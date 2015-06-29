@@ -1,0 +1,1316 @@
+
+<!DOCTYPE html>
+
+<html>
+
+	<head>
+
+		<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+		<title>WebGL test</title>
+
+		<script type="text/javascript" src="js/glMatrix-0.9.5.min.js"></script>
+		<script type="text/javascript" src="js/webgl-utils.js"></script>
+
+		<script type="text/javascript" src="js/randomiser.js"></script>
+		<script type="text/javascript" src="js/pnoise.js"></script>
+		<script type="text/javascript" src="js/marchingCube.js"></script>
+
+		<script type="text/javascript" src="js/frustum_culling.js"></script>
+		<script type="text/javascript" src="js/freeFlyCamera.js"></script>
+
+		<script type="text/javascript" src="js/myShaders.js"></script>
+
+		<script type="text/javascript" src="js/drawHUD.js"></script>
+
+
+
+
+		<script id="shader-fs" type="x-shader/x-fragment">
+
+			precision mediump float;
+
+			varying vec4 vColor;
+
+
+			varying float use_light;
+			varying vec3 normalInterp;
+			varying vec3 vertPos;
+
+			uniform int mode;
+			uniform vec4 uForcedRange2;
+			varying vec3 myVertPos;
+
+
+			const vec3 lightPos = vec3(1.0,1.0,1.0);
+			// const vec3 diffuseColor = vec3(0.5, 0.0, 0.0);
+			const vec3 specColor = vec3(1.0, 1.0, 1.0);
+
+			float my_calc_length(vec3 in_a, vec3 in_b) {
+
+				return sqrt( (in_a.x + in_b.x) * (in_a.x + in_b.x) +
+							 (in_a.y + in_b.y) * (in_a.y + in_b.y) +
+							 (in_a.z + in_b.z) * (in_a.z + in_b.z) );
+			}
+
+			void main(void) {
+
+				if (vColor.w == 0.0)
+				{
+					discard;
+					return;
+				}
+
+				if (uForcedRange2.w > 0.0)
+				{
+					float tmp_dist = my_calc_length( myVertPos, uForcedRange2.xyz );
+
+					if (tmp_dist >= 15.0 &&
+						tmp_dist < 15.0 + 0.5)
+					{
+						gl_FragColor = vec4(1,0,0,1);
+						return;
+					}
+				}
+
+				if (use_light == 0.0)
+				{
+					gl_FragColor = vColor;
+					return;
+				}
+
+
+				vec3 normal = normalize(normalInterp);
+				vec3 lightDir = normalize(lightPos - vertPos);
+
+				float lambertian = max(dot(lightDir,normal), 0.0);
+				float specular = 0.0;
+
+				if (lambertian > 0.0) {
+
+					vec3 reflectDir = reflect(-lightDir, normal);
+					vec3 viewDir = normalize(-vertPos);
+
+					float specAngle = max(dot(reflectDir, viewDir), 0.0);
+					specular = pow(specAngle, 4.0);
+				}
+
+				gl_FragColor = vec4( lambertian * vColor.xyz + specular * specColor, 1.0);
+			}
+		</script>
+
+
+
+
+		<script id="shader-vs" type="x-shader/x-vertex">
+
+			attribute vec3 aVertexPosition, aVertexColor, aVertexNormal;
+
+			// uniform vec4 uForcedColor, uForcedRange;
+			uniform vec4 uForcedColor;
+			uniform vec4 uForcedRange;
+
+			uniform mat4 uMVMatrix, uPMatrix, uNMatrix;
+
+			varying vec4 vColor;
+
+			varying float use_light;
+			varying vec3 normalInterp, vertPos, myVertPos;
+
+			const float k_range_width = 3.0;
+
+			float my_calc_length(vec3 in_a, vec3 in_b) {
+
+				return sqrt( (in_a.x + in_b.x) * (in_a.x + in_b.x) +
+							 (in_a.y + in_b.y) * (in_a.y + in_b.y) +
+							 (in_a.z + in_b.z) * (in_a.z + in_b.z) );
+			}
+
+			void main(void) {
+
+				use_light = 0.0;
+
+				vec4 vertPos4 = uMVMatrix * vec4(aVertexPosition, 1.0);
+				vertPos = vec3(vertPos4) / vertPos4.w;
+				normalInterp = vec3( uNMatrix * vec4(aVertexNormal, 0.0) );
+
+				//
+
+				float tmp_dist = -1.0;
+
+				if (uForcedRange.w > 0.0) {
+
+					myVertPos = aVertexPosition;
+
+					tmp_dist = my_calc_length( aVertexPosition, uForcedRange.xyz );
+
+
+					// if (tmp_dist >= 15.0 &&
+					// 	tmp_dist < 15.0 + 0.5)
+					// {
+					// 	gl_FragColor = vec4(1,0,0,1);
+					// 	return;
+					// }
+
+				}
+
+				if (tmp_dist < uForcedRange.w) {
+
+					gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+
+					if (uForcedColor.w > 0.0)
+						vColor = uForcedColor;
+					else {
+
+						use_light = 1.0;
+
+						vColor = vec4(aVertexColor, 1);
+					}
+
+					return;
+				}
+
+				if (tmp_dist < uForcedRange.w + k_range_width) {
+
+					float diff = (tmp_dist - uForcedRange.w) / k_range_width;
+					float ratio = ( (diff < 0.5) ? (diff * 2.0) : (1.0 + diff) );
+
+					gl_Position = uPMatrix * uMVMatrix * vec4(	aVertexPosition.x + aVertexNormal.x * ratio,
+																aVertexPosition.y + aVertexNormal.y * ratio,
+																aVertexPosition.z + aVertexNormal.z * ratio, 1.0);
+
+					if (uForcedColor.w > 0.0)
+						vColor = uForcedColor;
+					else {
+
+						use_light = 1.0;
+
+						vColor = mix( vec4(aVertexColor,1), vec4(1,1,1,1), ratio );
+					}
+
+				} else {
+
+					gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+
+					if (uForcedColor.w > 0.0)
+						vColor = uForcedColor;
+					else
+						vColor = vec4(0,0,0,0);
+				}
+
+			}
+		</script>
+
+
+
+
+		<script type="text/javascript">
+
+			///
+			///
+			///
+
+			var gl = null;
+
+			var my_marchingCube;
+			var myNoise2;
+			var myRand;
+
+
+			var my_FrustumCulling;
+
+
+
+			// var g_chunk_size = 15;
+			// var g_geom_cached_size = 1048 * 20;
+			var g_chunk_size = 20;
+			var g_geom_cached_size = 1048 * 30;
+			// var g_chunk_size = 30;
+			// var g_geom_cached_size = 1048 * 50;
+
+
+			var g_chunks = new Array();
+			var g_chunks_queue = new Array();
+
+
+			var g_FreeFlyCamera = new FreeFlyCamera();
+
+			g_FreeFlyCamera.setPosition(
+				g_chunk_size / 2,
+				g_chunk_size / 2,
+				g_chunk_size / 2
+			);
+
+
+			var myHUD = new CreateHUD();
+
+
+
+
+			function initGL(canvas) {
+
+				//
+				//
+				// // // POINTER LOCK
+
+				canvas.requestPointerLock = canvas.requestPointerLock ||
+											canvas.mozRequestPointerLock ||
+											canvas.webkitRequestPointerLock;
+
+				document.exitPointerLock =	document.exitPointerLock ||
+											document.mozExitPointerLock ||
+											document.webkitExitPointerLock;
+
+				canvas.onclick = function() {
+					canvas.requestPointerLock();
+				}
+
+				if ("onpointerlockchange" in document)
+					document.addEventListener('pointerlockchange', lockChangeAlert, false);
+				else if ("onmozpointerlockchange" in document)
+					document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
+				else if ("onwebkitpointerlockchange" in document)
+					document.addEventListener('webkitpointerlockchange', lockChangeAlert, false);
+
+				function lockChangeAlert() {
+					if (document.pointerLockElement === canvas ||
+						document.mozPointerLockElement === canvas ||
+						document.webkitPointerLockElement === canvas)
+					{
+						console.log('The pointer lock status is now locked');
+						// Do something useful in response
+
+						canvas.addEventListener('mousemove', callback_mousemove, false);
+
+					} else {
+						console.log('The pointer lock status is now unlocked');      
+						// Do something useful in response
+
+						canvas.removeEventListener('mousemove', callback_mousemove);
+					}
+				}
+
+				if ("onpointerlockerror" in document)
+					document.addEventListener('pointerlockerror', lockError, false);
+				else if ("onmozpointerlockerror" in document)
+					document.addEventListener('mozpointerlockerror', lockError, false);
+				else if ("onwebkitpointerlockerror" in document)
+					document.addEventListener('webkitpointerlockerror', lockError, false);
+
+				function lockError(e) {
+					console.error("Pointer lock failed"); 
+				}
+
+
+
+
+				function callback_mousemove(e) {
+
+					var movementX = e.movementX || e.mozMovementX || e.webkitMovementX || 0;
+					var movementY = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
+
+					// console.log('Mouse movement: ' + movementX + ',' + movementY);
+
+					g_FreeFlyCamera._theta	+= movementX / 2.0;
+					g_FreeFlyCamera._phi	+= movementY / 2.0;
+				}
+				
+
+				// // // POINTER LOCK
+				//
+				//
+
+
+				gl = WebGLUtils.setupWebGL(canvas);
+
+				gl.viewportWidth = canvas.width;
+				gl.viewportWidth = 600;
+				gl.viewportHeight = canvas.height;
+
+			}
+
+			var g_shaderProgram;
+
+			
+
+			function initShaders() {
+
+				g_shaderProgram = createShaders( gl, "shader-vs", "shader-fs" );
+
+				//
+
+				gl.useProgram(g_shaderProgram);
+
+				// get the attributes location
+				g_shaderProgram.vertexPositionAttr = gl.getAttribLocation(g_shaderProgram, "aVertexPosition");
+				g_shaderProgram.vertexColorAttr = gl.getAttribLocation(g_shaderProgram, "aVertexColor");
+				g_shaderProgram.vertexNormalAttr = gl.getAttribLocation(g_shaderProgram, "aVertexNormal");
+
+				// enable the attributes location
+				gl.enableVertexAttribArray(g_shaderProgram.vertexPositionAttr);
+				gl.enableVertexAttribArray(g_shaderProgram.vertexColorAttr);
+				gl.enableVertexAttribArray(g_shaderProgram.vertexNormalAttr);
+
+				// enable the uniform location
+				g_shaderProgram.pMatrixUniform = gl.getUniformLocation(g_shaderProgram, "uPMatrix");
+				g_shaderProgram.mvMatrixUniform = gl.getUniformLocation(g_shaderProgram, "uMVMatrix");
+				g_shaderProgram.nMatrixUniform = gl.getUniformLocation(g_shaderProgram, "uNMatrix");
+				g_shaderProgram.uForcedColor = gl.getUniformLocation(g_shaderProgram, "uForcedColor");
+				g_shaderProgram.uForcedRange = gl.getUniformLocation(g_shaderProgram, "uForcedRange");
+				g_shaderProgram.uForcedRange2 = gl.getUniformLocation(g_shaderProgram, "uForcedRange2");
+			}
+
+
+			var g_mvMatrixStack = new Array();
+
+			var mvMatrix = mat4.create();
+			var pMatrix = mat4.create();
+			var nMatrix = mat4.create();
+
+			function mvPushMatrix() {
+				var copy = mat4.create();
+				mat4.set(mvMatrix, copy);
+				g_mvMatrixStack.push(copy);
+			}
+
+			function mvPopMatrix() {
+				if (g_mvMatrixStack.length == 0)
+					throw "Invalid popMatrix!";
+
+				mvMatrix = g_mvMatrixStack.pop();
+			}
+
+
+			function degToRad(degrees) { return degrees * Math.PI / 180; }
+
+
+			function initBuffers( in_data ) {try{
+
+				// alert(JSON.stringify({
+				// 	 vertices_length : in_data.vertices.length
+				// 	,colors_length : in_data.colors.length
+				// 	,normals_length : in_data.normals.length
+				// 	,indices_length : in_data.indices.length
+				// 	,indices2_length : in_data.indices2.length
+				// },null,4));
+
+				///
+				///
+				///
+
+				var out_geometry = {};
+
+				///
+				/// vertices
+
+				out_geometry.VertexPositionBuffer = gl.createBuffer();
+				gl.bindBuffer( gl.ARRAY_BUFFER, out_geometry.VertexPositionBuffer );
+
+				gl.bufferData(gl.ARRAY_BUFFER, in_data.vertices.container, gl.STATIC_DRAW);
+				out_geometry.VertexPositionBuffer.itemSize = 3;
+				out_geometry.VertexPositionBuffer.numItems = in_data.vertices.length / out_geometry.VertexPositionBuffer.itemSize;
+
+				///
+				/// colors
+
+				out_geometry.VertexColorBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, out_geometry.VertexColorBuffer);
+
+				gl.bufferData( gl.ARRAY_BUFFER, in_data.colors.container, gl.STATIC_DRAW );
+				out_geometry.VertexColorBuffer.itemSize = 3;
+				out_geometry.VertexColorBuffer.numItems = in_data.colors.length / out_geometry.VertexColorBuffer.itemSize;
+
+				///
+				/// normals
+
+				out_geometry.VertexNormalBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, out_geometry.VertexNormalBuffer);
+
+				gl.bufferData( gl.ARRAY_BUFFER, in_data.normals.container, gl.STATIC_DRAW );
+				out_geometry.VertexNormalBuffer.itemSize = 3;
+				out_geometry.VertexNormalBuffer.numItems = in_data.normals.length / out_geometry.VertexNormalBuffer.itemSize;
+
+				///
+				///
+				///
+
+				///
+				/// indices
+
+				out_geometry.VertexIndexBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, out_geometry.VertexIndexBuffer);
+
+				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, in_data.indices.container, gl.STATIC_DRAW);
+				out_geometry.VertexIndexBuffer.itemSize = 1;
+				out_geometry.VertexIndexBuffer.numItems = in_data.indices.length / 3;
+
+				///
+				/// indices (lines)
+
+				out_geometry.VertexIndexBuffer_line = gl.createBuffer();
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, out_geometry.VertexIndexBuffer_line);
+
+				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, in_data.indices2.container, gl.STATIC_DRAW);
+				out_geometry.VertexIndexBuffer_line.itemSize = 1;
+				out_geometry.VertexIndexBuffer_line.numItems = in_data.indices2.length / 3;
+
+
+				return out_geometry;
+
+			}catch(e){alert(e);}}
+
+
+
+
+
+
+
+
+
+
+			var geom_cube = {
+				VertexPositionBuffer	:null,
+				VertexColorBuffer		:null,
+				VertexIndexBuffer		:null,
+				VertexNormalBuffer		:null
+			}
+
+			function initBuffers_cube() {
+
+				var side = g_chunk_size / 2;
+				var side2 = g_chunk_size / 2.1;
+
+				geom_cube.VertexPositionBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexPositionBuffer);
+				vertices = [
+					 side,  side,  side, // 0
+					-side,  side,  side,
+					 side, -side,  side,
+					-side, -side,  side,
+
+					 side,  side, -side, // 4
+					-side,  side, -side,
+					 side, -side, -side,
+					-side, -side, -side,
+
+					 side2,  side2,  side2, // 0
+					-side2,  side2,  side2,
+					 side2, -side2,  side2,
+					-side2, -side2,  side2,
+
+					 side2,  side2, -side2, // 4
+					-side2,  side2, -side2,
+					 side2, -side2, -side2,
+					-side2, -side2, -side2
+				];
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+				geom_cube.VertexPositionBuffer.itemSize = 3;
+				geom_cube.VertexPositionBuffer.numItems = vertices.length / 3;
+
+				///
+
+				geom_cube.VertexColorBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexColorBuffer);
+				colors = [
+					1,1,1,  1,1,1,  1,1,1,  1,1,1,
+					1,1,1,  1,1,1,  1,1,1,  1,1,1,
+
+					1,1,1,  1,1,1,  1,1,1,  1,1,1,
+					1,1,1,  1,1,1,  1,1,1,  1,1,1
+				];
+
+				gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW );
+				geom_cube.VertexColorBuffer.itemSize = 3;
+				geom_cube.VertexColorBuffer.numItems = colors.length / 3;
+
+				///
+
+				geom_cube.VertexNormalBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexNormalBuffer);
+				normals = [
+					1,0,0,  1,0,0,  1,0,0,  1,0,0,
+					1,0,0,  1,0,0,  1,0,0,  1,0,0,
+
+					1,0,0,  1,0,0,  1,0,0,  1,0,0,
+					1,0,0,  1,0,0,  1,0,0,  1,0,0
+				];
+
+				gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW );
+				geom_cube.VertexNormalBuffer.itemSize = 3;
+				geom_cube.VertexNormalBuffer.numItems = normals.length / 3;
+
+				///
+
+				geom_cube.VertexIndexBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geom_cube.VertexIndexBuffer);
+				var indices = [
+					0,1,  1,3,  3,2,  2,0,
+					4,5,  5,7,  7,6,  6,4,
+					0,4,  1,5,  3,7,  2,6,
+
+					 8, 9,   9,11,  11,10,  10, 8,
+					12,13,  13,15,  15,14,  14,12,
+					 8,12,   9,13,  11,15,  10,14
+				];
+
+				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+				geom_cube.VertexIndexBuffer.itemSize = 1;
+				geom_cube.VertexIndexBuffer.numItems = indices.length;
+			}
+
+
+
+
+			var g_visible = 0;
+
+			function drawScene() {
+
+				gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+				gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+
+				// set the projection matrix
+				mat4.perspective(70, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+				gl.uniformMatrix4fv(g_shaderProgram.pMatrixUniform, false, pMatrix);
+
+
+
+				g_FreeFlyCamera.updateViewMatrix( mvMatrix );
+
+
+
+
+				// set the normal matrix
+				mat4.identity(nMatrix);
+				nMatrix[ 0] = mvMatrix[ 0];
+				nMatrix[ 1] = mvMatrix[ 1];
+				nMatrix[ 2] = mvMatrix[ 2];
+
+				nMatrix[ 4] = mvMatrix[ 4];
+				nMatrix[ 5] = mvMatrix[ 5];
+				nMatrix[ 6] = mvMatrix[ 6];
+
+				nMatrix[ 8] = mvMatrix[ 8];
+				nMatrix[ 9] = mvMatrix[ 9];
+				nMatrix[10] = mvMatrix[10];
+
+				// send the normal matrix
+				gl.uniformMatrix4fv(g_shaderProgram.nMatrixUniform, false, nMatrix);
+
+
+
+
+				// update Frustum Culling
+				my_FrustumCulling.calculateFrustum( pMatrix, mvMatrix );
+				g_visible = 0;
+
+
+
+
+				gl.uniform4f( g_shaderProgram.uForcedRange, 0,0,0,0);
+				gl.uniform4f( g_shaderProgram.uForcedRange2, 0,0,0,0);
+
+
+
+
+				/// RENDER CUBES
+
+				gl.uniform4f( g_shaderProgram.uForcedRange, 0,0,0,0 );
+				gl.uniform4f( g_shaderProgram.uForcedRange2, 0,0,0,0 );
+
+				// for (var geom_i = 0; geom_i < g_chunks.length; ++geom_i) {
+				for (geom_i in g_chunks) {
+
+					var curr_chunk = g_chunks[ geom_i ];
+
+					var pos = curr_chunk.pos;
+
+
+					// no geom mean the chunk is a work in progress => show a green cube
+
+					if (!curr_chunk.geom)
+						gl.uniform4f( g_shaderProgram.uForcedColor, 0,1,0,1);
+					else
+						gl.uniform4f( g_shaderProgram.uForcedColor, 1,1,1,1);
+
+					//
+
+					var axis = [
+						pos[0] * g_chunk_size + g_chunk_size / 2,
+						pos[1] * g_chunk_size + g_chunk_size / 2,
+						pos[2] * g_chunk_size + g_chunk_size / 2
+					];
+
+					mvPushMatrix();
+
+						// translate the chunk were it belong
+						mat4.translate(mvMatrix, axis);
+
+						// send the modelview matrix
+						gl.uniformMatrix4fv(g_shaderProgram.mvMatrixUniform, false, mvMatrix);
+
+						///
+
+						gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexPositionBuffer);
+						gl.vertexAttribPointer(g_shaderProgram.vertexPositionAttr, geom_cube.VertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+						gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexColorBuffer);
+						gl.vertexAttribPointer(g_shaderProgram.vertexColorAttr, geom_cube.VertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+						gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexNormalBuffer);
+						gl.vertexAttribPointer(g_shaderProgram.vertexNormalAttr, geom_cube.VertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+
+						gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geom_cube.VertexIndexBuffer);
+						gl.drawElements(gl.LINES, geom_cube.VertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+					mvPopMatrix();
+
+				}
+
+
+
+				gl.uniformMatrix4fv(g_shaderProgram.mvMatrixUniform, false, mvMatrix);
+
+
+
+
+				for (geom_i in g_chunks) {
+
+					var curr_chunk = g_chunks[ geom_i ];
+
+					///
+					///
+
+
+					if (!curr_chunk.geom)
+						continue;
+
+					///
+					///
+
+					var pos = curr_chunk.pos;
+
+					var axis = [
+						pos[0] * g_chunk_size + g_chunk_size / 2,
+						pos[1] * g_chunk_size + g_chunk_size / 2,
+						pos[2] * g_chunk_size + g_chunk_size / 2
+					];
+
+					if (!my_FrustumCulling.cubeInFrustum( axis[0], axis[1], axis[2], g_chunk_size / 2 ))
+						continue;
+
+					++g_visible;
+
+
+					///
+					///
+
+					var tmp_geom = curr_chunk.geom;
+
+					gl.bindBuffer(gl.ARRAY_BUFFER, tmp_geom.VertexPositionBuffer);
+					gl.vertexAttribPointer(g_shaderProgram.vertexPositionAttr, tmp_geom.VertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+					gl.bindBuffer(gl.ARRAY_BUFFER, tmp_geom.VertexColorBuffer);
+					gl.vertexAttribPointer(g_shaderProgram.vertexColorAttr, tmp_geom.VertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+					gl.bindBuffer(gl.ARRAY_BUFFER, tmp_geom.VertexNormalBuffer);
+					gl.vertexAttribPointer(g_shaderProgram.vertexNormalAttr, tmp_geom.VertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+					gl.uniform4f( g_shaderProgram.uForcedColor, 1,1,1,0);
+
+					///
+
+					{
+
+
+						// gl.uniform4f( g_shaderProgram.uForcedColor, 0,0,0,1);
+						gl.uniform4f( g_shaderProgram.uForcedColor, 0,0,0,0);
+						// gl.uniform4f( g_shaderProgram.uForcedColor, 1,0,0,1);
+
+						gl.uniform4f( g_shaderProgram.uForcedRange,
+							-g_FreeFlyCamera._position[0],
+							-g_FreeFlyCamera._position[1],
+							-g_FreeFlyCamera._position[2],
+						10 );
+						gl.uniform4f( g_shaderProgram.uForcedRange2,
+							-g_FreeFlyCamera._position[0],
+							-g_FreeFlyCamera._position[1],
+							-g_FreeFlyCamera._position[2],
+						10 );
+
+
+
+
+
+
+
+						gl.enable(gl.CULL_FACE);
+
+						gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, tmp_geom.VertexIndexBuffer);
+						gl.drawElements(gl.TRIANGLES, tmp_geom.VertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+						gl.disable(gl.CULL_FACE);
+
+						gl.uniform4f( g_shaderProgram.uForcedColor, 1,1,1,1);
+
+
+						gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, tmp_geom.VertexIndexBuffer_line);
+						gl.drawElements(gl.LINES, tmp_geom.VertexIndexBuffer_line.numItems, gl.UNSIGNED_SHORT, 0);
+					}
+
+
+				}
+
+
+
+
+
+
+				// mvPopMatrix();
+
+				// /render
+
+			}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			var currentlyPressedKeys = {};
+
+			// function handleKeyDown(event)	{ alert(event.keyCode); }
+			function handleKeyDown(event)	{ currentlyPressedKeys[event.keyCode] = true; }
+			function handleKeyUp(event)		{ currentlyPressedKeys[event.keyCode] = false; }
+
+			function handleKeys() { try{
+
+				var move_f = (currentlyPressedKeys[90] || currentlyPressedKeys[87]);
+				var move_b = (currentlyPressedKeys[83]);
+
+				if      (move_f)	g_FreeFlyCamera.moveForward(); // Z || W
+				else if (move_b)	g_FreeFlyCamera.moveBackward(); // S
+
+				//
+
+				var move_l = (currentlyPressedKeys[65] || currentlyPressedKeys[81]); // A || Q
+				var move_r = (currentlyPressedKeys[68]); // D
+
+				if (move_l)			g_FreeFlyCamera.strafeLeft(); // A || Q
+				else if (move_r)	g_FreeFlyCamera.strafeRight(); // D
+
+				//
+
+				if (currentlyPressedKeys[37])	g_FreeFlyCamera.lookLeft();		// Left cursor key
+				if (currentlyPressedKeys[39])	g_FreeFlyCamera.lookRight();	// Right cursor key
+				if (currentlyPressedKeys[38])	g_FreeFlyCamera.lookUp();		// Up cursor key
+				if (currentlyPressedKeys[40])	g_FreeFlyCamera.lookDown();		// Down cursor key
+
+			}catch(err){alert(err);} }
+
+			var last_time = 0;
+
+			var prev_index = new Int32Array(3);
+			prev_index[0] = 999;
+			prev_index[1] = 999;
+			prev_index[2] = 999;
+			var curr_index = new Int32Array(3);
+
+			var g_busy = false;
+
+			function animate() { try{
+
+				var current_time = (new Date()).getTime();
+
+				if (!last_time)
+					last_time = current_time;
+
+				var elapsed = current_time - last_time;
+
+				last_time = current_time;
+
+				//
+
+				g_FreeFlyCamera.update( elapsed / 1000.0 );
+
+
+				//
+
+				//
+
+
+				{ // detect if the user movement make the current chunks outdated
+
+					curr_index[0] = Math.floor(g_FreeFlyCamera._position[0] / g_chunk_size)|0;
+					curr_index[1] = Math.floor(g_FreeFlyCamera._position[1] / g_chunk_size)|0;
+					curr_index[2] = Math.floor(g_FreeFlyCamera._position[2] / g_chunk_size)|0;
+
+					// update only if 
+
+					if ( prev_index[0] != curr_index[0] ||
+						 prev_index[1] != curr_index[1] ||
+						 prev_index[2] != curr_index[2] )
+					{
+						prev_index[0] = curr_index[0];
+						prev_index[1] = curr_index[1];
+						prev_index[2] = curr_index[2];
+
+						//
+
+						g_chunks_queue.length = 0; // clear the array
+
+
+						var old_chunk = g_chunks;
+						g_chunks = new Array(); // need a new array
+
+						var range = 1|0;
+
+						var min_index = new Int32Array(3);
+						min_index[0] = (curr_index[0] - range)|0;
+						min_index[1] = (curr_index[1] - range)|0;
+						min_index[2] = (curr_index[2] - range)|0;
+
+						var max_index = new Int32Array(3);
+						max_index[0] = (curr_index[0] + range)|0;
+						max_index[1] = (curr_index[1] + range)|0;
+						max_index[2] = (curr_index[2] + range)|0;
+
+						for (var z = min_index[2]; z <= max_index[2]; ++z)
+						for (var y = min_index[1]; y <= max_index[1]; ++y)
+						for (var x = min_index[0]; x <= max_index[0]; ++x)
+						{
+							var found = false;
+
+							for (i in old_chunk)
+								if (old_chunk[i].pos[0] == x &&
+									old_chunk[i].pos[1] == y &&
+									old_chunk[i].pos[2] == z)
+								{
+									g_chunks.push( old_chunk[i] );
+									found = true;
+								}
+
+							if (!found)
+								// g_chunks_queue.push( [x,y,z] );
+								g_chunks_queue.push( new Int32Array([x,y,z]) );
+
+						}
+
+						old_chunk = null;
+					}
+
+				}
+
+
+				//
+
+				//
+
+
+				{ // launch the chunk processing
+
+					if (g_busy || g_chunks_queue.length == 0)
+						return;
+
+					try {
+
+						/////
+						/////
+						/////
+
+						var choosen = -1;
+						var choosen_dist = null;
+
+						var camera_pos = [
+							g_FreeFlyCamera._position[0] + g_FreeFlyCamera._forward[0] * g_chunk_size / 4,
+							g_FreeFlyCamera._position[1] + g_FreeFlyCamera._forward[1] * g_chunk_size / 4,
+							g_FreeFlyCamera._position[2] + g_FreeFlyCamera._forward[2] * g_chunk_size / 4
+						];
+
+						function calc_length(in_x, in_y, in_z) {
+							return Math.sqrt(in_x * in_x + in_y * in_y + in_z * in_z);
+						}
+
+						for (i in g_chunks_queue) {
+
+							var pos = g_chunks_queue[ i ];
+
+							var axis = [
+								pos[0] * g_chunk_size + g_chunk_size / 2,
+								pos[1] * g_chunk_size + g_chunk_size / 2,
+								pos[2] * g_chunk_size + g_chunk_size / 2
+							];
+
+							if (!my_FrustumCulling.cubeInFrustum( axis[0], axis[1], axis[2], g_chunk_size / 2 ))
+								continue;
+
+							var dist = calc_length( camera_pos[0] - axis[0],
+													camera_pos[1] - axis[1],
+													camera_pos[2] - axis[2] );
+
+							if (choosen != -1 && choosen_dist < dist)
+								continue;
+
+							choosen = i;
+							choosen_dist = dist;
+						}
+
+						if (choosen == -1) {
+
+							for (i in g_chunks_queue) {
+
+								var pos = g_chunks_queue[ i ];
+
+								var axis = [
+									pos[0] * g_chunk_size + g_chunk_size / 2,
+									pos[1] * g_chunk_size + g_chunk_size / 2,
+									pos[2] * g_chunk_size + g_chunk_size / 2
+								];
+
+								var dist = calc_length(
+									g_FreeFlyCamera._position[0] - axis[0],
+									g_FreeFlyCamera._position[1] - axis[1],
+									g_FreeFlyCamera._position[2] - axis[2]
+								);
+
+								if (choosen != -1 && choosen_dist < dist)
+									continue;
+
+								choosen = i;
+								choosen_dist = dist;
+							}
+						}
+
+						if (choosen != -1) {
+
+							var pos = g_chunks_queue[ choosen ];
+							g_chunks_queue.splice( choosen, 1 );
+
+							add_chunk( pos[0], pos[1], pos[2] );
+						}
+
+						/////
+						/////
+						/////
+
+					}catch(e){alert(e);}
+
+				}
+
+
+
+			}catch(err){alert(err);} }
+
+
+			function tick(in_event) {
+
+				window.requestAnimFrame( tick ); // webgl-utils.js
+
+				///
+
+				var start_time = (new Date()).getTime();
+
+					handleKeys();
+					animate();
+
+					drawScene();
+
+				var stop_time = (new Date()).getTime();
+				var elapsed_time = stop_time - start_time;
+
+				//
+
+				// drawScene_hud( elapsed_time );
+				myHUD.draw( gl, g_shaderProgram, elapsed_time );
+			}
+
+
+			var tmp_inc = 0;
+
+
+
+
+			var ArrayArena = function (type, length) {
+
+				this.container = new type(length);
+
+				this.length = 0;
+				this.push = function(val) { this.container[ this.length++ ] = val; };
+				this.clear = function() { this.length = 0; };
+			}
+
+
+
+
+			var g_geom_cached = {
+				indices			: new ArrayArena(Uint16Array, g_geom_cached_size),
+				indices2		: new ArrayArena(Uint16Array, g_geom_cached_size * 3),
+				normals			: new ArrayArena(Float32Array,g_geom_cached_size),
+				vertices		: new ArrayArena(Float32Array,g_geom_cached_size),
+				colors			: new ArrayArena(Float32Array,g_geom_cached_size)
+			};
+
+
+			function add_chunk(x, y, z) {try{
+
+
+				g_busy = true;
+
+				var timeout_value = 10;
+
+
+				g_geom_cached.indices.clear();
+				g_geom_cached.indices2.clear();
+				g_geom_cached.normals.clear();
+				g_geom_cached.vertices.clear();
+				g_geom_cached.colors.clear();
+
+				my_marchingCube.marchCube(
+					g_geom_cached,
+					x * g_chunk_size,
+					y * g_chunk_size,
+					z * g_chunk_size
+				);
+
+
+
+				g_chunks.push( {
+					pos : [x, y, z],
+					// geom : initBuffers( g_geom_cached )
+					geom : null
+				} );
+
+
+
+
+				// if (g_geom_cached) {
+
+					function reccursive_conclusion_callback () {
+
+						var tmp_step = 900;
+
+						var tmp_end = tmp_inc + tmp_step;
+
+						if (tmp_end > g_geom_cached.indices_len)
+							tmp_end = g_geom_cached.indices_len;
+
+						// var tmp_inc = 0;
+						// var tmp_end = g_geom_cached.indices_len;
+
+						for (var tmp_i = tmp_inc; (tmp_i + 3) < tmp_end; tmp_i += 3) {
+
+							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
+							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
+
+							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
+							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
+
+							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
+							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
+						}
+
+						tmp_inc += tmp_step;
+
+						if (tmp_inc >= g_geom_cached.indices.length) {
+
+							tmp_inc = 0;
+
+							for (g_chunks_i in g_chunks)
+							{
+								var curr_chunk = g_chunks[g_chunks_i];
+
+								// if (curr_chunk.pos[0] == x ||
+								// 	curr_chunk.pos[1] == y ||
+								// 	curr_chunk.pos[2] == z)
+								if (!curr_chunk.geom)
+								{
+									curr_chunk.geom = initBuffers( g_geom_cached );
+									break;
+								}
+							}
+
+							// g_chunks.push( {
+							// 	pos : [x, y, z],
+							// 	geom : initBuffers( g_geom_cached )
+							// } );
+
+							g_busy = false;
+
+						} else {
+
+							setTimeout( reccursive_conclusion_callback, timeout_value );
+						}
+					}
+
+					reccursive_conclusion_callback();
+
+					// setTimeout( reccursive_conclusion_callback, timeout_value );
+				// }
+
+			}catch(e){alert(e)}}
+
+
+
+			function webGLStart() {
+
+				// already initialised?
+				if (gl)
+				{
+					return;
+				}
+
+				//
+
+				var canvas = document.getElementById("main-canvas");
+				initGL(canvas);
+				initShaders();
+
+
+
+
+				myRand = new Randomiser();
+
+				// myNoise2 = new ClassicalNoise();
+				myNoise2 = new ClassicalNoise(myRand);
+
+				my_marchingCube = new MarchinCube( g_chunk_size, 0, function(x, y, z) {
+
+					// return myNoise2.noise(x / 2, y / 2, z / 2);
+					return myNoise2.noise(x, y, z);
+				} );
+
+				try {
+
+					my_FrustumCulling = new FrustumCulling();
+
+				}  catch(e) {alert(e);}
+
+
+
+
+
+				g_chunks = new Array();
+
+				initBuffers_cube();
+				// initBuffers_square();
+
+
+
+
+				//
+
+				document.onkeydown = handleKeyDown;
+				document.onkeyup = handleKeyUp;
+
+				gl.clearColor(0.0, 0.0, 0.0, 1.0);
+				gl.enable(gl.DEPTH_TEST);
+
+				//
+
+				tick();
+			}
+
+		</script>
+
+	</head>
+
+
+<!-- 	<body onload="webGLStart();"> -->
+	<body>
+
+
+<style>
+/*	.my_cells {*/
+	#my_table td {
+		background-color: #88f;
+		text-align: center;
+		border: 2px solid black;
+	}
+</style>
+
+
+		<div>
+
+			<button onclick="webGLStart();">LAUNCH</button> 
+
+			<table border="1">
+
+				<tr>
+
+					<td>
+						<canvas id="main-canvas" style="border: none;" width="800" height="600"></canvas>
+					</td>
+
+					<td>
+
+						<table border="1">
+
+							<tr>
+								<td>
+									<table id="my_table" cellspacing=2 cellpadding=2 >
+
+										<tr>
+											<th colspan="3">Move</th>
+										</tr>
+										<tr>
+											<th></th>
+											<td>Z/W</td>
+											<th></th>
+										</tr>
+										<tr>
+											<td>Q/A</td>
+											<td>S</td>
+											<td>D</td>
+										</tr>
+
+										<tr>
+											<th colspan="3">Look</th>
+										</tr>
+										<tr>
+											<th></th>
+											<td>Up</td>
+											<th></th>
+										</tr>
+										<tr>
+											<td>Left</td>
+											<td>Down</td>
+											<td>Right</td>
+										</tr>
+
+									</table>
+								</td>
+							</tr>
+
+						</table>
+
+					</td>
+
+				</tr>
+
+			</table>
+
+		</div>
+
+<!-- 		<audio id="player" src="./music/test.mp3"></audio>
+		<div> 
+			<button onclick="document.getElementById('player').play()">Play</button> 
+			<button onclick="document.getElementById('player').pause()">Pause</button> 
+			<button onclick="document.getElementById('player').volume += 0.1">Vol+ </button> 
+			<button onclick="document.getElementById('player').volume -= 0.1">Vol- </button> 
+		</div>
+ -->
+	</body>
+
+</html>
+
