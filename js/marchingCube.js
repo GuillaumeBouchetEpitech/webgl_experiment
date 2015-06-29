@@ -9,10 +9,6 @@ var MarchinCube = function(in_chunk_size, in_fTv, in_sample_cb) {
 
 	this.step_size = 1.0 / this.chunk_size;
 
-	// var chunk_size = 20;
-	// var step_size = 1.0 / chunk_size;
-	// var fTv = 0.0; // Targetvalue
-
 	//a2fVertexOffset lists the positions, relative to vertex0, of each of the 8 vertices of a cube
 	this.a2fVertexOffset = [
 		[0,0,0],[1,0,0],[1,1,0],[0,1,0],
@@ -357,9 +353,6 @@ function vNormalizeVector( vec ) {
 	];
 }
 
-/// work
-
-/**/
 
 MarchinCube.prototype.getNormal = function( fX, fY, fZ ) {
 
@@ -476,24 +469,6 @@ MarchinCube.prototype.marchCube_single = function( iX, iY, iZ ) {
 
 			for (var tmp_i = 0; tmp_i < 3; ++tmp_i) {
 
-				// this.output.indices.push( this.output.indices.length );
-				// this.output.normals.push( asEdgeNorm[iVertex][tmp_i] );
-				// this.output.vertices.push( vertex[tmp_i] );
-				// this.output.colors.push( color[tmp_i] );
-
-
-				// this.output.indices[ this.output.indices_len ]		= this.output.indices_len;
-				// this.output.normals[ this.output.normals_len ]		= asEdgeNorm[iVertex][tmp_i];
-				// this.output.vertices[ this.output.vertices_len ]	= vertex[tmp_i];
-				// this.output.colors[ this.output.colors_len ]		= color[tmp_i];
-
-				// ++this.output.indices_len;
-				// ++this.output.normals_len;
-				// ++this.output.vertices_len;
-				// ++this.output.colors_len;
-
-
-
 				this.output.indices.push( this.output.indices.length );
 
 				this.output.normals.push( asEdgeNorm[iVertex][tmp_i] );
@@ -502,8 +477,8 @@ MarchinCube.prototype.marchCube_single = function( iX, iY, iZ ) {
 
 			}
 
-		} // for (iCorner = 0; iCorner < 3; ++iCorner)
+		} // for (iCorner = [...]
 
-	} // for (iTriangle = 0; iTriangle < 5; ++iTriangle) {
+	} // for (iTriangle = [...]
 
 }

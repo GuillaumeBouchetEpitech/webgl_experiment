@@ -1,7 +1,6 @@
 
-var Randomiser = function() { // Classic Perlin noise in 3D, for comparison
+var Randomiser = function() {
 
-	// #define	RAND_MAX	2147483647 // int max positive value : 2,147,483,647
 	this.RAND_MAX = 2147483648|0;
 
 	this.s_seed = 1|0;

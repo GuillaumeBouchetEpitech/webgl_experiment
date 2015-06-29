@@ -26,22 +26,19 @@ ClassicalNoise.prototype.fade = function(t) {  return t*t*t*(t*(t*6.0-15.0)+10.0
 ClassicalNoise.prototype.noise = function(x, y, z) { 
 
 	// Find unit grid cell containing point 
-	// var X = Math.floor(x)|0;
-	// var Y = Math.floor(y)|0;
-	// var Z = Math.floor(z)|0;
-	var X = (x < 0 ? (x - 1) : x)|0;
-	var Y = (y < 0 ? (y - 1) : y)|0;
-	var Z = (z < 0 ? (z - 1) : z)|0;
+	var X = Math.floor(x)|0;
+	var Y = Math.floor(y)|0;
+	var Z = Math.floor(z)|0;
 
 	// Get relative xyz coordinates of point within that cell 
-	x = x - X; 
-	y = y - Y; 
-	z = z - Z; 
+	x = x - X;
+	y = y - Y;
+	z = z - Z;
 
 	// Wrap the integer cells at 255 (smaller integer period can be introduced here) 
-	X = X & 255; 
-	Y = Y & 255; 
-	Z = Z & 255;
+	X = (X & 255)|0; 
+	Y = (Y & 255)|0; 
+	Z = (Z & 255)|0;
 
 	// Calculate a set of eight hashed gradient indices 
 	var gi000 = (this.perm[X  +this.perm[Y  +this.perm[Z  ]]] % 12)|0;
@@ -52,16 +49,6 @@ ClassicalNoise.prototype.noise = function(x, y, z) {
 	var gi101 = (this.perm[X+1+this.perm[Y  +this.perm[Z+1]]] % 12)|0;
 	var gi110 = (this.perm[X+1+this.perm[Y+1+this.perm[Z  ]]] % 12)|0;
 	var gi111 = (this.perm[X+1+this.perm[Y+1+this.perm[Z+1]]] % 12)|0;
-
-	// The gradients of each corner are now: 
-	// g000 = grad3[gi000]; 
-	// g001 = grad3[gi001]; 
-	// g010 = grad3[gi010]; 
-	// g011 = grad3[gi011];
-	// g100 = grad3[gi100];
-	// g101 = grad3[gi101];
-	// g110 = grad3[gi110];
-	// g111 = grad3[gi111];
 
 	// Calculate noise contributions from each of the eight corners
 	var n000 = this.dot(this.grad3[gi000], x  , y  , z  );
@@ -83,9 +70,11 @@ ClassicalNoise.prototype.noise = function(x, y, z) {
 	var nx01 = this.mix(n001, n101, u);
 	var nx10 = this.mix(n010, n110, u);
 	var nx11 = this.mix(n011, n111, u);
+
 	// Interpolate the four results along y
 	var nxy0 = this.mix(nx00, nx10, v);
 	var nxy1 = this.mix(nx01, nx11, v);
+
 	// Interpolate the two last results along z
 	var nxyz = this.mix(nxy0, nxy1, w);
 
