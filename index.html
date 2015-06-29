@@ -119,13 +119,6 @@
 
 			const float k_range_width = 3.0;
 
-			float my_calc_length(vec3 in_a, vec3 in_b) {
-
-				return sqrt( (in_a.x + in_b.x) * (in_a.x + in_b.x) +
-							 (in_a.y + in_b.y) * (in_a.y + in_b.y) +
-							 (in_a.z + in_b.z) * (in_a.z + in_b.z) );
-			}
-
 			void main(void) {
 
 				use_light = 0.0;
@@ -142,16 +135,7 @@
 
 					myVertPos = aVertexPosition;
 
-					tmp_dist = my_calc_length( aVertexPosition, uForcedRange.xyz );
-
-
-					// if (tmp_dist >= 15.0 &&
-					// 	tmp_dist < 15.0 + 0.5)
-					// {
-					// 	gl_FragColor = vec4(1,0,0,1);
-					// 	return;
-					// }
-
+					tmp_dist = length( aVertexPosition + uForcedRange.xyz );
 				}
 
 				if (tmp_dist < uForcedRange.w) {
