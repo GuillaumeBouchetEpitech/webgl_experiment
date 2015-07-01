@@ -1056,8 +1056,15 @@
 
 				var start_time = performance.now() || (new Date()).getTime();
 
+					// events
+
 					handleKeys();
+
+					// update
+
 					animate();
+
+					// render scene
 
 					drawScene();
 
@@ -1065,6 +1072,8 @@
 				var elapsed_time = stop_time - start_time;
 
 				//
+
+				// render hud
 
 				myHUD.draw( gl, g_shaderProgram_hud, elapsed_time );
 			}
