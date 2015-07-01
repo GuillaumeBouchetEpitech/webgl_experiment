@@ -45,13 +45,6 @@
 			const vec3 lightPos = vec3(1.0,1.0,1.0);
 			const vec3 specColor = vec3(1.0, 1.0, 1.0);
 
-			float my_calc_length(vec3 in_a, vec3 in_b) {
-
-				return sqrt( (in_a.x + in_b.x) * (in_a.x + in_b.x) +
-							 (in_a.y + in_b.y) * (in_a.y + in_b.y) +
-							 (in_a.z + in_b.z) * (in_a.z + in_b.z) );
-			}
-
 			void main(void) {
 
 				if (vColor.w == 0.0)
@@ -62,7 +55,7 @@
 
 				if (uForcedRange2.w > 0.0)
 				{
-					float tmp_dist = my_calc_length( myVertPos, uForcedRange2.xyz );
+					float tmp_dist = length( myVertPos + uForcedRange2.xyz );
 
 					if (tmp_dist >= 15.0 &&
 						tmp_dist < 15.0 + 0.5)
