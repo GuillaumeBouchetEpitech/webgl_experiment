@@ -1,8 +1,6 @@
 
 var MarchinCube = function(in_chunk_size, in_fTv, in_sample_cb) {
 
-	// this.output_z = 0;
-
 	this.chunk_size = in_chunk_size
 	this.fTv = in_fTv;
 	this.sample = in_sample_cb;
@@ -368,7 +366,7 @@ MarchinCube.prototype.getNormal = function( fX, fY, fZ ) {
 
 MarchinCube.prototype.marchCube = function( geom, x, y, z ) {
 
-	this.output = geom;
+	this.current_geom = geom;
 
 	for (var iX = 0; iX < this.chunk_size; ++iX)
 	for (var iY = 0; iY < this.chunk_size; ++iY)
@@ -465,17 +463,19 @@ MarchinCube.prototype.marchCube_single = function( iX, iY, iZ ) {
 				asEdgeVertex[iVertex][2] * this.chunk_size
 			];
 
+			var normal = asEdgeNorm[iVertex];
+
 			//
 
-			for (var tmp_i = 0; tmp_i < 3; ++tmp_i) {
+			for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+				this.current_geom.indices.push( this.current_geom.indices.length );
 
-				this.output.indices.push( this.output.indices.length );
-
-				this.output.normals.push( asEdgeNorm[iVertex][tmp_i] );
-				this.output.vertices.push( vertex[tmp_i] );
-				this.output.colors.push( color[tmp_i] );
-
-			}
+			for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+				this.current_geom.vertices.push( vertex[tmp_i] );
+			for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+				this.current_geom.vertices.push( color[tmp_i] );
+			for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+				this.current_geom.vertices.push( normal[tmp_i] );
 
 		} // for (iCorner = [...]
 

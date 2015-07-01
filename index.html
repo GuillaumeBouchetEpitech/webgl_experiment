@@ -43,7 +43,6 @@
 
 
 			const vec3 lightPos = vec3(1.0,1.0,1.0);
-			// const vec3 diffuseColor = vec3(0.5, 0.0, 0.0);
 			const vec3 specColor = vec3(1.0, 1.0, 1.0);
 
 			float my_calc_length(vec3 in_a, vec3 in_b) {
@@ -420,8 +419,6 @@
 
 				// alert(JSON.stringify({
 				// 	 vertices_length : in_data.vertices.length
-				// 	,colors_length : in_data.colors.length
-				// 	,normals_length : in_data.normals.length
 				// 	,indices_length : in_data.indices.length
 				// 	,indices2_length : in_data.indices2.length
 				// },null,4));
@@ -439,28 +436,6 @@
 				gl.bindBuffer( gl.ARRAY_BUFFER, out_geometry.VertexPositionBuffer );
 
 				gl.bufferData(gl.ARRAY_BUFFER, in_data.vertices.container, gl.STATIC_DRAW);
-				out_geometry.VertexPositionBuffer.itemSize = 3;
-				out_geometry.VertexPositionBuffer.numItems = in_data.vertices.length / out_geometry.VertexPositionBuffer.itemSize;
-
-				///
-				/// colors
-
-				out_geometry.VertexColorBuffer = gl.createBuffer();
-				gl.bindBuffer(gl.ARRAY_BUFFER, out_geometry.VertexColorBuffer);
-
-				gl.bufferData( gl.ARRAY_BUFFER, in_data.colors.container, gl.STATIC_DRAW );
-				out_geometry.VertexColorBuffer.itemSize = 3;
-				out_geometry.VertexColorBuffer.numItems = in_data.colors.length / out_geometry.VertexColorBuffer.itemSize;
-
-				///
-				/// normals
-
-				out_geometry.VertexNormalBuffer = gl.createBuffer();
-				gl.bindBuffer(gl.ARRAY_BUFFER, out_geometry.VertexNormalBuffer);
-
-				gl.bufferData( gl.ARRAY_BUFFER, in_data.normals.container, gl.STATIC_DRAW );
-				out_geometry.VertexNormalBuffer.itemSize = 3;
-				out_geometry.VertexNormalBuffer.numItems = in_data.normals.length / out_geometry.VertexNormalBuffer.itemSize;
 
 				///
 				///
@@ -502,9 +477,7 @@
 
 			var geom_cube = {
 				VertexPositionBuffer	:null,
-				VertexColorBuffer		:null,
-				VertexIndexBuffer		:null,
-				VertexNormalBuffer		:null
+				VertexIndexBuffer		:null
 			}
 
 			function initBuffers_cube() {
@@ -516,60 +489,43 @@
 				gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexPositionBuffer);
 				vertices = [
 					 side,  side,  side, // 0
+					 1,1,1,  1,0,0,
 					-side,  side,  side,
+					 1,1,1,  1,0,0,
 					 side, -side,  side,
+					 1,1,1,  1,0,0,
 					-side, -side,  side,
+					 1,1,1,  1,0,0,
 
 					 side,  side, -side, // 4
+					 1,1,1,  1,0,0,
 					-side,  side, -side,
+					 1,1,1,  1,0,0,
 					 side, -side, -side,
+					 1,1,1,  1,0,0,
 					-side, -side, -side,
+					 1,1,1,  1,0,0
 
+					 ,
 					 side2,  side2,  side2, // 0
+					 1,1,1,  1,0,0,
 					-side2,  side2,  side2,
+					 1,1,1,  1,0,0,
 					 side2, -side2,  side2,
+					 1,1,1,  1,0,0,
 					-side2, -side2,  side2,
+					 1,1,1,  1,0,0,
 
 					 side2,  side2, -side2, // 4
+					 1,1,1,  1,0,0,
 					-side2,  side2, -side2,
+					 1,1,1,  1,0,0,
 					 side2, -side2, -side2,
-					-side2, -side2, -side2
+					 1,1,1,  1,0,0,
+					-side2, -side2, -side2,
+					 1,1,1,  1,0,0
 				];
 				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-				geom_cube.VertexPositionBuffer.itemSize = 3;
-				geom_cube.VertexPositionBuffer.numItems = vertices.length / 3;
-
-				///
-
-				geom_cube.VertexColorBuffer = gl.createBuffer();
-				gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexColorBuffer);
-				colors = [
-					1,1,1,  1,1,1,  1,1,1,  1,1,1,
-					1,1,1,  1,1,1,  1,1,1,  1,1,1,
-
-					1,1,1,  1,1,1,  1,1,1,  1,1,1,
-					1,1,1,  1,1,1,  1,1,1,  1,1,1
-				];
-
-				gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW );
-				geom_cube.VertexColorBuffer.itemSize = 3;
-				geom_cube.VertexColorBuffer.numItems = colors.length / 3;
-
-				///
-
-				geom_cube.VertexNormalBuffer = gl.createBuffer();
-				gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexNormalBuffer);
-				normals = [
-					1,0,0,  1,0,0,  1,0,0,  1,0,0,
-					1,0,0,  1,0,0,  1,0,0,  1,0,0,
-
-					1,0,0,  1,0,0,  1,0,0,  1,0,0,
-					1,0,0,  1,0,0,  1,0,0,  1,0,0
-				];
-
-				gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW );
-				geom_cube.VertexNormalBuffer.itemSize = 3;
-				geom_cube.VertexNormalBuffer.numItems = normals.length / 3;
 
 				///
 
@@ -578,8 +534,9 @@
 				var indices = [
 					0,1,  1,3,  3,2,  2,0,
 					4,5,  5,7,  7,6,  6,4,
-					0,4,  1,5,  3,7,  2,6,
+					0,4,  1,5,  3,7,  2,6
 
+					,
 					 8, 9,   9,11,  11,10,  10, 8,
 					12,13,  13,15,  15,14,  14,12,
 					 8,12,   9,13,  11,15,  10,14
@@ -686,15 +643,16 @@
 
 						///
 
+						var bpp = 4; // gl.FLOAT -> 4 bytes
+						var stride = 9 * bpp;
+						var index_pos    = 0 * bpp;
+						var index_color  = 3 * bpp;
+						var index_normal = 6 * bpp;
+
 						gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexPositionBuffer);
-						gl.vertexAttribPointer(g_shaderProgram.vertexPositionAttr, geom_cube.VertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-						gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexColorBuffer);
-						gl.vertexAttribPointer(g_shaderProgram.vertexColorAttr, geom_cube.VertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-						gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexNormalBuffer);
-						gl.vertexAttribPointer(g_shaderProgram.vertexNormalAttr, geom_cube.VertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
+						gl.vertexAttribPointer(g_shaderProgram.vertexPositionAttr,3,gl.FLOAT,false,stride, index_pos);
+						gl.vertexAttribPointer(g_shaderProgram.vertexColorAttr,3,gl.FLOAT,false,stride, index_color);
+						gl.vertexAttribPointer(g_shaderProgram.vertexNormalAttr,3,gl.FLOAT,false,stride, index_normal);
 
 						gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geom_cube.VertexIndexBuffer);
 						gl.drawElements(gl.LINES, geom_cube.VertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
@@ -744,13 +702,9 @@
 					var tmp_geom = curr_chunk.geom;
 
 					gl.bindBuffer(gl.ARRAY_BUFFER, tmp_geom.VertexPositionBuffer);
-					gl.vertexAttribPointer(g_shaderProgram.vertexPositionAttr, tmp_geom.VertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-					gl.bindBuffer(gl.ARRAY_BUFFER, tmp_geom.VertexColorBuffer);
-					gl.vertexAttribPointer(g_shaderProgram.vertexColorAttr, tmp_geom.VertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-					gl.bindBuffer(gl.ARRAY_BUFFER, tmp_geom.VertexNormalBuffer);
-					gl.vertexAttribPointer(g_shaderProgram.vertexNormalAttr, tmp_geom.VertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+					gl.vertexAttribPointer(g_shaderProgram.vertexPositionAttr,3,gl.FLOAT,false,stride, 0);
+					gl.vertexAttribPointer(g_shaderProgram.vertexColorAttr,3,gl.FLOAT,false,stride, 3*bpp);
+					gl.vertexAttribPointer(g_shaderProgram.vertexNormalAttr,3,gl.FLOAT,false,stride, 6*bpp);
 
 					gl.uniform4f( g_shaderProgram.uForcedColor, 1,1,1,0);
 
@@ -1073,9 +1027,9 @@
 
 				//
 
-				// render hud
+					// render hud
 
-				myHUD.draw( gl, g_shaderProgram_hud, elapsed_time );
+					myHUD.draw( gl, g_shaderProgram_hud, elapsed_time );
 			}
 
 
@@ -1099,9 +1053,10 @@
 			var g_geom_cached = {
 				indices			: new ArrayArena(Uint16Array, g_geom_cached_size),
 				indices2		: new ArrayArena(Uint16Array, g_geom_cached_size * 3),
-				normals			: new ArrayArena(Float32Array,g_geom_cached_size),
-				vertices		: new ArrayArena(Float32Array,g_geom_cached_size),
-				colors			: new ArrayArena(Float32Array,g_geom_cached_size)
+				// normals			: new ArrayArena(Float32Array,g_geom_cached_size),
+				// vertices		: new ArrayArena(Float32Array,g_geom_cached_size),
+				// colors			: new ArrayArena(Float32Array,g_geom_cached_size)
+				vertices		: new ArrayArena(Float32Array,g_geom_cached_size * 3)
 			};
 
 
@@ -1115,9 +1070,10 @@
 
 				g_geom_cached.indices.clear();
 				g_geom_cached.indices2.clear();
-				g_geom_cached.normals.clear();
+				// g_geom_cached.normals.clear();
+				// g_geom_cached.vertices.clear();
+				// g_geom_cached.colors.clear();
 				g_geom_cached.vertices.clear();
-				g_geom_cached.colors.clear();
 
 				my_marchingCube.marchCube(
 					g_geom_cached,
