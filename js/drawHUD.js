@@ -1,112 +1,108 @@
 
 
+var createLimitedArray = function (max_item) {
+
+	var container = new Array();
+
+	// fill with 0
+	while (container.length < max_item)
+		Array.prototype.push.call(container, 0);
+
+	container.max_item = max_item;
+	container.max_value = 0.0;
+
+	//
+
+	container.push = function(val) {
+
+		Array.prototype.push.call(this, val);
+
+		var need_search_max = false;
+
+		while (this.length > this.max_item)
+		{
+			var first_value = this.shift();
+			if (first_value == this.max_value)
+				need_search_max = true;
+		}
+
+
+		if (val > this.max_value)
+			this.max_value = val;
+		else if (val != 0 && val == this.max_value)
+			need_search_max = true;
+
+		if (need_search_max)
+		{
+			this.max_value = 0;
+			for (var i = 0; i < this.length; ++i)
+				this.max_value = Math.max(this.max_value, this[i]);
+		}
+	};
+
+	return container;
+}
+
 
 
 CreateHUD = function () {
 
 	this.geom_square = {
 		VertexPositionBuffer	:null,
-		VertexColorBuffer		:null,
-		VertexIndexBuffer		:null,
-		VertexNormalBuffer		:null
+		VertexIndexBuffer		:null
 	}
 
 	//
 
 	this.g_hud_vertices = [];
-	this.g_framerate = [];
-
+	// this.g_framerate = [];
+	this.g_framerate = new createLimitedArray(120);
 }
 
 //
 
 CreateHUD.prototype._initBuffers_square = function (gl, vertices, indices) {
 
-	var side = 0.5;
-
 	this.geom_square.VertexPositionBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.geom_square.VertexPositionBuffer);
 
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
 	this.geom_square.VertexPositionBuffer.itemSize = 3;
 	this.geom_square.VertexPositionBuffer.numItems = vertices.length / 3;
 
 	///
 
-	this.geom_square.VertexColorBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, this.geom_square.VertexColorBuffer);
-	// colors = [
-	// 	1,1,1,  1,0,0,  0,1,0,  0,0,1
-	// ];
-
-	var colors = [];
-
-	for (var i = 0; i < vertices.length; ++i)
-		colors.push(1);
-
-	gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW );
-	this.geom_square.VertexColorBuffer.itemSize = 3;
-	this.geom_square.VertexColorBuffer.numItems = colors.length / 3;
-
-	///
-
-	this.geom_square.VertexNormalBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, this.geom_square.VertexNormalBuffer);
-	// normals = [
-	// 	1,0,0,  1,0,0,  1,0,0,  1,0,0
-	// ];
-
-	var normals = [];
-
-	for (var i = 0; i < vertices.length; ++i)
-		normals.push(1);
-
-	gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW );
-	this.geom_square.VertexNormalBuffer.itemSize = 3;
-	this.geom_square.VertexNormalBuffer.numItems = normals.length / 3;
-
-	///
-
 	this.geom_square.VertexIndexBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.geom_square.VertexIndexBuffer);
-	// var indices = [
-	// 	0,1,  1,3,  3,2,  2,0
-	// ];
 
-	// var indices = [];
-
-	// for (var i = 0; (i + 1) < vertices.length / 3; ++i)
-	// {
-	// 	indices.push(i);
-	// 	indices.push(i + 1);
-	// }
-
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.DYNAMIC_DRAW);
 	this.geom_square.VertexIndexBuffer.itemSize = 1;
 	this.geom_square.VertexIndexBuffer.numItems = indices.length;
 }
 
-CreateHUD.prototype.draw = function ( gl, in_shaderProgram, elapsed_time ) {
+CreateHUD.prototype.draw = function ( gl, in_shaderPrg, elapsed_time ) {
 
-	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+
+	gl.useProgram(in_shaderPrg);
+
+
+
+
+	gl.viewport(600, 0, 200, gl.viewportHeight);
+
 	gl.clear(gl.DEPTH_BUFFER_BIT);
 
 
+
+
 	// set the projection matrix
-	// mat4.perspective(70, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
-	mat4.ortho( -1,+1, -1,+1, -1,+1, pMatrix );
+	mat4.ortho( -1,+1, -4,+4, -1,+1, pMatrix );
 
-	gl.uniformMatrix4fv(in_shaderProgram.pMatrixUniform, false, pMatrix);
-
+	gl.uniformMatrix4fv(in_shaderPrg.pMatrixUniform, false, pMatrix);
 
 
 
-
-	// g_FreeFlyCamera.updateViewMatrix( mvMatrix );
-
-	// // TODO : update modelview matrix
-	// mvMatrix
-
+	// update modelview matrix
 	mat4.lookAt(
 		vec3.create(0,0,-1),
 		vec3.create(0,0,0),
@@ -114,160 +110,105 @@ CreateHUD.prototype.draw = function ( gl, in_shaderProgram, elapsed_time ) {
 		mvMatrix
 	);
 
+	// send the modelview matrix
+	gl.uniformMatrix4fv(in_shaderPrg.mvMatrixUniform, false, mvMatrix);
 
 
 
-	// // set the normal matrix
-	// mat4.identity(nMatrix);
-	// nMatrix[ 0] = mvMatrix[ 0];
-	// nMatrix[ 1] = mvMatrix[ 1];
-	// nMatrix[ 2] = mvMatrix[ 2];
+	//
+	// fps meter
 
-	// nMatrix[ 4] = mvMatrix[ 4];
-	// nMatrix[ 5] = mvMatrix[ 5];
-	// nMatrix[ 6] = mvMatrix[ 6];
+	var hud_vertices_max = 120;
+	var hud_fstep = (7.8 / hud_vertices_max);
 
-	// nMatrix[ 8] = mvMatrix[ 8];
-	// nMatrix[ 9] = mvMatrix[ 9];
-	// nMatrix[10] = mvMatrix[10];
+	this.g_framerate.push( elapsed_time / 1000 ); // -> elapsed_time is in msec
 
-	// // send the normal matrix
-	// gl.uniformMatrix4fv(in_shaderProgram.nMatrixUniform, false, nMatrix);
+	// this.g_framerate.push( elapsed_time / 1000 ); // -> elapsed_time is in msec
 
+	// while (this.g_framerate.length < hud_vertices_max)
+	// 	this.g_framerate.push( 0 );
 
-	gl.uniform4f( in_shaderProgram.uForcedRange, 0,0,0,0);
-	gl.uniform4f( in_shaderProgram.uForcedRange2, 0,0,0,0);
+	if (this.g_framerate.length < 2)
+		return;
 
+	// while (this.g_framerate.length > hud_vertices_max)
+	// 	this.g_framerate.shift();
 
-
-	var hud_vertices_max = 60;
-
-
-	this.g_framerate.push( elapsed_time );
-
-	// fi
-	while (this.g_framerate.length < hud_vertices_max)
-		this.g_framerate.push( 0 );
+	// fps meter
+	//
 
 
 
 
-	if (this.g_hud_vertices.length == 0)
+	//
+	// hud geometry
+
+	this.g_hud_vertices.length = 0;
+
+	// find the biggest stored value
+
+	// var tmp_max = 0;
+	// for (index in this.g_framerate)
+	// 	tmp_max = Math.max(tmp_max, this.g_framerate[index]);
+
+	var tmp_max = this.g_framerate.max_value;
+
+	// fps curve vertices
+
+	for (index in this.g_framerate)
 	{
-		this.g_hud_vertices.push(0.05);
-		this.g_hud_vertices.push(0.2);
-		this.g_hud_vertices.push(0.0);
+		var tmp_ratio = this.g_framerate[index] / tmp_max;
+
+		var start_x = -0.9 + tmp_ratio * 1.8;
+		var start_y = -3.9 + hud_fstep * index;
+
+		this.g_hud_vertices.push( start_x, start_y, 0.0 );
 	}
 
-	var hud_fstep = (0.8 / hud_vertices_max);
-
-	var start_x = 0.8 + hud_fstep;
-	var start_y = 0.05 + (elapsed_time/ 100);
-
-	this.g_hud_vertices.push(start_x);
-	this.g_hud_vertices.push(start_y);
-	this.g_hud_vertices.push(0.0);
-
-	if ((this.g_hud_vertices.length / 3) > hud_vertices_max)
-	{
-		this.g_hud_vertices.shift();
-		this.g_hud_vertices.shift();
-		this.g_hud_vertices.shift();
-
-		for (var i = 0; (i + 3) < this.g_hud_vertices.length; i += 3)
-			this.g_hud_vertices[i] -= hud_fstep;
-	}
-
-
+	// fps curve indices
 
 	var indices = [];
 
-	for (var i = 0; (i + 1) < this.g_hud_vertices.length / 3; ++i)
-	{
-		indices.push(i);
-		indices.push(i + 1);
-	}
+	var tmp_len = (this.g_hud_vertices.length / 3);
+
+	for (var i = 0; (i + 1) < tmp_len; ++i)
+		indices.push( i, i + 1 );
+
+
+
+	this.g_hud_vertices.push( -0.9 + 0.000 / tmp_max, -3.9, 0.0 );
+	this.g_hud_vertices.push( -0.9 + 0.000 / tmp_max, +3.9, 0.0 );
+
+	this.g_hud_vertices.push( -0.9 + 0.025 / tmp_max, -3.9, 0.0 ); // 40fps line
+	this.g_hud_vertices.push( -0.9 + 0.025 / tmp_max, +3.9, 0.0 );
+
+	this.g_hud_vertices.push( -0.9 + 0.050 / tmp_max, -3.9, 0.0 ); // 20fps line
+	this.g_hud_vertices.push( -0.9 + 0.050 / tmp_max, +3.9, 0.0 );
+
+	indices.push(tmp_len + 0, tmp_len + 1);
+
+	indices.push(tmp_len + 2, tmp_len + 3);
+
+	indices.push(tmp_len + 4, tmp_len + 5);
+
+	//
 
 	this._initBuffers_square(gl, this.g_hud_vertices, indices);
 
-
-
-
-
-	// var side = 0.4;
-	// var side2 = Math.random() * 0.4;
-
-	// vertices = [
-	// 	 side,  side,  side,
-	// 	-side,  side2,  side,
-	// 	 side, -side2,  side,
-	// 	-side, -side,  side
-	// ];
-	// initBuffers_square(vertices);
+	// hud geometry
+	//
 
 
 
 
 
-	/// RENDER CUBES
+	/// RENDER
 
-	gl.uniform4f( in_shaderProgram.uForcedRange, 0,0,0,0 );
-	gl.uniform4f( in_shaderProgram.uForcedRange2, 0,0,0,0 );
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.geom_square.VertexPositionBuffer);
+	gl.vertexAttribPointer(in_shaderPrg.vertexPositionAttr, this.geom_square.VertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-	// for (var geom_i = 0; geom_i < g_chunks.length; ++geom_i) {
-	// for (geom_i in g_chunks) {
-
-	// 	var curr_chunk = g_chunks[ geom_i ];
-
-	// 	var pos = curr_chunk.pos;
-
-
-		// no geom mean the chunk is a work in progress => show a green cube
-
-		// if (!curr_chunk.geom)
-		// 	gl.uniform4f( in_shaderProgram.uForcedColor, 0,1,0,1);
-		// else
-			gl.uniform4f( in_shaderProgram.uForcedColor, 1,1,1,1);
-
-		// //
-
-		// var axis = [
-		// 	pos[0] * g_chunk_size + g_chunk_size / 2,
-		// 	pos[1] * g_chunk_size + g_chunk_size / 2,
-		// 	pos[2] * g_chunk_size + g_chunk_size / 2
-		// ];
-
-		// mvPushMatrix();
-
-		// 	// translate the chunk were it belong
-		// 	mat4.translate(mvMatrix, axis);
-
-			// send the modelview matrix
-			gl.uniformMatrix4fv(in_shaderProgram.mvMatrixUniform, false, mvMatrix);
-
-			///
-
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.geom_square.VertexPositionBuffer);
-			gl.vertexAttribPointer(in_shaderProgram.vertexPositionAttr, this.geom_square.VertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.geom_square.VertexColorBuffer);
-			gl.vertexAttribPointer(in_shaderProgram.vertexColorAttr, this.geom_square.VertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.geom_square.VertexNormalBuffer);
-			gl.vertexAttribPointer(in_shaderProgram.vertexNormalAttr, this.geom_square.VertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.geom_square.VertexIndexBuffer);
-			gl.drawElements(gl.LINES, this.geom_square.VertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-
-		// mvPopMatrix();
-
-	// }
-
-
-
-	// gl.uniformMatrix4fv(in_shaderProgram.mvMatrixUniform, false, mvMatrix);
-
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.geom_square.VertexIndexBuffer);
+	gl.drawElements(gl.LINES, this.geom_square.VertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
 	// /render
 

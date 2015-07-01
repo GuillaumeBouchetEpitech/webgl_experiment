@@ -188,6 +188,34 @@
 
 
 
+
+
+
+		<script id="shader-fs-hud" type="x-shader/x-fragment">
+
+			precision mediump float;
+
+			void main(void) {
+
+				gl_FragColor = vec4(1,1,1,1);
+			}
+		</script>
+
+		<script id="shader-vs-hud" type="x-shader/x-vertex">
+
+			attribute vec3 aVertexPosition;
+
+			uniform mat4 uMVMatrix, uPMatrix;
+
+
+			void main(void) {
+
+				gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+			}
+		</script>
+
+
+
 		<script type="text/javascript">
 
 			///
@@ -314,6 +342,7 @@
 			}
 
 			var g_shaderProgram;
+			var g_shaderProgram_hud;
 
 			
 
@@ -342,6 +371,25 @@
 				g_shaderProgram.uForcedColor = gl.getUniformLocation(g_shaderProgram, "uForcedColor");
 				g_shaderProgram.uForcedRange = gl.getUniformLocation(g_shaderProgram, "uForcedRange");
 				g_shaderProgram.uForcedRange2 = gl.getUniformLocation(g_shaderProgram, "uForcedRange2");
+
+				//
+				//
+
+				g_shaderProgram_hud = createShaders( gl, "shader-vs-hud", "shader-fs-hud" );
+
+				//
+
+				gl.useProgram(g_shaderProgram_hud);
+
+				// get the attributes location
+				g_shaderProgram_hud.vertexPositionAttr = gl.getAttribLocation(g_shaderProgram_hud, "aVertexPosition");
+
+				// enable the attributes location
+				gl.enableVertexAttribArray(g_shaderProgram_hud.vertexPositionAttr);
+
+				// enable the uniform location
+				g_shaderProgram_hud.pMatrixUniform = gl.getUniformLocation(g_shaderProgram_hud, "uPMatrix");
+				g_shaderProgram_hud.mvMatrixUniform = gl.getUniformLocation(g_shaderProgram_hud, "uMVMatrix");
 			}
 
 
@@ -548,6 +596,9 @@
 			var g_visible = 0;
 
 			function drawScene() {
+
+				gl.useProgram(g_shaderProgram);
+
 
 				gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 				gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -815,7 +866,7 @@
 
 			function animate() { try{
 
-				var current_time = (new Date()).getTime();
+				var current_time = performance.now() || (new Date()).getTime();
 
 				if (!last_time)
 					last_time = current_time;
@@ -1003,20 +1054,19 @@
 
 				///
 
-				var start_time = (new Date()).getTime();
+				var start_time = performance.now() || (new Date()).getTime();
 
 					handleKeys();
 					animate();
 
 					drawScene();
 
-				var stop_time = (new Date()).getTime();
+				var stop_time = performance.now() || (new Date()).getTime();
 				var elapsed_time = stop_time - start_time;
 
 				//
 
-				// drawScene_hud( elapsed_time );
-				myHUD.draw( gl, g_shaderProgram, elapsed_time );
+				myHUD.draw( gl, g_shaderProgram_hud, elapsed_time );
 			}
 
 
