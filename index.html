@@ -1046,9 +1046,6 @@
 			var g_geom_cached = {
 				indices			: new ArrayArena(Uint16Array, g_geom_cached_size),
 				indices2		: new ArrayArena(Uint16Array, g_geom_cached_size * 3),
-				// normals			: new ArrayArena(Float32Array,g_geom_cached_size),
-				// vertices		: new ArrayArena(Float32Array,g_geom_cached_size),
-				// colors			: new ArrayArena(Float32Array,g_geom_cached_size)
 				vertices		: new ArrayArena(Float32Array,g_geom_cached_size * 3)
 			};
 
@@ -1063,9 +1060,6 @@
 
 				g_geom_cached.indices.clear();
 				g_geom_cached.indices2.clear();
-				// g_geom_cached.normals.clear();
-				// g_geom_cached.vertices.clear();
-				// g_geom_cached.colors.clear();
 				g_geom_cached.vertices.clear();
 
 				my_marchingCube.marchCube(
