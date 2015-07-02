@@ -902,7 +902,13 @@
 
 				{ // launch the chunk processing
 
-					if (g_busy || g_chunks_queue.length == 0)
+					if (g_busy)
+					{
+						reccursive_conclusion_callback();
+						return;
+					}
+
+					if (g_chunks_queue.length == 0)
 						return;
 
 					try {
@@ -1052,11 +1058,7 @@
 
 			function add_chunk(x, y, z) {try{
 
-
 				g_busy = true;
-
-				var timeout_value = 10;
-
 
 				g_geom_cached.indices.clear();
 				g_geom_cached.indices2.clear();
@@ -1069,82 +1071,60 @@
 					z * g_chunk_size
 				);
 
-
-
 				g_chunks.push( {
 					pos : [x, y, z],
-					// geom : initBuffers( g_geom_cached )
 					geom : null
 				} );
 
+			}catch(e){alert(e)}}
 
 
 
-				// if (g_geom_cached) {
+			function reccursive_conclusion_callback () {
 
-					function reccursive_conclusion_callback () {
+				var tmp_step = 300 * 3;
 
-						var tmp_step = 900;
+				var tmp_end = tmp_inc + tmp_step;
 
-						var tmp_end = tmp_inc + tmp_step;
+				if (tmp_end > g_geom_cached.indices.length)
+					tmp_end = g_geom_cached.indices.length;
 
-						if (tmp_end > g_geom_cached.indices_len)
-							tmp_end = g_geom_cached.indices_len;
+				for (var tmp_i = tmp_inc; (tmp_i + 3) < tmp_end; tmp_i += 3) {
 
-						// var tmp_inc = 0;
-						// var tmp_end = g_geom_cached.indices_len;
+					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
+					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
 
-						for (var tmp_i = tmp_inc; (tmp_i + 3) < tmp_end; tmp_i += 3) {
+					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
+					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
 
-							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
-							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
+					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
+					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
+				}
 
-							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
-							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
+				tmp_inc += tmp_step;
 
-							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
-							g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
-						}
+				if (tmp_inc >= g_geom_cached.indices.length) {
 
-						tmp_inc += tmp_step;
+					tmp_inc = 0;
 
-						if (tmp_inc >= g_geom_cached.indices.length) {
+					for (g_chunks_i in g_chunks)
+					{
+						var curr_chunk = g_chunks[g_chunks_i];
 
-							tmp_inc = 0;
-
-							for (g_chunks_i in g_chunks)
-							{
-								var curr_chunk = g_chunks[g_chunks_i];
-
-								// if (curr_chunk.pos[0] == x ||
-								// 	curr_chunk.pos[1] == y ||
-								// 	curr_chunk.pos[2] == z)
-								if (!curr_chunk.geom)
-								{
-									curr_chunk.geom = initBuffers( g_geom_cached );
-									break;
-								}
-							}
-
-							// g_chunks.push( {
-							// 	pos : [x, y, z],
-							// 	geom : initBuffers( g_geom_cached )
-							// } );
-
-							g_busy = false;
-
-						} else {
-
-							setTimeout( reccursive_conclusion_callback, timeout_value );
+						if (!curr_chunk.geom)
+						{
+							curr_chunk.geom = initBuffers( g_geom_cached );
+							break;
 						}
 					}
 
-					reccursive_conclusion_callback();
+					g_busy = false;
 
-					// setTimeout( reccursive_conclusion_callback, timeout_value );
-				// }
+				// } else {
 
-			}catch(e){alert(e)}}
+				// 	reccursive_conclusion_callback();
+				}
+			}
 
 
 
