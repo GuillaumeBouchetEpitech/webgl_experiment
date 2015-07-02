@@ -356,22 +356,25 @@ MarchinCube.prototype.getNormal = function( fX, fY, fZ ) {
 
 	var step_dec = this.step_size * 0.00001;
 
-	var vec = [0,0,0];
-	vec[0] = this.sample( fX - step_dec, fY, fZ ) - this.sample( fX + step_dec, fY, fZ );
-	vec[1] = this.sample( fX, fY - step_dec, fZ ) - this.sample( fX, fY + step_dec, fZ );
-	vec[2] = this.sample( fX, fY, fZ - step_dec ) - this.sample( fX, fY, fZ + step_dec );
+	var vec = [
+		this.sample( fX - step_dec, fY, fZ ) - this.sample( fX + step_dec, fY, fZ ),
+		this.sample( fX, fY - step_dec, fZ ) - this.sample( fX, fY + step_dec, fZ ),
+		this.sample( fX, fY, fZ - step_dec ) - this.sample( fX, fY, fZ + step_dec )
+	];
 
 	return vNormalizeVector( vec );
 }
 
-MarchinCube.prototype.marchCube = function( geom, x, y, z ) {
+MarchinCube.prototype.marchCube = function( pos, geom_callback ) {
 
-	this.current_geom = geom;
+	this.current_geom_callback = geom_callback;
 
 	for (var iX = 0; iX < this.chunk_size; ++iX)
 	for (var iY = 0; iY < this.chunk_size; ++iY)
 	for (var iZ = 0; iZ < this.chunk_size; ++iZ)
-		this.marchCube_single( x + iX, y + iY, z + iZ );
+		this.marchCube_single( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
+
+	this.current_geom_callback = null;
 }
 
 MarchinCube.prototype.marchCube_single = function( iX, iY, iZ ) {
@@ -467,15 +470,8 @@ MarchinCube.prototype.marchCube_single = function( iX, iY, iZ ) {
 
 			//
 
-			for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-				this.current_geom.indices.push( this.current_geom.indices.length );
-
-			for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-				this.current_geom.vertices.push( vertex[tmp_i] );
-			for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-				this.current_geom.vertices.push( color[tmp_i] );
-			for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-				this.current_geom.vertices.push( normal[tmp_i] );
+			if (this.current_geom_callback)
+				this.current_geom_callback( vertex, color, normal );
 
 		} // for (iCorner = [...]
 

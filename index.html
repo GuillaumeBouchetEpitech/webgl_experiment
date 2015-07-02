@@ -1064,12 +1064,24 @@
 				g_geom_cached.indices2.clear();
 				g_geom_cached.vertices.clear();
 
-				my_marchingCube.marchCube(
-					g_geom_cached,
+				var tmp_pos = [
 					x * g_chunk_size,
 					y * g_chunk_size,
 					z * g_chunk_size
-				);
+				];
+
+				my_marchingCube.marchCube(tmp_pos, function (vertex, color, normal) {
+
+					for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+						g_geom_cached.indices.push( g_geom_cached.indices.length );
+
+					for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+						g_geom_cached.vertices.push( vertex[tmp_i] );
+					for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+						g_geom_cached.vertices.push( color[tmp_i] );
+					for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+						g_geom_cached.vertices.push( normal[tmp_i] );
+				});
 
 				g_chunks.push( {
 					pos : [x, y, z],
