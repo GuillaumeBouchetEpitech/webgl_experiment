@@ -41,9 +41,20 @@
 			uniform vec4 uForcedRange2;
 			varying vec3 myVertPos;
 
+			varying vec3 myBcenter;
+
 
 			const vec3 lightPos = vec3(1.0,1.0,1.0);
 			const vec3 specColor = vec3(1.0, 1.0, 1.0);
+
+			void draw_wireframe(vec4 color)
+			{
+				if (any(lessThan(myBcenter, vec3(0.04)))) {
+					gl_FragColor = vec4(1);
+				} else {
+					gl_FragColor = color;
+				}
+			}
 
 			void main(void) {
 
@@ -60,14 +71,24 @@
 					if (tmp_dist >= 15.0 &&
 						tmp_dist < 15.0 + 0.5)
 					{
-						gl_FragColor = vec4(1,0,0,1);
+						// gl_FragColor = vec4(1,0,0,1);
+						draw_wireframe( vec4(1,0,0,1) );
 						return;
 					}
 				}
 
 				if (use_light == 0.0)
 				{
-					gl_FragColor = vColor;
+					// gl_FragColor = vColor;
+
+					draw_wireframe( vColor );
+
+					if (any(lessThan(myBcenter, vec3(0.02)))) {
+						gl_FragColor = vec4(1);
+					} else {
+						discard;
+					}
+
 					return;
 				}
 
@@ -87,7 +108,8 @@
 					specular = pow(specAngle, 4.0);
 				}
 
-				gl_FragColor = vec4( lambertian * vColor.xyz + specular * specColor, 1.0);
+				// gl_FragColor = vec4( lambertian * vColor.xyz + specular * specColor, 1.0);
+				draw_wireframe( vec4( lambertian * vColor.xyz + specular * specColor, 1.0) );
 			}
 		</script>
 
@@ -96,7 +118,7 @@
 
 		<script id="shader-vs" type="x-shader/x-vertex">
 
-			attribute vec3 aVertexPosition, aVertexColor, aVertexNormal;
+			attribute vec3 aVertexPosition, aVertexColor, aVertexNormal, aVertexBcenter;
 
 			// uniform vec4 uForcedColor, uForcedRange;
 			uniform vec4 uForcedColor;
@@ -107,7 +129,7 @@
 			varying vec4 vColor;
 
 			varying float use_light;
-			varying vec3 normalInterp, vertPos, myVertPos;
+			varying vec3 normalInterp, vertPos, myVertPos, myBcenter;
 
 			const float k_range_width = 3.0;
 
@@ -118,6 +140,8 @@
 				vec4 vertPos4 = uMVMatrix * vec4(aVertexPosition, 1.0);
 				vertPos = vec3(vertPos4) / vertPos4.w;
 				normalInterp = vec3( uNMatrix * vec4(aVertexNormal, 0.0) );
+
+				myBcenter = aVertexBcenter;
 
 				//
 
@@ -350,11 +374,13 @@
 				g_shaderProgram.vertexPositionAttr = gl.getAttribLocation(g_shaderProgram, "aVertexPosition");
 				g_shaderProgram.vertexColorAttr = gl.getAttribLocation(g_shaderProgram, "aVertexColor");
 				g_shaderProgram.vertexNormalAttr = gl.getAttribLocation(g_shaderProgram, "aVertexNormal");
+				g_shaderProgram.vertexBcenterAttr = gl.getAttribLocation(g_shaderProgram, "aVertexBcenter");
 
 				// enable the attributes location
 				gl.enableVertexAttribArray(g_shaderProgram.vertexPositionAttr);
 				gl.enableVertexAttribArray(g_shaderProgram.vertexColorAttr);
 				gl.enableVertexAttribArray(g_shaderProgram.vertexNormalAttr);
+				gl.enableVertexAttribArray(g_shaderProgram.vertexBcenterAttr);
 
 				// enable the uniform location
 				g_shaderProgram.pMatrixUniform = gl.getUniformLocation(g_shaderProgram, "uPMatrix");
@@ -410,12 +436,6 @@
 
 			function initBuffers( in_data ) {try{
 
-				// alert(JSON.stringify({
-				// 	 vertices_length : in_data.vertices.length
-				// 	,indices_length : in_data.indices.length
-				// 	,indices2_length : in_data.indices2.length
-				// },null,4));
-
 				///
 				///
 				///
@@ -430,30 +450,7 @@
 
 				gl.bufferData(gl.ARRAY_BUFFER, in_data.vertices.container, gl.STATIC_DRAW);
 
-				///
-				///
-				///
-
-				///
-				/// indices
-
-				out_geometry.VertexIndexBuffer = gl.createBuffer();
-				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, out_geometry.VertexIndexBuffer);
-
-				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, in_data.indices.container, gl.STATIC_DRAW);
-				out_geometry.VertexIndexBuffer.itemSize = 1;
-				out_geometry.VertexIndexBuffer.numItems = in_data.indices.length / 3;
-
-				///
-				/// indices (lines)
-
-				out_geometry.VertexIndexBuffer_line = gl.createBuffer();
-				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, out_geometry.VertexIndexBuffer_line);
-
-				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, in_data.indices2.container, gl.STATIC_DRAW);
-				out_geometry.VertexIndexBuffer_line.itemSize = 1;
-				out_geometry.VertexIndexBuffer_line.numItems = in_data.indices2.length / 3;
-
+				out_geometry.VertexPositionBuffer.num_item = in_data.vertices.length / 12;
 
 				return out_geometry;
 
@@ -469,8 +466,9 @@
 
 
 			var geom_cube = {
-				VertexPositionBuffer	:null,
-				VertexIndexBuffer		:null
+				VertexPositionBuffer	:null
+				// VertexPositionBuffer	:null,
+				// VertexIndexBuffer		:null
 			}
 
 			function initBuffers_cube() {
@@ -478,9 +476,7 @@
 				var side = g_chunk_size / 2;
 				var side2 = g_chunk_size / 2.1;
 
-				geom_cube.VertexPositionBuffer = gl.createBuffer();
-				gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexPositionBuffer);
-				vertices = [
+				var vertices = [
 					 side,  side,  side, // 0
 					 1,1,1,  1,0,0,
 					-side,  side,  side,
@@ -518,26 +514,34 @@
 					-side2, -side2, -side2,
 					 1,1,1,  1,0,0
 				];
-				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-				///
-
-				geom_cube.VertexIndexBuffer = gl.createBuffer();
-				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geom_cube.VertexIndexBuffer);
 				var indices = [
 					0,1,  1,3,  3,2,  2,0,
 					4,5,  5,7,  7,6,  6,4,
-					0,4,  1,5,  3,7,  2,6
+					0,4,  1,5,  3,7,  2,6,
 
-					,
 					 8, 9,   9,11,  11,10,  10, 8,
 					12,13,  13,15,  15,14,  14,12,
 					 8,12,   9,13,  11,15,  10,14
 				];
 
-				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-				geom_cube.VertexIndexBuffer.itemSize = 1;
-				geom_cube.VertexIndexBuffer.numItems = indices.length;
+				var fvertices = [];
+
+				for (i in indices)
+				{
+					var curr_index = indices[i] * 9;
+					for (var j = 0; j < 9; ++j)
+						fvertices.push( vertices[curr_index + j] );
+				}
+
+
+
+				geom_cube.VertexPositionBuffer = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, geom_cube.VertexPositionBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(fvertices), gl.STATIC_DRAW);
+
+				geom_cube.VertexPositionBuffer.num_item = fvertices.length / 9;
+
 			}
 
 
@@ -647,8 +651,7 @@
 						gl.vertexAttribPointer(g_shaderProgram.vertexColorAttr,3,gl.FLOAT,false,stride, index_color);
 						gl.vertexAttribPointer(g_shaderProgram.vertexNormalAttr,3,gl.FLOAT,false,stride, index_normal);
 
-						gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geom_cube.VertexIndexBuffer);
-						gl.drawElements(gl.LINES, geom_cube.VertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+						gl.drawArrays( gl.LINES, 0, geom_cube.VertexPositionBuffer.num_item );
 
 					mvPopMatrix();
 
@@ -694,10 +697,19 @@
 
 					var tmp_geom = curr_chunk.geom;
 
+					var bpp = 4; // gl.FLOAT -> 4 bytes
+					var stride = 12 * bpp;
+					var index_pos    = 0 * bpp;
+					var index_color  = 3 * bpp;
+					var index_normal = 6 * bpp;
+					var index_bCenter = 9 * bpp;
+
 					gl.bindBuffer(gl.ARRAY_BUFFER, tmp_geom.VertexPositionBuffer);
-					gl.vertexAttribPointer(g_shaderProgram.vertexPositionAttr,3,gl.FLOAT,false,stride, 0);
-					gl.vertexAttribPointer(g_shaderProgram.vertexColorAttr,3,gl.FLOAT,false,stride, 3*bpp);
-					gl.vertexAttribPointer(g_shaderProgram.vertexNormalAttr,3,gl.FLOAT,false,stride, 6*bpp);
+					gl.vertexAttribPointer(g_shaderProgram.vertexPositionAttr,3,gl.FLOAT,false,stride, index_pos);
+					gl.vertexAttribPointer(g_shaderProgram.vertexColorAttr,3,gl.FLOAT,false,stride, index_color);
+					gl.vertexAttribPointer(g_shaderProgram.vertexNormalAttr,3,gl.FLOAT,false,stride, index_normal);
+					gl.vertexAttribPointer(g_shaderProgram.vertexBcenterAttr,3,gl.FLOAT,false,stride, index_bCenter);
+
 
 					gl.uniform4f( g_shaderProgram.uForcedColor, 1,1,1,0);
 
@@ -723,22 +735,17 @@
 
 
 
-
-
-
-
 						gl.enable(gl.CULL_FACE);
 
-						gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, tmp_geom.VertexIndexBuffer);
-						gl.drawElements(gl.TRIANGLES, tmp_geom.VertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+						gl.drawArrays( gl.TRIANGLES, 0, tmp_geom.VertexPositionBuffer.num_item );
 
 						gl.disable(gl.CULL_FACE);
 
 						gl.uniform4f( g_shaderProgram.uForcedColor, 1,1,1,1);
 
+						gl.drawArrays( gl.TRIANGLES, 0, tmp_geom.VertexPositionBuffer.num_item );
 
-						gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, tmp_geom.VertexIndexBuffer_line);
-						gl.drawElements(gl.LINES, tmp_geom.VertexIndexBuffer_line.numItems, gl.UNSIGNED_SHORT, 0);
+
 					}
 
 
@@ -1050,9 +1057,9 @@
 
 
 			var g_geom_cached = {
-				indices			: new ArrayArena(Uint16Array, g_geom_cached_size),
-				indices2		: new ArrayArena(Uint16Array, g_geom_cached_size * 3),
-				vertices		: new ArrayArena(Float32Array,g_geom_cached_size * 3)
+				// indices			: new ArrayArena(Uint16Array, g_geom_cached_size),
+				// indices2		: new ArrayArena(Uint16Array, g_geom_cached_size * 3),
+				vertices		: new ArrayArena(Float32Array,g_geom_cached_size * 4)
 			};
 
 
@@ -1060,27 +1067,42 @@
 
 				g_busy = true;
 
-				g_geom_cached.indices.clear();
-				g_geom_cached.indices2.clear();
+				// g_geom_cached.indices.clear();
+				// g_geom_cached.indices2.clear();
 				g_geom_cached.vertices.clear();
 
-				var tmp_pos = [
-					x * g_chunk_size,
-					y * g_chunk_size,
-					z * g_chunk_size
+				var tmp_pos333 = [
+					(x * g_chunk_size)|0,
+					(y * g_chunk_size)|0,
+					(z * g_chunk_size)|0
 				];
 
-				my_marchingCube.marchCube(tmp_pos, function (vertex, color, normal) {
+				var tmp_index = 0;
 
-					for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-						g_geom_cached.indices.push( g_geom_cached.indices.length );
+				my_marchingCube.marchCube(tmp_pos333, function (vertex, color, normal) {
 
-					for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-						g_geom_cached.vertices.push( vertex[tmp_i] );
-					for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-						g_geom_cached.vertices.push( color[tmp_i] );
-					for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-						g_geom_cached.vertices.push( normal[tmp_i] );
+					// for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+					// 	g_geom_cached.indices.push( g_geom_cached.indices.length );
+
+					// for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+					// 	g_geom_cached.vertices.push( vertex[tmp_i] );
+					// for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+					// 	g_geom_cached.vertices.push( color[tmp_i] );
+					// for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
+					// 	g_geom_cached.vertices.push( normal[tmp_i] );
+
+					for (var i = 0; i < 3; ++i)
+						g_geom_cached.vertices.push( vertex[i] );
+					for (var i = 0; i < 3; ++i)
+						g_geom_cached.vertices.push( color[i] );
+					for (var i = 0; i < 3; ++i)
+						g_geom_cached.vertices.push( normal[i] );
+
+					g_geom_cached.vertices.push( (tmp_index == 0 ? 1.0 : 0.0) );
+					g_geom_cached.vertices.push( (tmp_index == 1 ? 1.0 : 0.0) );
+					g_geom_cached.vertices.push( (tmp_index == 2 ? 1.0 : 0.0) );
+
+					tmp_index = (tmp_index + 1) % 3;
 				});
 
 				g_chunks.push( {
@@ -1094,30 +1116,30 @@
 
 			function reccursive_conclusion_callback () {
 
-				var tmp_step = 300 * 3;
+				// var tmp_step = 300 * 6;
 
-				var tmp_end = tmp_inc + tmp_step;
+				// var tmp_end = tmp_inc + tmp_step;
 
-				if (tmp_end > g_geom_cached.indices.length)
-					tmp_end = g_geom_cached.indices.length;
+				// if (tmp_end > g_geom_cached.indices.length)
+				// 	tmp_end = g_geom_cached.indices.length;
 
-				for (var tmp_i = tmp_inc; (tmp_i + 3) < tmp_end; tmp_i += 3) {
+				// // for (var tmp_i = tmp_inc; (tmp_i + 3) < tmp_end; tmp_i += 3) {
 
-					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
-					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
+				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
+				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
 
-					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
-					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
+				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
+				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
 
-					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
-					g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
-				}
+				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
+				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
+				// // }
 
-				tmp_inc += tmp_step;
+				// tmp_inc += tmp_step;
 
-				if (tmp_inc >= g_geom_cached.indices.length) {
+				// if (tmp_inc >= g_geom_cached.indices.length) {
 
-					tmp_inc = 0;
+				// 	tmp_inc = 0;
 
 					for (g_chunks_i in g_chunks)
 					{
@@ -1132,10 +1154,10 @@
 
 					g_busy = false;
 
-				// } else {
+				// // } else {
 
-				// 	reccursive_conclusion_callback();
-				}
+				// // 	reccursive_conclusion_callback();
+				// }
 			}
 
 
