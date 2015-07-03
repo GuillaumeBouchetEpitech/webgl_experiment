@@ -434,7 +434,7 @@
 			function degToRad(degrees) { return degrees * Math.PI / 180; }
 
 
-			function initBuffers( in_data ) {try{
+			function initBuffers( in_vertices ) {try{
 
 				///
 				///
@@ -448,9 +448,9 @@
 				out_geometry.VertexPositionBuffer = gl.createBuffer();
 				gl.bindBuffer( gl.ARRAY_BUFFER, out_geometry.VertexPositionBuffer );
 
-				gl.bufferData(gl.ARRAY_BUFFER, in_data.vertices.container, gl.STATIC_DRAW);
+				gl.bufferData(gl.ARRAY_BUFFER, in_vertices.container, gl.STATIC_DRAW);
 
-				out_geometry.VertexPositionBuffer.num_item = in_data.vertices.length / 12;
+				out_geometry.VertexPositionBuffer.num_item = in_vertices.length / 12;
 
 				return out_geometry;
 
@@ -1056,20 +1056,14 @@
 
 
 
-			var g_geom_cached = {
-				// indices			: new ArrayArena(Uint16Array, g_geom_cached_size),
-				// indices2		: new ArrayArena(Uint16Array, g_geom_cached_size * 3),
-				vertices		: new ArrayArena(Float32Array,g_geom_cached_size * 4)
-			};
+			var g_vertices_cached = new ArrayArena(Float32Array,g_geom_cached_size * 4);
 
 
 			function add_chunk(x, y, z) {try{
 
 				g_busy = true;
 
-				// g_geom_cached.indices.clear();
-				// g_geom_cached.indices2.clear();
-				g_geom_cached.vertices.clear();
+				g_vertices_cached.clear();
 
 				var tmp_pos333 = [
 					(x * g_chunk_size)|0,
@@ -1081,26 +1075,16 @@
 
 				my_marchingCube.marchCube(tmp_pos333, function (vertex, color, normal) {
 
-					// for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-					// 	g_geom_cached.indices.push( g_geom_cached.indices.length );
-
-					// for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-					// 	g_geom_cached.vertices.push( vertex[tmp_i] );
-					// for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-					// 	g_geom_cached.vertices.push( color[tmp_i] );
-					// for (var tmp_i = 0; tmp_i < 3; ++tmp_i)
-					// 	g_geom_cached.vertices.push( normal[tmp_i] );
-
 					for (var i = 0; i < 3; ++i)
-						g_geom_cached.vertices.push( vertex[i] );
+						g_vertices_cached.push( vertex[i] );
 					for (var i = 0; i < 3; ++i)
-						g_geom_cached.vertices.push( color[i] );
+						g_vertices_cached.push( color[i] );
 					for (var i = 0; i < 3; ++i)
-						g_geom_cached.vertices.push( normal[i] );
+						g_vertices_cached.push( normal[i] );
 
-					g_geom_cached.vertices.push( (tmp_index == 0 ? 1.0 : 0.0) );
-					g_geom_cached.vertices.push( (tmp_index == 1 ? 1.0 : 0.0) );
-					g_geom_cached.vertices.push( (tmp_index == 2 ? 1.0 : 0.0) );
+					g_vertices_cached.push( (tmp_index == 0 ? 1.0 : 0.0) );
+					g_vertices_cached.push( (tmp_index == 1 ? 1.0 : 0.0) );
+					g_vertices_cached.push( (tmp_index == 2 ? 1.0 : 0.0) );
 
 					tmp_index = (tmp_index + 1) % 3;
 				});
@@ -1116,48 +1100,19 @@
 
 			function reccursive_conclusion_callback () {
 
-				// var tmp_step = 300 * 6;
 
-				// var tmp_end = tmp_inc + tmp_step;
+				for (g_chunks_i in g_chunks)
+				{
+					var curr_chunk = g_chunks[g_chunks_i];
 
-				// if (tmp_end > g_geom_cached.indices.length)
-				// 	tmp_end = g_geom_cached.indices.length;
-
-				// // for (var tmp_i = tmp_inc; (tmp_i + 3) < tmp_end; tmp_i += 3) {
-
-				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
-				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
-
-				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 1 ] );
-				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
-
-				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 2 ] );
-				// // 	g_geom_cached.indices2.push( g_geom_cached.indices.container[ tmp_i + 0 ] );
-				// // }
-
-				// tmp_inc += tmp_step;
-
-				// if (tmp_inc >= g_geom_cached.indices.length) {
-
-				// 	tmp_inc = 0;
-
-					for (g_chunks_i in g_chunks)
+					if (!curr_chunk.geom)
 					{
-						var curr_chunk = g_chunks[g_chunks_i];
-
-						if (!curr_chunk.geom)
-						{
-							curr_chunk.geom = initBuffers( g_geom_cached );
-							break;
-						}
+						curr_chunk.geom = initBuffers( g_vertices_cached );
+						break;
 					}
+				}
 
-					g_busy = false;
-
-				// // } else {
-
-				// // 	reccursive_conclusion_callback();
-				// }
+				g_busy = false;
 			}
 
 
