@@ -55,7 +55,6 @@ CreateHUD = function () {
 	//
 
 	this.g_hud_vertices = [];
-	// this.g_framerate = [];
 	this.g_framerate = new createLimitedArray(120);
 }
 
@@ -84,7 +83,6 @@ CreateHUD.prototype.draw = function ( gl, in_shaderPrg, elapsed_time ) {
 
 
 	gl.useProgram(in_shaderPrg);
-
 
 
 
@@ -123,16 +121,8 @@ CreateHUD.prototype.draw = function ( gl, in_shaderPrg, elapsed_time ) {
 
 	this.g_framerate.push( elapsed_time / 1000 ); // -> elapsed_time is in msec
 
-	// this.g_framerate.push( elapsed_time / 1000 ); // -> elapsed_time is in msec
-
-	// while (this.g_framerate.length < hud_vertices_max)
-	// 	this.g_framerate.push( 0 );
-
 	if (this.g_framerate.length < 2)
 		return;
-
-	// while (this.g_framerate.length > hud_vertices_max)
-	// 	this.g_framerate.shift();
 
 	// fps meter
 	//
@@ -146,10 +136,6 @@ CreateHUD.prototype.draw = function ( gl, in_shaderPrg, elapsed_time ) {
 	this.g_hud_vertices.length = 0;
 
 	// find the biggest stored value
-
-	// var tmp_max = 0;
-	// for (index in this.g_framerate)
-	// 	tmp_max = Math.max(tmp_max, this.g_framerate[index]);
 
 	var tmp_max = this.g_framerate.max_value;
 
