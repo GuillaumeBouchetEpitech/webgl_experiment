@@ -66,10 +66,7 @@
 
 				if (any(lessThan(myBcenter, vec3(0.06))))
 				{
-					if (gl_FrontFacing)
-						gl_FragColor = vec4(1);
-					else
-						gl_FragColor = vec4(0.8,0.8,1.0,1.0);
+					gl_FragColor = vec4(1);
 					return;
 				}
 
@@ -224,10 +221,12 @@
 
 
 
+			var g_chunk_size = 10;
+			var g_geom_cached_size = 1048 * 20;
 			// var g_chunk_size = 15;
 			// var g_geom_cached_size = 1048 * 20;
-			var g_chunk_size = 20;
-			var g_geom_cached_size = 1048 * 30;
+			// var g_chunk_size = 20;
+			// var g_geom_cached_size = 1048 * 30;
 			// var g_chunk_size = 30;
 			// var g_geom_cached_size = 1048 * 50;
 
@@ -729,7 +728,7 @@
 						var old_chunk = g_chunks;
 						g_chunks = new Array(); // need a new array
 
-						var range = 1|0;
+						var range = 2|0;
 
 						var min_index = new Int32Array(3);
 						min_index[0] = (curr_index[0] - range)|0;
@@ -757,7 +756,6 @@
 								}
 
 							if (!found)
-								// g_chunks_queue.push( [x,y,z] );
 								g_chunks_queue.push( new Int32Array([x,y,z]) );
 
 						}
@@ -1001,7 +999,7 @@
 				// myNoise2 = new ClassicalNoise();
 				myNoise2 = new ClassicalNoise(myRand);
 
-				my_marchingCube = new MarchinCube( g_chunk_size, 0, function(x, y, z) {
+				my_marchingCube = new MarchinCube( g_chunk_size, 0.2, function(x, y, z) {
 
 					// return myNoise2.noise(x / 2, y / 2, z / 2);
 					return myNoise2.noise(x, y, z);
