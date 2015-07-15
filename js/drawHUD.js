@@ -91,27 +91,33 @@ CreateHUD.prototype.draw = function ( gl, in_shaderPrg, elapsed_time ) {
 	gl.clear(gl.DEPTH_BUFFER_BIT);
 
 
+	//
+	// matrices
 
+		// set the projection matrix
 
-	// set the projection matrix
-	mat4.ortho( -1,+1, -4,+4, -1,+1, pMatrix );
+		var tmp_pMatrix = mat4.create();
 
-	gl.uniformMatrix4fv(in_shaderPrg.pMatrixUniform, false, pMatrix);
+		mat4.ortho( -1,+1, -4,+4, -1,+1, tmp_pMatrix );
 
+		// set the modelview matrix
 
+		var tmp_mvMatrix = mat4.create();
 
-	// update modelview matrix
-	mat4.lookAt(
-		vec3.create(0,0,-1),
-		vec3.create(0,0,0),
-		vec3.create(0,0,1),
-		mvMatrix
-	);
+		var tmp_eye		= vec3.create( 0, 0,-1);
+		var tmp_center	= vec3.create( 0, 0, 0);
+		var tmp_up		= vec3.create( 0, 0, 1);
 
-	// send the modelview matrix
-	gl.uniformMatrix4fv(in_shaderPrg.mvMatrixUniform, false, mvMatrix);
+		mat4.lookAt( tmp_eye, tmp_center, tmp_up, tmp_mvMatrix );
 
+		// send the matrix
 
+		var tmp_matrix = mat4.create();
+		mat4.multiply(tmp_pMatrix, tmp_mvMatrix, tmp_matrix);
+		gl.uniformMatrix4fv(g_shaderProgram_hud.mvpMatrixUniform, false, tmp_matrix);
+
+	// matrices
+	//
 
 	//
 	// fps meter

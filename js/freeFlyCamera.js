@@ -33,6 +33,10 @@ FreeFlyCamera.prototype.lookDown	= function () { this._phi += 2; }
 
 //
 
+FreeFlyCamera.prototype._degToRad = function (degrees) { return degrees * Math.PI / 180; }
+
+//
+
 FreeFlyCamera.prototype.update = function (elapsed_sec) {
 
 	this._phi = Math.max(Math.min(this._phi, 89), -89)
@@ -40,9 +44,9 @@ FreeFlyCamera.prototype.update = function (elapsed_sec) {
 	if (this._old_theta != this._theta ||
 		this._old_phi != this._phi)
 	{
-		var tmp_radian_phi		= degToRad(this._phi),
-			tmp_radian_theta	= degToRad(this._theta),
-			tmp_radian_theta2	= degToRad(this._theta + 90);
+		var tmp_radian_phi		= this._degToRad(this._phi),
+			tmp_radian_theta	= this._degToRad(this._theta),
+			tmp_radian_theta2	= this._degToRad(this._theta + 90);
 
 		var tmp_cos_phi = Math.cos( tmp_radian_phi );
 
@@ -73,8 +77,8 @@ FreeFlyCamera.prototype.updateViewMatrix = function (viewMatrix) {
 	mat4.identity( viewMatrix );
 
 	// rotate modelview matrix
-	mat4.rotate( viewMatrix, degToRad(this._phi), [1, 0, 0] );
-	mat4.rotate( viewMatrix, degToRad(this._theta), [0, 1, 0] );
+	mat4.rotate( viewMatrix, this._degToRad(this._phi), [1, 0, 0] );
+	mat4.rotate( viewMatrix, this._degToRad(this._theta), [0, 1, 0] );
 
 	// translate modelview matrix
 	mat4.translate( viewMatrix, [ -this._position[0], -this._position[1], -this._position[2] ] );

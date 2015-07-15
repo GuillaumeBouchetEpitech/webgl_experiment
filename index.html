@@ -37,7 +37,6 @@
 			varying vec3 normalInterp;
 			varying vec3 vertPos;
 
-			uniform int mode;
 			varying vec3 myVertPos;
 
 			varying vec3 myBcenter;
@@ -74,7 +73,7 @@
 				//
 
 				//
-				// white lines
+				// tranparency (void -> grid effect)
 
 				if (!gl_FrontFacing ||
 					vColor.w == 0.0 ||
@@ -83,6 +82,12 @@
 					discard;
 					return;
 				}
+
+				// tranparency (void -> grid effect)
+				//
+
+				//
+				// light
 
 				vec3 normal = normalize(normalInterp);
 				vec3 lightDir = normalize(lightPos - vertPos);
@@ -100,6 +105,9 @@
 				}
 
 				gl_FragColor = vec4( lambertian * vColor.xyz + specular * specColor, 1.0);
+
+				// light
+				//
 			}
 		</script>
 
@@ -112,7 +120,9 @@
 
 			uniform vec3 uForcedRange;
 
-			uniform mat4 uMVMatrix, uPMatrix, uNMatrix;
+			uniform vec3 uForcedRatio;
+
+			uniform mat4 uMatrices[2];
 
 			varying vec4 vColor;
 
@@ -124,14 +134,19 @@
 
 			void main(void) {
 
+				mat4 uPMatrix	= uMatrices[0];
+				mat4 uMVMatrix	= uMatrices[1];
+
+
 				use_light = 0.0;
 				vDistance = -1.0;
 
 				vec4 vertPos4 = uMVMatrix * vec4(aVertexPosition, 1.0);
 				vertPos = vec3(vertPos4) / vertPos4.w;
-				normalInterp = vec3( uNMatrix * vec4(aVertexNormal, 0.0) );
+				normalInterp = vec3( uMVMatrix * vec4(aVertexNormal, 0.0) );
 
-				myBcenter = aVertexBcenter;
+
+				myBcenter = vec3( aVertexBcenter.xyz * uForcedRatio.xyz );
 
 				//
 
@@ -139,6 +154,9 @@
 
 				float tmp_dist = length( aVertexPosition + uForcedRange.xyz );
 				vDistance = tmp_dist;
+
+				//
+				// colored part
 
 				if (tmp_dist < k_range) {
 
@@ -151,7 +169,13 @@
 					return;
 				}
 
+				// colored part
+				//
+
 				if (tmp_dist < k_range + k_range_width) {
+
+					//
+					// colored and deformed part
 
 					float diff = (tmp_dist - k_range) / k_range_width;
 					float ratio = ( (diff < 0.5) ? (diff * 2.0) : (1.0 + diff) );
@@ -164,10 +188,19 @@
 
 					vColor = vec4(aVertexColor,1);
 
+					// colored and deformed part
+					//
+
 				} else {
+
+					//
+					// tranparency (void -> grid effect)
 
 					gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
 					vColor = vec4(0,0,0,0);
+
+					// tranparency (void -> grid effect)
+					//
 				}
 
 			}
@@ -185,6 +218,7 @@
 
 			void main(void) {
 
+				// just set the white color
 				gl_FragColor = vec4(1);
 			}
 		</script>
@@ -193,12 +227,12 @@
 
 			attribute vec3 aVertexPosition;
 
-			uniform mat4 uMVMatrix, uPMatrix;
-
+			uniform mat4 uMVPMatrix;
 
 			void main(void) {
 
-				gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+				// just set the position
+				gl_Position = uMVPMatrix * vec4(aVertexPosition, 1.0);
 			}
 		</script>
 
@@ -213,9 +247,6 @@
 			var gl = null;
 
 			var my_marchingCube;
-			var myNoise2;
-			var myRand;
-
 
 			var my_FrustumCulling;
 
@@ -357,10 +388,9 @@
 				gl.enableVertexAttribArray(g_shaderProgram.vertexBcenterAttr);
 
 				// enable the uniform location
-				g_shaderProgram.pMatrixUniform  = gl.getUniformLocation(g_shaderProgram, "uPMatrix");
-				g_shaderProgram.mvMatrixUniform = gl.getUniformLocation(g_shaderProgram, "uMVMatrix");
-				g_shaderProgram.nMatrixUniform  = gl.getUniformLocation(g_shaderProgram, "uNMatrix");
-				g_shaderProgram.uForcedRange    = gl.getUniformLocation(g_shaderProgram, "uForcedRange");
+				g_shaderProgram.uMatrices		= gl.getUniformLocation(g_shaderProgram, "uMatrices");
+				g_shaderProgram.uForcedRange 	= gl.getUniformLocation(g_shaderProgram, "uForcedRange");
+				g_shaderProgram.uForcedRatio 	= gl.getUniformLocation(g_shaderProgram, "uForcedRatio");
 
 				//
 				//
@@ -378,32 +408,30 @@
 				gl.enableVertexAttribArray(g_shaderProgram_hud.vertexPositionAttr);
 
 				// enable the uniform location
-				g_shaderProgram_hud.pMatrixUniform = gl.getUniformLocation(g_shaderProgram_hud, "uPMatrix");
-				g_shaderProgram_hud.mvMatrixUniform = gl.getUniformLocation(g_shaderProgram_hud, "uMVMatrix");
+				g_shaderProgram_hud.mvpMatrixUniform = gl.getUniformLocation(g_shaderProgram_hud, "uMVPMatrix");
 			}
 
 
-			var g_mvMatrixStack = new Array();
+			// var g_mvMatrixStack = new Array();
 
-			var mvMatrix = mat4.create();
-			var pMatrix = mat4.create();
-			var nMatrix = mat4.create();
+			// var mvMatrix = mat4.create();
+			// var pMatrix = mat4.create();
+			// var nMatrix = mat4.create();
 
-			function mvPushMatrix() {
-				var copy = mat4.create();
-				mat4.set(mvMatrix, copy);
-				g_mvMatrixStack.push(copy);
-			}
+			// function mvPushMatrix() {
+			// 	var copy = mat4.create();
+			// 	mat4.set(mvMatrix, copy);
+			// 	g_mvMatrixStack.push(copy);
+			// }
 
-			function mvPopMatrix() {
-				if (g_mvMatrixStack.length == 0)
-					throw "Invalid popMatrix!";
+			// function mvPopMatrix() {
+			// 	if (g_mvMatrixStack.length == 0)
+			// 		throw "Invalid popMatrix!";
 
-				mvMatrix = g_mvMatrixStack.pop();
-			}
+			// 	mvMatrix = g_mvMatrixStack.pop();
+			// }
 
 
-			function degToRad(degrees) { return degrees * Math.PI / 180; }
 
 
 
@@ -476,11 +504,24 @@
 				gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 
+				var tmp_pMatrix = mat4.create();
+
 				// set the projection matrix
-				mat4.perspective(70, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+				mat4.perspective(70, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, tmp_pMatrix);
 
-				g_FreeFlyCamera.updateViewMatrix( mvMatrix );
+				var tmp_mvMatrix = mat4.create();
 
+				g_FreeFlyCamera.updateViewMatrix( tmp_mvMatrix );
+
+				//
+
+				drawScene2(tmp_pMatrix, tmp_mvMatrix, g_chunks);
+			}
+
+			var g_total_elapsed = 0.0;
+			var g_total_sens = 0.001;
+
+			function drawScene2(in_pMatrix, in_mvMatrix, in_chunks) {
 
 				//
 				//
@@ -489,12 +530,13 @@
 
 				gl.useProgram( g_shaderProgram_hud );
 
-				gl.uniformMatrix4fv(g_shaderProgram_hud.pMatrixUniform, false, pMatrix);
+				// gl.uniformMatrix4fv(g_shaderProgram_hud.pMatrixUniform, false, in_pMatrix);
 
 
-				for (geom_i in g_chunks) {
 
-					var curr_chunk = g_chunks[ geom_i ];
+				for (geom_i in in_chunks) {
+
+					var curr_chunk = in_chunks[ geom_i ];
 
 					var pos = curr_chunk.pos;
 
@@ -506,13 +548,23 @@
 						pos[2] * g_chunk_size + g_chunk_size / 2
 					];
 
-					mvPushMatrix();
+
+					var tmp_mvMatrix = mat4.create();
+					mat4.set(in_mvMatrix, tmp_mvMatrix);
 
 						// translate the chunk were it belong
-						mat4.translate(mvMatrix, cube_position);
+						mat4.translate(tmp_mvMatrix, cube_position);
 
-						// send the modelview matrix
-						gl.uniformMatrix4fv(g_shaderProgram_hud.mvMatrixUniform, false, mvMatrix);
+						// // send the modelview matrix
+						// gl.uniformMatrix4fv(g_shaderProgram_hud.mvMatrixUniform, false, tmp_mvMatrix);
+
+
+						var tmp_matrix = mat4.create();
+						mat4.multiply(in_pMatrix, tmp_mvMatrix, tmp_matrix);
+						gl.uniformMatrix4fv(g_shaderProgram_hud.mvpMatrixUniform, false, tmp_matrix);
+
+
+
 
 						///
 
@@ -520,8 +572,6 @@
 						gl.vertexAttribPointer(g_shaderProgram_hud.vertexPositionAttr,3,gl.FLOAT,false,0,0);
 
 						gl.drawArrays( gl.LINES, 0, VertexPositionBuffer_cube_.num_item );
-
-					mvPopMatrix();
 
 				}
 
@@ -539,33 +589,31 @@
 				gl.useProgram( g_shaderProgram );
 
 
-				gl.uniformMatrix4fv(g_shaderProgram.pMatrixUniform, false, pMatrix);
 
+				//
+				//
+				//
+				// UPDATE MATRIX
 
-				// set the normal matrix
-				mat4.identity(nMatrix);
-				nMatrix[ 0] = mvMatrix[ 0];
-				nMatrix[ 1] = mvMatrix[ 1];
-				nMatrix[ 2] = mvMatrix[ 2];
+				var nMatrix = new Float32Array(32);
 
-				nMatrix[ 4] = mvMatrix[ 4];
-				nMatrix[ 5] = mvMatrix[ 5];
-				nMatrix[ 6] = mvMatrix[ 6];
+				for (var i = 0; i < 16; ++i)
+					nMatrix[i] = in_pMatrix[i];
 
-				nMatrix[ 8] = mvMatrix[ 8];
-				nMatrix[ 9] = mvMatrix[ 9];
-				nMatrix[10] = mvMatrix[10];
+				for (var i = 0; i < 16; ++i)
+					nMatrix[16+i] = in_mvMatrix[i];
 
-				// send the normal matrix
-				gl.uniformMatrix4fv(g_shaderProgram.nMatrixUniform, false, nMatrix);
+				gl.uniformMatrix4fv(g_shaderProgram.uMatrices, false, nMatrix);
+
+				// UPDATE MATRIX
+				//
+				//
+				//
 
 
 				// update Frustum Culling
-				my_FrustumCulling.calculateFrustum( pMatrix, mvMatrix );
+				my_FrustumCulling.calculateFrustum( in_pMatrix, in_mvMatrix );
 				g_visible = 0;
-
-
-				gl.uniformMatrix4fv(g_shaderProgram.mvMatrixUniform, false, mvMatrix);
 
 				gl.uniform3f( g_shaderProgram.uForcedRange,
 					-g_FreeFlyCamera._position[0],
@@ -573,11 +621,18 @@
 					-g_FreeFlyCamera._position[2]
 				);
 
+				gl.uniform3f( g_shaderProgram.uForcedRatio,
+					0.8 + g_total_elapsed * 0.8,
+					1.2 + g_total_elapsed * 0.4,
+					0.8 + g_total_elapsed * 0.8
+				);
+
+
 				///
 
-				for (geom_i in g_chunks) {
+				for (geom_i in in_chunks) {
 
-					var curr_chunk = g_chunks[ geom_i ];
+					var curr_chunk = in_chunks[ geom_i ];
 
 					///
 					///
@@ -677,10 +732,7 @@
 
 			var last_time = 0;
 
-			var prev_index = new Int32Array(3);
-			prev_index[0] = 999;
-			prev_index[1] = 999;
-			prev_index[2] = 999;
+			var prev_index = new Int32Array([999,999,999]);
 			var curr_index = new Int32Array(3);
 
 			function animate() { try{
@@ -693,6 +745,19 @@
 				var elapsed = current_time - last_time;
 
 				last_time = current_time;
+
+				//
+
+				//
+
+				g_total_elapsed += elapsed * g_total_sens;
+				if (g_total_elapsed > 1.0)
+					g_total_sens = -0.001;
+
+				if (g_total_elapsed < 0.0)
+					g_total_sens = +0.001;
+
+				//
 
 				//
 
@@ -730,15 +795,16 @@
 
 						var range = 2|0;
 
-						var min_index = new Int32Array(3);
-						min_index[0] = (curr_index[0] - range)|0;
-						min_index[1] = (curr_index[1] - range)|0;
-						min_index[2] = (curr_index[2] - range)|0;
-
-						var max_index = new Int32Array(3);
-						max_index[0] = (curr_index[0] + range)|0;
-						max_index[1] = (curr_index[1] + range)|0;
-						max_index[2] = (curr_index[2] + range)|0;
+						var min_index = new Int32Array([
+							(curr_index[0] - range)|0,
+							(curr_index[1] - range)|0,
+							(curr_index[2] - range)|0,
+						]);
+						var max_index = new Int32Array([
+							(curr_index[0] + range)|0,
+							(curr_index[1] + range)|0,
+							(curr_index[2] + range)|0,
+						]);
 
 						for (var z = min_index[2]; z <= max_index[2]; ++z)
 						for (var y = min_index[1]; y <= max_index[1]; ++y)
@@ -746,14 +812,18 @@
 						{
 							var found = false;
 
-							for (i in old_chunk)
+							for (var i = 0; i < old_chunk.length; ++i)
+							{
 								if (old_chunk[i].pos[0] == x &&
 									old_chunk[i].pos[1] == y &&
 									old_chunk[i].pos[2] == z)
 								{
 									g_chunks.push( old_chunk[i] );
+									old_chunk.splice(i, 1);
 									found = true;
+									break;
 								}
+							}
 
 							if (!found)
 								g_chunks_queue.push( new Int32Array([x,y,z]) );
@@ -994,25 +1064,19 @@
 
 
 
+				// the 'Randomiser' object is just a determinitic random
+				// which just mean it can 'replay' what it generate if you reuse the same seed
+				var myRand = new Randomiser();
 
-				myRand = new Randomiser();
-
-				// myNoise2 = new ClassicalNoise();
-				myNoise2 = new ClassicalNoise(myRand);
+				var myNoise2 = new ClassicalNoise(myRand);
 
 				my_marchingCube = new MarchinCube( g_chunk_size, 0.2, function(x, y, z) {
 
-					// return myNoise2.noise(x / 2, y / 2, z / 2);
 					return myNoise2.noise(x, y, z);
 				} );
 
-				try {
 
-					my_FrustumCulling = new FrustumCulling();
-
-				}  catch(e) {alert(e);}
-
-
+				my_FrustumCulling = new FrustumCulling();
 
 
 
