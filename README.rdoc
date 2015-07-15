@@ -1,5 +1,6 @@
 
-= Webglexperiment (-> Perlin noise 3d navigator)
+= Webgl experiment
+==(-> Perlin noise 3d navigator)
 
 Probably obvious, anyway :
 * require a browser supporting webgl
@@ -9,7 +10,7 @@ Probably obvious, anyway :
 link:http://guillaumebouchetepitech.github.io/webgl_experiment/
 
 == Screenshot
-[TODO]
+TODO...
 
 == Credits :
 
