@@ -167,6 +167,9 @@ define(
     var vertices = createCubeVertices(chunk_size,[1,1,1]);
     var cubeW_geom = new createGeometryColor(vertices, gl.LINES);
 
+    var vertices = createCubeVertices(chunk_size,[0,1,0]);
+    var cubeG_geom = new createGeometryColor(vertices, gl.LINES);
+
 
     // var aspectRatio = gl.viewportWidth / gl.viewportHeight;
     var aspectRatio = 600 / gl.viewportHeight;
@@ -387,6 +390,19 @@ define(
                         cubeR_geom.render(shader);
                 }
 
+
+                if (my_chunkGenerator.is_processing_chunk)
+                {
+                    var pos = my_chunkGenerator.processing_pos
+
+                    glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, pos);
+
+                    gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix2);
+                    cubeG_geom.render(shader);
+                }
+
+
+
         gl.useProgram(null);
 
 
@@ -481,6 +497,22 @@ define(
                         cubeR_geom.render(shader);
                     }
                 }
+
+                if (my_chunkGenerator.is_processing_chunk)
+                {
+                    var pos = my_chunkGenerator.processing_pos
+
+                    glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, [
+                        pos[0] + chunk_size*0.2,
+                        pos[1] + chunk_size*0.2,
+                        pos[2] + chunk_size*0.2
+                    ]);
+                    glm.mat4.scale(tmp_mvMatrix2,tmp_mvMatrix2, [0.6,0.6,0.6]);
+
+                    gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix2);
+                    cubeG_geom.render(shader);
+                }
+
 
 
                     glm.mat4.translate(tmp_mvMatrix,tmp_mvMatrix, g_FreeFlyCamera._Position);
