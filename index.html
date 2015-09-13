@@ -163,37 +163,43 @@
 			varying vec4 vColor;
 			varying vec3 vBCenter;
 
-			varying vec3 normalInterp;
-			varying vec3 vertPos;
+			varying vec3 vNormalInterp;
+			varying vec3 vVertPos;
 
 
-			const vec3 lightPos = vec3(1.0,1.0,1.0);
+			const vec3 lightPos = vec3(0.0,0.0,0.0);
 			const vec3 specColor = vec3(1.0, 1.0, 1.0);
 
 			void main(void) {
 
-				vec3 normal = normalize(normalInterp);
-				vec3 lightDir = normalize(lightPos - vertPos);
+				vec3 normal = normalize(vNormalInterp);
+				vec3 lightDir = normalize(lightPos - vVertPos);
 
 				float lambertian = max(dot(lightDir,normal), 0.0);
 				float specular = 0.0;
 
+				// wireframe
 				if (any(lessThan(vBCenter, vec3(0.03))))
 				{
 					gl_FragColor = vec4(1);
 					return;
 				}
 
+				// lines only on the backface
+				if (!gl_FrontFacing)
+					discard;
+
+				// lighting
 				if (lambertian > 0.0)
 				{
 					vec3 reflectDir = reflect(-lightDir, normal);
-					vec3 viewDir = normalize(-vertPos);
+					vec3 viewDir = normalize(-vVertPos);
 
 					float specAngle = max(dot(reflectDir, viewDir), 0.0);
-					specular = pow(specAngle, 4.0);
+					specular = pow(specAngle, 8.0);
 				}
 
-				gl_FragColor = vec4( vColor.xyz * 0.2 + lambertian * vColor.xyz + specular * specColor, 1.0);
+				gl_FragColor = vec4(vColor.xyz*0.2 + lambertian*vColor.xyz + specular*specColor, 1.0);
 			}
 		</script>
 
@@ -207,7 +213,7 @@
 			varying vec4 vColor;
 			varying vec3 vBCenter;
 
-			varying vec3 normalInterp, vertPos;
+			varying vec3 vNormalInterp, vVertPos;
 
 			const float k_range = 10.0;
 			const float k_range_width = 3.0;
@@ -215,8 +221,8 @@
 			void main(void) {
 
 				vec4 vertPos4 = uMVMatrix * vec4(aVertexPosition, 1.0);
-				vertPos = vec3(vertPos4) / vertPos4.w;
-				normalInterp = vec3( uMVMatrix * vec4(aVertexNormal, 0.0) );
+				vVertPos = vec3(vertPos4) / vertPos4.w;
+				vNormalInterp = vec3( uMVMatrix * vec4(aVertexNormal, 0.0) );
 
 				//
 
