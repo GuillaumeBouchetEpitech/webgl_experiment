@@ -151,6 +151,10 @@ define(
 			if (!priority_cb || this._chunk_queue.length == 1)
 			{
 				pos = this._chunk_queue.pop();
+
+				this.processing_pos = pos;
+
+				this.is_processing_chunk = true;
 			}
 			else
 			{
@@ -169,6 +173,18 @@ define(
 						pos[1] * this._chunk_size + this._chunk_size / 2,
 						pos[2] * this._chunk_size + this._chunk_size / 2
 					];
+				}
+
+				var chunks = this._chunks;
+				function is_already_processed(pos) {
+					for (var j = 0; j < chunks.length; ++j)
+						if (chunks[j].pos[0] === pos[0] &&
+							chunks[j].pos[1] === pos[1] &&
+							chunks[j].pos[2] === pos[2])
+						{
+							return true;
+						}
+					return false;
 				}
 
 				var pos = this._chunk_queue[0];
@@ -191,22 +207,19 @@ define(
 					var best_pos = this._chunk_queue[best_index];
 					var try_pos = this._chunk_queue[i];
 
+					//
+					/// already processed ?
+					if (is_already_processed(try_pos))
+					{
+						this._chunk_queue.splice(i,1);
+						--i;
+						continue;
+					}
+					/// /already processed ?
+					//
+
 					if (priority_cb( try_pos, best_pos ))
 					{
-
-						//
-						/// already processed ?
-						for (var j = 0; j < this._chunks.length; ++j)
-							if (this._chunks[j].pos[0] === try_pos[0] &&
-								this._chunks[j].pos[1] === try_pos[1] &&
-								this._chunks[j].pos[2] === try_pos[2])
-							{
-								continue;
-							}
-						/// /already processed ?
-						//
-
-
 						var chunk_center = [
 							try_pos[0] * this._chunk_size + this._chunk_size / 2,
 							try_pos[1] * this._chunk_size + this._chunk_size / 2,
