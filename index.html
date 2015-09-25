@@ -172,12 +172,6 @@
 
 			void main(void) {
 
-				vec3 normal = normalize(vNormalInterp);
-				vec3 lightDir = normalize(lightPos - vVertPos);
-
-				float lambertian = max(dot(lightDir,normal), 0.0);
-				float specular = 0.0;
-
 				// wireframe
 				if (any(lessThan(vBCenter, vec3(0.03))))
 				{
@@ -190,6 +184,14 @@
 					discard;
 
 				// lighting
+				// vec3 normal = normalize(vNormalInterp)* normalize(vNormalInterp);
+				vec3 normal = normalize(vNormalInterp);
+				vec3 lightDir = normalize(lightPos - vVertPos);
+
+				float lambertian = max(dot(lightDir,normal), 0.0);
+				float specular = 0.0;
+
+				// lighting specular
 				if (lambertian > 0.0)
 				{
 					vec3 reflectDir = reflect(-lightDir, normal);
@@ -199,6 +201,7 @@
 					specular = pow(specAngle, 8.0);
 				}
 
+				// lighting output
 				gl_FragColor = vec4(vColor.xyz*0.2 + lambertian*vColor.xyz + specular*specColor, 1.0);
 			}
 		</script>
@@ -257,37 +260,49 @@
 			<tr>
 
 				<td>
-					<canvas id="main-canvas" style="border: none;" width="800" height="600"></canvas>	
+					<canvas id="main-canvas" style="border: none;" width="800" height="600">
+					</canvas>
 				</td>
 				<td>
 
 					<table id="my_table" cellspacing=2 cellpadding=2 >
 
-						<tr>
-							<th colspan="3">Move</th>
-						</tr>
-						<tr>
-							<th></th><td>Z/W</td><th></th>
-						</tr>
-						<tr>
-							<td>Q/A</td><td>S</td><td>D</td>
-						</tr>
+						<tr><th colspan="3">Move</th></tr>
+						<tr><th></th><td>Z/W</td><th></th></tr>
+						<tr><td>Q/A</td><td>S</td><td>D</td></tr>
 
-						<tr>
-							<th colspan="3">Look</th>
-						</tr>
-						<tr>
-							<th></th><td>Up</td><th></th>
-						</tr>
-						<tr>
-							<td>Left</td><td>Down</td><td>Right</td>
-						</tr>
-						<tr>
-							<td colspan="3">&lt;= or click to use<br/>your mouse cursor</td>
-						</tr>
+						<tr><th colspan="3">Look</th></tr>
+						<tr><th></th><td>Up</td><th></th></tr>
+						<tr><td>Left</td><td>Down</td><td>Right</td></tr>
+						<tr><td colspan="3">&lt;= or click to use<br/>
+						your mouse cursor</td></tr>
 
 					</table>
 
+					<table>
+
+						<tr><th colspan="3">Interface</th></tr>
+
+						<tr><th colspan="3">
+							<button id="gui_reset">Reset Generation</button>
+						</th></tr>
+<!-- 
+						<tr>
+							<th colspan="1"><p>Octaves</p></th>
+							<th colspan="2"><input id="range_octaves" type="range"/></th>
+						</tr>
+
+						<tr>
+							<th colspan="1"><p>Frequency</p></th>
+							<th colspan="2"><input id="range_frequency" type="range"/></th>
+						</tr>
+
+						<tr>
+							<th colspan="1"><p>Amplitude</p></th>
+							<th colspan="2"><input id="range_amplitude" type="range"/></th>
+						</tr>
+ -->
+					</table>
 
 				</td>
 			</tr>
