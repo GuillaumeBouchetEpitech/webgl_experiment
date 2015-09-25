@@ -378,11 +378,19 @@ MarchinCube.prototype.getNormal2 = function( t1, t2, t3 ) {
 	var Vy = t3[1] - t1[1];
 	var Vz = t3[2] - t1[2];
 
-	return [
+	var normal2 = [
 		Uy*Vz - Uz*Vy,
 		Uz*Vx - Ux*Vz,
 		Ux*Vy - Uy*Vx
 	];
+
+	var len = Math.sqrt(
+		normal2[0]*normal2[0]+
+		normal2[1]*normal2[1]+
+		normal2[2]*normal2[2]
+	);
+
+	return normal2
 }
 
 MarchinCube.prototype.marchCube = function( pos, geom_callback ) {
@@ -504,6 +512,8 @@ MarchinCube.prototype.marchCube_single = function( iX, iY, iZ ) {
 		if (this.a2iTriangleConnectionTable[ iFlagIndex ][ 3 * iTriangle ] < 0)
 			break;
 
+
+
 		for (var iCorner = 0; iCorner < 3; ++iCorner) {
 
 			iVertex = this.a2iTriangleConnectionTable[ iFlagIndex ][ 3 * iTriangle + iCorner ];
@@ -526,6 +536,7 @@ MarchinCube.prototype.marchCube_single = function( iX, iY, iZ ) {
 				this.current_geom_callback( vertex, color, normal );
 
 		} // for (iCorner = [...]
+
 
 
 		// var t_positions = [];
@@ -565,6 +576,8 @@ MarchinCube.prototype.marchCube_single = function( iX, iY, iZ ) {
 		// 		this.current_geom_callback( t_positions[i], t_color, t_normal );
 
 		// } // for (iCorner = [...]
+
+
 
 	} // for (iTriangle = [...]
 

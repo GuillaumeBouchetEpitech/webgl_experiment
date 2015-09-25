@@ -22,6 +22,17 @@ define(
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
 
 		this._vbuffer.numItems = vertices.length / 12;
+
+		console.log('create called');
+	}
+
+	//
+
+	createGeometryLight.prototype.dispose = function() {
+
+		gl.deleteBuffer(this._vbuffer);
+
+		console.log('dispose called');
 	}
 
 	//

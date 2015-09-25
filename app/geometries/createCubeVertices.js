@@ -1,7 +1,7 @@
 
 define(function() {
 
-    function createCubeVertices(size, arr_color) {
+    function createCubeVertices(size, arr_color, no_inside) {
 
         var outer_side = size / 2;
         var inner_side = size / 2.5;
@@ -39,6 +39,11 @@ define(function() {
             12,13,  13,15,  15,14,  14,12,
              8,12,   9,13,  11,15,  10,14
         ];
+
+        //
+
+        if (no_inside)
+            indices.length /= 2;
 
         //
 

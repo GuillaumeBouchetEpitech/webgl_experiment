@@ -160,14 +160,14 @@ define(
     var chunk_size = 15;
 
 
-    var vertices = createCubeVertices(chunk_size,[1,0,0]);
+    var vertices = createCubeVertices(chunk_size,[1,0,0], true);
     var cubeR_geom = new createGeometryColor(vertices, gl.LINES);
 
     // var vertices = createCubeVertices(chunk_size,[0.5,0.5,0.5]);
     var vertices = createCubeVertices(chunk_size,[1,1,1]);
     var cubeW_geom = new createGeometryColor(vertices, gl.LINES);
 
-    var vertices = createCubeVertices(chunk_size,[0,1,0]);
+    var vertices = createCubeVertices(chunk_size,[0,1,0], true);
     var cubeG_geom = new createGeometryColor(vertices, gl.LINES);
 
 
@@ -180,6 +180,10 @@ define(
 
 
     var my_chunkGenerator = new chunkGenerator( chunk_size, shader4 );
+
+
+
+
 
 
 
@@ -206,6 +210,33 @@ define(
     }
 
     var saved_index = [1,0,0]
+
+
+
+
+
+
+
+    var gui_reset = document.getElementById("gui_reset");
+    gui_reset.addEventListener('click', function () {
+
+        my_chunkGenerator._chunks.length = 0;
+        my_chunkGenerator._chunk_queue.length = 0;
+        my_chunkGenerator = null;
+
+        // my_chunkGenerator = new chunkGenerator( chunk_size, shader4, 5,0.5,1 );
+        my_chunkGenerator = new chunkGenerator( chunk_size, shader4 );
+
+
+        var curr_index_x = Math.floor(g_FreeFlyCamera._Position[0] / chunk_size);
+        saved_index = [curr_index_x +1,0,0]
+    })
+
+
+
+
+
+
 
     tick();
 
@@ -252,7 +283,7 @@ define(
             saved_index[1] = curr_index[1];
             saved_index[2] = curr_index[2];
 
-            my_chunkGenerator._chunk_queue = [];
+            my_chunkGenerator._chunk_queue.length = 0;
 
             var range = 2|0;
 
@@ -281,6 +312,7 @@ define(
                     curr_pos[1] < min_index[1] || curr_pos[1] > max_index[1] ||
                     curr_pos[2] < min_index[2] || curr_pos[2] > max_index[2])
                 {
+                    my_chunkGenerator._chunks[i].geom.dispose();
                     my_chunkGenerator._chunks.splice(i, 1);
                     i--;
                 }
@@ -330,14 +362,20 @@ define(
 
 
 
-        // my_chunkGenerator.update();
+
+
+        //
+        //
+        ////// generation
+
         {
-            var camera = g_FreeFlyCamera;
+            var p = g_FreeFlyCamera._Position;
+            var f = g_FreeFlyCamera._Forward;
 
             var camera_pos = [
-                camera._Position[0] + camera._Forward[0]*chunk_size/4,
-                camera._Position[1] + camera._Forward[1]*chunk_size/4,
-                camera._Position[2] + camera._Forward[2]*chunk_size/4
+                p[0] + f[0] * chunk_size / 4,
+                p[1] + f[1] * chunk_size / 4,
+                p[2] + f[2] * chunk_size / 4
             ];
 
             my_chunkGenerator.update(camera_pos, function (try_pos, best_pos) {
@@ -349,62 +387,72 @@ define(
             });
         }
 
+        ////// /generation
+        //
+        //
 
 
 
-            //
-            // init
 
-            // gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-            gl.viewport(0, 0, 600, gl.viewportHeight);
+        //
+        //
+        ////// render 3d scene
 
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        // gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.viewport(0, 0, 600, gl.viewportHeight);
+
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 
-                my_chunkGenerator.render(tmp_mvMatrix, tmp_pMatrix, chunk_is_visible);
+        /// render chunks
+
+            // this part is already setting up a shader
+            my_chunkGenerator.render(tmp_mvMatrix, tmp_pMatrix, chunk_is_visible);
+
+        /// render cubes
 
         gl.useProgram(shader);
 
-                    gl.uniformMatrix4fv(shader.uPMatrix, false, tmp_pMatrix);
-                    gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix);
+            gl.uniformMatrix4fv(shader.uPMatrix, false, tmp_pMatrix);
+            gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix);
 
-                axis_geom.render(shader);
+            axis_geom.render(shader);
 
-                var tmp_mvMatrix2 = glm.mat4.create();
+            var tmp_mvMatrix2 = glm.mat4.create();
 
-                for (var i = 0; i < my_chunkGenerator._chunks.length; ++i)
-                {
-                    var pos = my_chunkGenerator._chunks[i].pos;
+            for (var i = 0; i < my_chunkGenerator._chunks.length; ++i)
+            {
+                var pos = my_chunkGenerator._chunks[i].pos;
 
-                    glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, pos);
+                glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, pos);
 
-                    gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix2);
+                gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix2);
 
-                    ///
+                ///
 
-                    var visible = chunk_is_visible(pos);
+                var visible = chunk_is_visible(pos);
 
-                    if (visible)
-                        cubeW_geom.render(shader);
-                    else
-                        cubeR_geom.render(shader);
-                }
+                if (visible)
+                    cubeW_geom.render(shader);
+                else
+                    cubeR_geom.render(shader);
+            }
 
+            if (my_chunkGenerator.is_processing_chunk)
+            {
+                var pos = my_chunkGenerator.processing_pos
 
-                if (my_chunkGenerator.is_processing_chunk)
-                {
-                    var pos = my_chunkGenerator.processing_pos
+                glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, pos);
 
-                    glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, pos);
-
-                    gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix2);
-                    cubeG_geom.render(shader);
-                }
-
-
+                gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix2);
+                cubeG_geom.render(shader);
+            }
 
         gl.useProgram(null);
 
+        ////// /render 3d scene
+        //
+        //
 
 
 
@@ -421,7 +469,7 @@ define(
 
         // rendered 3 times with a different viewport and point of view
 
-        render_hud( [600,  0,200,200], [-1.0, 1.2, 1.0], [0,0,1] );
+        render_hud( [600,  0,200,200], [1.0, 1.2, 1.0], [0,0,1] );
         render_hud( [600,200,200,200], [0.0, 1.0, 0.0], [0,0,1] );
         render_hud( [600,400,200,200], [0.0, 0.0, 1.0], [0,1,0] );
 
