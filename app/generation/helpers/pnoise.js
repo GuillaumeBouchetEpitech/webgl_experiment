@@ -1,5 +1,9 @@
 
-var ClassicalNoise = function(r) { // Classic Perlin noise in 3D, for comparison
+var ClassicalNoise = function(r, octaves, freq, amp) {
+
+	this._octaves		= octaves || 1;
+	this._frequency		= freq || 1.0;
+	this._amplitude		= amp || 0.5;
 
 	if (r == undefined) r = Math;
 
@@ -22,18 +26,14 @@ var ClassicalNoise = function(r) { // Classic Perlin noise in 3D, for comparison
 
 ClassicalNoise.prototype.noise_ex = function(x2, y2, z2) { 
 
-	var _amplitude = 3.0;
-	var _frequency = 0.75;
-	var _octaves = 1;
-
 	var result = 0.0;
-	var amp = _amplitude;
+	var amp = this._amplitude;
 
-	var x = x2 * _frequency;
-	var y = y2 * _frequency;
-	var z = z2 * _frequency;
+	var x = x2 * this._frequency;
+	var y = y2 * this._frequency;
+	var z = z2 * this._frequency;
 
-	for (var i = 0; i < _octaves; ++i)
+	for (var i = 0; i < this._octaves; ++i)
 	{
 		result += this.noise(x,y,z) * amp;
 
@@ -53,7 +53,7 @@ ClassicalNoise.prototype.dot = function(g, x, y, z) { return g[0]*x + g[1]*y + g
 ClassicalNoise.prototype.mix = function(a, b, t) { return (1.0-t)*a + t*b; };
 ClassicalNoise.prototype.fade = function(t) {  return t*t*t*(t*(t*6.0-15.0)+10.0); };
  
-	// Classic Perlin noise, 3D version 
+// Classic Perlin noise, 3D version 
 ClassicalNoise.prototype.noise = function(x, y, z) { 
 
 	// Find unit grid cell containing point 

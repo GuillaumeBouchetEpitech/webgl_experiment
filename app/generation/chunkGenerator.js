@@ -28,7 +28,7 @@ define(
 
 	//
 
-	var chunkRenderer = function(chunk_size, shader) {
+	var chunkRenderer = function(chunk_size, shader, octaves, freq, amp) {
 
 		this._shader = shader;
 		this._chunks = [];
@@ -37,9 +37,9 @@ define(
 
 		var myRand = new Randomiser();
 
-		var myNoise2 = new ClassicalNoise(myRand);
+		var myNoise2 = new ClassicalNoise(myRand, octaves, freq, amp);
 
-		this._marchingCube = new MarchinCube(chunk_size, 0.0, function(x, y, z) {
+		this._marchingCube = new MarchinCube(chunk_size, -0.1, function(x, y, z) {
 
 			return myNoise2.noise_ex(x, y, z);
 		});
@@ -54,7 +54,9 @@ define(
 				this._chunks[i].pos[1] === pos[1] &&
 				this._chunks[i].pos[2] === pos[2])
 			{
-				gl.deleteBuffer(this._chunks[i].geom._vbuffer);
+				// gl.deleteBuffer(this._chunks[i].geom._vbuffer);
+				console.log('dispose calling')
+				this._chunks[i].geom.dispose();
 				this._chunks.splice(i,1);
 				break;
 			}
@@ -102,11 +104,11 @@ define(
 
 		while (true)
 		{
-			finished = this._marchingCube.marchCube_step( 600, pos, marchCube_cb )
+			finished = this._marchingCube.marchCube_step( 90, pos, marchCube_cb )
 			if (finished)
 				break;
 
-			if ((last_time - (new Date()).getTime()) > 16)
+			if ((last_time - (new Date()).getTime()) > 8)
 				break;
 		}
 
@@ -141,9 +143,12 @@ define(
 
 		//TODO : handle the processing chunk
 
-		if (!this.is_processing_chunk)
+		if (this.is_processing_chunk)
+			return this._partially_generate(this.processing_pos);
+
 		{
-			if (!(this._chunk_queue.length > 0))
+			// nothing to process
+			if (this._chunk_queue.length == 0)
 				return;
 
 			var pos = null;
@@ -246,8 +251,6 @@ define(
 
 			return;
 		}
-
-		this._partially_generate(this.processing_pos);
 	}
 
 
