@@ -224,8 +224,12 @@ define(
         my_chunkGenerator._chunk_queue.length = 0;
         my_chunkGenerator = null;
 
+        var tmp_octave = document.getElementById("range_octaves").value;
+        var tmp_frequency = document.getElementById("range_frequency").value / 100;
+
+
         // my_chunkGenerator = new chunkGenerator( chunk_size, shader4, 5,0.5,1 );
-        my_chunkGenerator = new chunkGenerator( chunk_size, shader4 );
+        my_chunkGenerator = new chunkGenerator( chunk_size, shader4, tmp_octave, tmp_frequency );
 
 
         var curr_index_x = Math.floor(g_FreeFlyCamera._Position[0] / chunk_size);
