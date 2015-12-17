@@ -28,7 +28,7 @@ define(
 
 	//
 
-	var chunkRenderer = function(chunk_size, shader, octaves, freq, amp) {
+	var chunkRenderer = function(chunk_size, shader, octaves, freq, amp, tetra) {
 
 		this._shader = shader;
 		this._chunks = [];
@@ -39,10 +39,10 @@ define(
 
 		var myNoise2 = new ClassicalNoise(myRand, octaves, freq, amp);
 
-		this._marchingCube = new MarchinCube(chunk_size, -0.1, function(x, y, z) {
+		this._marchingCube = new MarchinCube(chunk_size, 0.0, function(x, y, z) {
 
 			return myNoise2.noise_ex(x, y, z);
-		});
+		}, tetra);
 	}
 
 	//
@@ -105,6 +105,7 @@ define(
 		while (true)
 		{
 			finished = this._marchingCube.marchCube_step( 90, pos, marchCube_cb )
+
 			if (finished)
 				break;
 

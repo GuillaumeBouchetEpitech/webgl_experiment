@@ -172,7 +172,7 @@ define(
 
 
     // var aspectRatio = gl.viewportWidth / gl.viewportHeight;
-    var aspectRatio = 600 / gl.viewportHeight;
+    var aspectRatio = gl.viewportWidth * 0.75 / gl.viewportHeight;
 
     var vertices = createFrustumVertices(70, aspectRatio, 0.1, 40);
     var frustum_geom = new createGeometryColor(vertices, gl.LINES);
@@ -214,9 +214,6 @@ define(
 
 
 
-
-
-
     var gui_reset = document.getElementById("gui_reset");
     gui_reset.addEventListener('click', function () {
 
@@ -226,10 +223,18 @@ define(
 
         var tmp_octave = document.getElementById("range_octaves").value;
         var tmp_frequency = document.getElementById("range_frequency").value / 100;
+        var tmp_amplitude = 0.5;
+
+        var tmp_tetra = document.getElementById("check_tetra").checked || false;
+
 
 
         // my_chunkGenerator = new chunkGenerator( chunk_size, shader4, 5,0.5,1 );
-        my_chunkGenerator = new chunkGenerator( chunk_size, shader4, tmp_octave, tmp_frequency );
+        my_chunkGenerator = new chunkGenerator(
+            chunk_size, shader4,
+            tmp_octave, tmp_frequency, tmp_amplitude,
+            tmp_tetra
+        );
 
 
         var curr_index_x = Math.floor(g_FreeFlyCamera._Position[0] / chunk_size);
@@ -403,7 +408,7 @@ define(
         ////// render 3d scene
 
         // gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-        gl.viewport(0, 0, 600, gl.viewportHeight);
+        gl.viewport(0, 0, gl.viewportWidth*0.75, gl.viewportHeight);
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -473,9 +478,13 @@ define(
 
         // rendered 3 times with a different viewport and point of view
 
-        render_hud( [600,  0,200,200], [1.0, 1.2, 1.0], [0,0,1] );
-        render_hud( [600,200,200,200], [0.0, 1.0, 0.0], [0,0,1] );
-        render_hud( [600,400,200,200], [0.0, 0.0, 1.0], [0,1,0] );
+        var w = gl.viewportWidth*0.25;
+        var w2 = gl.viewportWidth*0.75;
+        var h = gl.viewportHeight*0.33;
+
+        render_hud( [w2,h*0,w,h], [1.0, 1.2, 1.0], [0,0,1] );
+        render_hud( [w2,h*1,w,h], [0.0, 1.0, 0.0], [0,0,1] );
+        render_hud( [w2,h*2,w,h], [0.0, 0.0, 1.0], [0,1,0] );
 
         //
 

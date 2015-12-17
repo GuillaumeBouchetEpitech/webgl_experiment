@@ -1,9 +1,11 @@
 
-var MarchinCube = function(in_chunk_size, in_fTv, in_sample_cb) {
+var MarchinCube = function(in_chunk_size, in_fTv, in_sample_cb, tetra) {
 
 	this.chunk_size = in_chunk_size
 	this.fTv = in_fTv;
 	this.sample = in_sample_cb;
+
+	this.tetra = tetra || false;
 
 
 	this.current_index = 0;
@@ -11,25 +13,63 @@ var MarchinCube = function(in_chunk_size, in_fTv, in_sample_cb) {
 
 	this.step_size = 1.0 / this.chunk_size;
 
-	//a2fVertexOffset lists the positions, relative to vertex0, of each of the 8 vertices of a cube
+
+
 	this.a2fVertexOffset = [
 		[0,0,0],[1,0,0],[1,1,0],[0,1,0],
 		[0,0,1],[1,0,1],[1,1,1],[0,1,1]
 	];
 
-	//a2iEdgeConnection lists the index of the endpoint vertices for each of the 12 edges of the cube
 	this.a2iEdgeConnection = [
 		[0,1], [1,2], [2,3], [3,0],
 		[4,5], [5,6], [6,7], [7,4],
 		[0,4], [1,5], [2,6], [3,7]
 	];
 
-	//a2fEdgeDirection lists the direction vector (vertex1-vertex0) for each edge in the cube
 	this.a2fEdgeDirection = [
-		[ 1,0,0],[0,1,0],[-1,0,0],[0,-1,0],
-		[ 1,0,0],[0,1,0],[-1,0,0],[0,-1,0],
+		[1,0,0],[0,1,0],[-1,0,0],[0,-1,0],
+		[1,0,0],[0,1,0],[-1,0,0],[0,-1,0],
 		[0,0,1],[0,0,1],[ 0,0,1],[0, 0,1]
 	];
+
+	this.a2iTetrahedronEdgeConnection = [
+		[0,1], [1,2], [2,0], [0,3], [1,3], [2,3]
+	];
+
+	this.a2iTetrahedronsInACube = [
+		[0,5,1,6], [0,1,2,6], [0,2,3,6],
+		[0,3,7,6], [0,7,4,6], [0,4,5,6]
+	];
+
+	this.aiTetrahedronEdgeFlags = [
+        0x00, 0x0d, 0x13, 0x1e, 0x26, 0x2b, 0x35, 0x38,
+        0x38, 0x35, 0x2b, 0x26, 0x1e, 0x13, 0x0d, 0x00
+	];
+
+	this.a2iTetrahedronTriangles = [
+        [-1, -1, -1, -1, -1, -1, -1],
+        [ 0,  3,  2, -1, -1, -1, -1],
+        [ 0,  1,  4, -1, -1, -1, -1],
+        [ 1,  4,  2,  2,  4,  3, -1],
+
+        [ 1,  2,  5, -1, -1, -1, -1],
+        [ 0,  3,  5,  0,  5,  1, -1],
+        [ 0,  2,  5,  0,  5,  4, -1],
+        [ 5,  4,  3, -1, -1, -1, -1],
+
+        [ 3,  4,  5, -1, -1, -1, -1],
+        [ 4,  5,  0,  5,  2,  0, -1],
+        [ 1,  5,  0,  5,  3,  0, -1],
+        [ 5,  2,  1, -1, -1, -1, -1],
+
+        [ 3,  4,  2,  2,  4,  1, -1],
+        [ 4,  1,  0, -1, -1, -1, -1],
+        [ 2,  3,  0, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1]
+	];
+
+
+
 
 	this.aiCubeEdgeFlags = [
 		0x000, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
@@ -420,7 +460,10 @@ MarchinCube.prototype.marchCube_step = function( step, pos, geom_callback ) {
 		if (tmp_index >= this.current_index &&
 			tmp_index < this.current_index + step)
 		{
-			this.marchCube_single( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
+			if (!this.tetra)
+				this.marchCube_single( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
+			else
+				this.vMarchCube2( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
 		}
 	}
 
@@ -582,3 +625,154 @@ MarchinCube.prototype.marchCube_single = function( iX, iY, iZ ) {
 	} // for (iTriangle = [...]
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MarchinCube.prototype.vMarchCube2 = function(iX, iY, iZ) {
+
+	/// add chunk pos here
+	var fX = iX * this.step_size,
+		fY = iY * this.step_size,
+		fZ = iZ * this.step_size;
+
+	var asCubePosition = [
+		[0,0,0],[0,0,0],[0,0,0],[0,0,0],
+		[0,0,0],[0,0,0],[0,0,0],[0,0,0]
+	];
+
+	// Make a local copy of the cube's corner positions
+	for (var iVertex = 0; iVertex < 8; iVertex++)
+	{
+		asCubePosition[iVertex][0] = fX + this.a2fVertexOffset[iVertex][0]*this.step_size;
+		asCubePosition[iVertex][1] = fY + this.a2fVertexOffset[iVertex][1]*this.step_size;
+		asCubePosition[iVertex][2] = fZ + this.a2fVertexOffset[iVertex][2]*this.step_size;
+	}
+
+	var  afCubeValue = [0,0,0,0,0,0,0,0];
+
+	// Make a local copy of the cube's corner values
+	for (var iVertex = 0; iVertex < 8; iVertex++)
+		afCubeValue[iVertex] = this.sample( asCubePosition[iVertex][0],
+											asCubePosition[iVertex][1],
+											asCubePosition[iVertex][2]);
+
+	var asTetrahedronPosition =  [ [0,0,0],[0,0,0],[0,0,0],[0,0,0] ];
+	var afTetrahedronValue = [0,0,0,0];
+
+	for (var iTetrahedron = 0; iTetrahedron < 6; iTetrahedron++)
+	{
+		for(var iVertex = 0; iVertex < 4; iVertex++)
+		{
+			var iVertexInACube = this.a2iTetrahedronsInACube[iTetrahedron][iVertex];
+
+			asTetrahedronPosition[iVertex][0] = asCubePosition[iVertexInACube][0];
+			asTetrahedronPosition[iVertex][1] = asCubePosition[iVertexInACube][1];
+			asTetrahedronPosition[iVertex][2] = asCubePosition[iVertexInACube][2];
+
+			afTetrahedronValue[iVertex] = afCubeValue[iVertexInACube];
+		}
+
+		this.vMarchTetrahedron( asTetrahedronPosition, afTetrahedronValue );
+	}
+}
+
+MarchinCube.prototype.vMarchTetrahedron = function(pasTetrahedronPosition, pafTetrahedronValue) {
+
+	var iEdge, iVert0, iVert1, iEdgeFlags, iTriangle, iCorner, iVertex, iFlagIndex = 0;
+	var fOffset, fInvOffset, fValue = 0.0;
+	var asEdgeVertex = [ [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0] ];
+	var asEdgeNorm = [ [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0] ];
+	var sColor = [0,0,0];
+
+	//Find which vertices are inside of the surface and which are outside
+	for (iVertex = 0; iVertex < 4; iVertex++)
+	{
+		if(pafTetrahedronValue[iVertex] <= this.fTv) 
+			iFlagIndex |= 1<<iVertex;
+	}
+
+	//Find which edges are intersected by the surface
+	iEdgeFlags = this.aiTetrahedronEdgeFlags[iFlagIndex];
+
+	//If the tetrahedron is entirely inside or outside of the surface, then there will be no intersections
+	if (iEdgeFlags == 0)
+		return;
+
+	for (iEdge = 0; iEdge < 6; iEdge++)
+	{
+		if (iEdgeFlags & (1<<iEdge))
+		{
+			iVert0 = this.a2iTetrahedronEdgeConnection[iEdge][0];
+			iVert1 = this.a2iTetrahedronEdgeConnection[iEdge][1];
+			fOffset = fgetOffset(
+				pafTetrahedronValue[iVert0],
+				pafTetrahedronValue[iVert1],
+				this.fTv
+			);
+			fInvOffset = 1.0 - fOffset;
+
+			asEdgeVertex[iEdge][0] = fInvOffset*pasTetrahedronPosition[iVert0][0]  +  fOffset*pasTetrahedronPosition[iVert1][0];
+			asEdgeVertex[iEdge][1] = fInvOffset*pasTetrahedronPosition[iVert0][1]  +  fOffset*pasTetrahedronPosition[iVert1][1];
+			asEdgeVertex[iEdge][2] = fInvOffset*pasTetrahedronPosition[iVert0][2]  +  fOffset*pasTetrahedronPosition[iVert1][2];
+
+			asEdgeNorm[iEdge] = this.getNormal( asEdgeVertex[iEdge][0], asEdgeVertex[iEdge][1], asEdgeVertex[iEdge][2] );
+		}
+	}
+
+	for (iTriangle = 0; iTriangle < 2; iTriangle++)
+	{
+		if (this.a2iTetrahedronTriangles[iFlagIndex][3*iTriangle] < 0)
+			break;
+
+
+		for (iCorner = 0; iCorner < 3; iCorner++)
+		{
+			iVertex = this.a2iTetrahedronTriangles[iFlagIndex][3*iTriangle+iCorner];
+
+			var color = vgetColor( asEdgeNorm[iVertex] );
+
+			var vertex = [
+				asEdgeVertex[iVertex][0] * this.chunk_size,
+				asEdgeVertex[iVertex][1] * this.chunk_size,
+				asEdgeVertex[iVertex][2] * this.chunk_size
+				// asEdgeVertex[iVertex][0],
+				// asEdgeVertex[iVertex][1],
+				// asEdgeVertex[iVertex][2]
+			];
+
+			var normal = asEdgeNorm[iVertex];
+
+			if (this.current_geom_callback)
+				this.current_geom_callback( vertex, color, normal );
+
+		}
+	}
+}
+
+
+
