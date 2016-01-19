@@ -3,7 +3,7 @@ define([
         'webgl/WebGLUtils'
     ], function(
         WebGLUtils
-        ) {
+    ) {
 
 	var canvas = document.getElementById("main-canvas");
 
