@@ -55,7 +55,7 @@
 			varying vec3 vertPos;
 
 
-			const vec3 lightPos = vec3(1.0,1.0,1.0);
+			const vec3 lightPos = vec3(0.0,0.0,0.0);
 			const vec3 specColor = vec3(1.0, 1.0, 1.0);
 
 			void main(void) {
@@ -72,7 +72,8 @@
 					vec3 viewDir = normalize(-vertPos);
 
 					float specAngle = max(dot(reflectDir, viewDir), 0.0);
-					specular = pow(specAngle, 4.0);
+					if (specAngle > 0)
+						specular = pow(specAngle, 4.0);
 				}
 
 				gl_FragColor = vec4( vColor.xyz * 0.2 + lambertian * vColor.xyz + specular * specColor, 1.0);
@@ -89,9 +90,6 @@
 			varying vec4 vColor;
 
 			varying vec3 normalInterp, vertPos;
-
-			const float k_range = 10.0;
-			const float k_range_width = 3.0;
 
 			void main(void) {
 
@@ -198,7 +196,7 @@
 				//
 				//
 
-				// lines only on the backface
+				// lines only for the backface
 				if (!gl_FrontFacing)
 					discard;
 
