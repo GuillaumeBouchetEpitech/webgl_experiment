@@ -79,7 +79,7 @@ define([
 
 
 
-		var speed = 8;
+		var speed = 16;
 
 		if      (this._movementFlag & 1<<0)
 		{
