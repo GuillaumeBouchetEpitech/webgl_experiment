@@ -4,7 +4,7 @@ define(function() {
     function createCubeVertices(size, arr_color, no_inside) {
 
         var outer_side = size / 2;
-        var inner_side = size / 2.5;
+        var inner_side = size / 2.1;
 
         var vertices = [
              outer_side,  outer_side,  outer_side, // 0
@@ -57,7 +57,7 @@ define(function() {
                 fvertices.push( vertices[curr_index + j] + outer_side );
 
             for (var j = 0; j < 3; ++j)
-                fvertices.push( arr_color[j] );            
+                fvertices.push( arr_color[j] );
         }
 
         return fvertices;
