@@ -14,9 +14,6 @@ define(
         , 'webgl/myShaders'
 
         , './geometries/geometryColor.js'
-        , './geometries/geometryLight.js'
-        , './geometries/geometryBCenter.js'
-        , './geometries/geometryExperimental.js'
         , './geometries/createCubeVertices.js'
         , './geometries/createFrustumVertices.js'
 
@@ -32,9 +29,6 @@ define(
         , myShaders
 
         , createGeometryColor
-        , createGeometryLight
-        , createGeometryBCenter
-        , createGeometryExperimental
         , createCubeVertices
         , createFrustumVertices
 
@@ -61,27 +55,7 @@ define(
     }
     g_shaderProgram_color = new createShaders( gl, shader_opt );
 
-    // //
-
-    // var shader_opt = {
-    //     vs_id: "shader-vs-light",
-    //     fs_id: "shader-fs-light",
-    //     arr_attrib: ['aVertexPosition','aVertexColor','aVertexNormal'],
-    //     arr_uniform: ['uMVMatrix','uPMatrix']
-    // }
-    // g_shaderProgram_light = new createShaders( gl, shader_opt );
-
-    // //
-
-    // var shader_opt = {
-    //     vs_id: "shader-vs-bcenter",
-    //     fs_id: "shader-fs-bcenter",
-    //     arr_attrib: ['aVertexPosition','aVertexColor','aVertexBCenter'],
-    //     arr_uniform: ['uMVMatrix','uPMatrix']
-    // }
-    // g_shaderProgram_bcenter = new createShaders( gl, shader_opt );
-
-    // //
+    //
 
     var shader_opt = {
         vs_id: "shader-vs-experimental",
@@ -93,10 +67,8 @@ define(
 
     //
 
-    var shader = g_shaderProgram_color;
-    // var shader2 = g_shaderProgram_light;
-    // var shader3 = g_shaderProgram_bcenter;
-    var shader4 = g_shaderProgram_experimental;
+    var shader_color = g_shaderProgram_color;
+    var shader_exp = g_shaderProgram_experimental;
 
     // shader
     //
@@ -157,17 +129,17 @@ define(
 
 
 
-    var chunk_size = 15;
+    var k_chunk_size = 15;
 
 
-    var vertices = createCubeVertices(chunk_size,[1,0,0], true);
+    var vertices = createCubeVertices(k_chunk_size,[1,0,0], true);
     var cubeR_geom = new createGeometryColor(vertices, gl.LINES);
 
-    // var vertices = createCubeVertices(chunk_size,[0.5,0.5,0.5]);
-    var vertices = createCubeVertices(chunk_size,[1,1,1]);
+    // var vertices = createCubeVertices(k_chunk_size,[0.5,0.5,0.5]);
+    var vertices = createCubeVertices(k_chunk_size,[1,1,1]);
     var cubeW_geom = new createGeometryColor(vertices, gl.LINES);
 
-    var vertices = createCubeVertices(chunk_size,[0,1,0], true);
+    var vertices = createCubeVertices(k_chunk_size,[0,1,0], true);
     var cubeG_geom = new createGeometryColor(vertices, gl.LINES);
 
 
@@ -179,7 +151,7 @@ define(
 
 
 
-    var my_chunkGenerator = new chunkGenerator( chunk_size, shader4 );
+    var my_chunkGenerator = new chunkGenerator( k_chunk_size, shader_exp );
 
 
 
@@ -202,10 +174,10 @@ define(
     function chunk_is_visible(pos) {
 
         return g_FrustumCulling.cubeInFrustum(
-            pos[0] + chunk_size/2,
-            pos[1] + chunk_size/2,
-            pos[2] + chunk_size/2,
-            chunk_size/2
+            pos[0] + k_chunk_size/2,
+            pos[1] + k_chunk_size/2,
+            pos[2] + k_chunk_size/2,
+            k_chunk_size/2
         );
     }
 
@@ -217,9 +189,15 @@ define(
     var gui_reset = document.getElementById("gui_reset");
     gui_reset.addEventListener('click', function () {
 
+        //
+        // reset all the chunks in use and queued
+
         my_chunkGenerator._chunks.length = 0;
         my_chunkGenerator._chunk_queue.length = 0;
         my_chunkGenerator = null;
+
+        //
+        // retrieve the values
 
         var tmp_octave = document.getElementById("range_octaves").value;
         var tmp_frequency = document.getElementById("range_frequency").value / 100;
@@ -227,17 +205,19 @@ define(
 
         var tmp_tetra = document.getElementById("check_tetra").checked || false;
 
+        //
+        // set the new values
 
-
-        // my_chunkGenerator = new chunkGenerator( chunk_size, shader4, 5,0.5,1 );
         my_chunkGenerator = new chunkGenerator(
-            chunk_size, shader4,
+            k_chunk_size, shader_exp,
             tmp_octave, tmp_frequency, tmp_amplitude,
             tmp_tetra
         );
 
+        //
+        // this part is like saying "the user have moved, generate your stuff now"
 
-        var curr_index_x = Math.floor(g_FreeFlyCamera._Position[0] / chunk_size);
+        var curr_index_x = Math.floor(g_FreeFlyCamera._Position[0] / k_chunk_size);
         saved_index = [curr_index_x +1,0,0]
     })
 
@@ -279,9 +259,9 @@ define(
 
 
         var curr_index = [
-            Math.floor(g_FreeFlyCamera._Position[0] / chunk_size)|0,
-            Math.floor(g_FreeFlyCamera._Position[1] / chunk_size)|0,
-            Math.floor(g_FreeFlyCamera._Position[2] / chunk_size)|0
+            Math.floor(g_FreeFlyCamera._Position[0] / k_chunk_size)|0,
+            Math.floor(g_FreeFlyCamera._Position[1] / k_chunk_size)|0,
+            Math.floor(g_FreeFlyCamera._Position[2] / k_chunk_size)|0
         ];
 
         if (curr_index[0] != saved_index[0] ||
@@ -312,9 +292,9 @@ define(
             for (var i = 0; i < my_chunkGenerator._chunks.length; ++i)
             {
                 var curr_pos = [
-                    (my_chunkGenerator._chunks[i].pos[0]/chunk_size)|0,
-                    (my_chunkGenerator._chunks[i].pos[1]/chunk_size)|0,
-                    (my_chunkGenerator._chunks[i].pos[2]/chunk_size)|0
+                    (my_chunkGenerator._chunks[i].pos[0]/k_chunk_size)|0,
+                    (my_chunkGenerator._chunks[i].pos[1]/k_chunk_size)|0,
+                    (my_chunkGenerator._chunks[i].pos[2]/k_chunk_size)|0
                 ]
 
                 if (curr_pos[0] < min_index[0] || curr_pos[0] > max_index[0] ||
@@ -334,9 +314,9 @@ define(
             for (var x = min_index[0]; x <= max_index[0]; ++x)
             {
                 my_chunkGenerator._chunk_queue.push([
-                    x * chunk_size,
-                    y * chunk_size,
-                    z * chunk_size
+                    x * k_chunk_size,
+                    y * k_chunk_size,
+                    z * k_chunk_size
                 ]);
             }
 
@@ -382,9 +362,9 @@ define(
             var f = g_FreeFlyCamera._Forward;
 
             var camera_pos = [
-                p[0] + f[0] * chunk_size / 4,
-                p[1] + f[1] * chunk_size / 4,
-                p[2] + f[2] * chunk_size / 4
+                p[0] + f[0] * k_chunk_size / 4,
+                p[1] + f[1] * k_chunk_size / 4,
+                p[2] + f[2] * k_chunk_size / 4
             ];
 
             my_chunkGenerator.update(camera_pos, function (try_pos, best_pos) {
@@ -420,12 +400,12 @@ define(
 
         /// render cubes
 
-        gl.useProgram(shader);
+        gl.useProgram(shader_color);
 
-            gl.uniformMatrix4fv(shader.uPMatrix, false, tmp_pMatrix);
-            gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix);
+            gl.uniformMatrix4fv(shader_color.uPMatrix, false, tmp_pMatrix);
+            gl.uniformMatrix4fv(shader_color.uMVMatrix, false, tmp_mvMatrix);
 
-            axis_geom.render(shader);
+            axis_geom.render(shader_color);
 
             var tmp_mvMatrix2 = glm.mat4.create();
 
@@ -435,16 +415,16 @@ define(
 
                 glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, pos);
 
-                gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix2);
+                gl.uniformMatrix4fv(shader_color.uMVMatrix, false, tmp_mvMatrix2);
 
                 ///
 
                 var visible = chunk_is_visible(pos);
 
                 if (visible)
-                    cubeW_geom.render(shader);
+                    cubeW_geom.render(shader_color);
                 else
-                    cubeR_geom.render(shader);
+                    cubeR_geom.render(shader_color);
             }
 
             if (my_chunkGenerator.is_processing_chunk)
@@ -453,8 +433,8 @@ define(
 
                 glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, pos);
 
-                gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix2);
-                cubeG_geom.render(shader);
+                gl.uniformMatrix4fv(shader_color.uMVMatrix, false, tmp_mvMatrix2);
+                cubeG_geom.render(shader_color);
             }
 
         gl.useProgram(null);
@@ -474,7 +454,7 @@ define(
         //
         // HUD
 
-        gl.useProgram(shader);
+        gl.useProgram(shader_color);
 
         // rendered 3 times with a different viewport and point of view
 
@@ -496,7 +476,7 @@ define(
 
                 var tmp_pMatrix = glm.mat4.create();
                 var aspectRatio2 = 1;
-                var ortho_size = 70
+                var ortho_size = 65;
                 glm.mat4.ortho(tmp_pMatrix,
                     -ortho_size*aspectRatio2,ortho_size*aspectRatio2,
                     -ortho_size,ortho_size,
@@ -515,10 +495,10 @@ define(
                 );
 
 
-                gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix);
-                gl.uniformMatrix4fv(shader.uPMatrix, false, tmp_pMatrix);
+                gl.uniformMatrix4fv(shader_color.uMVMatrix, false, tmp_mvMatrix);
+                gl.uniformMatrix4fv(shader_color.uPMatrix, false, tmp_pMatrix);
 
-            axis_geom.render(shader)
+            axis_geom.render(shader_color)
 
                 var tmp_mvMatrix2 = glm.mat4.create();
 
@@ -540,22 +520,22 @@ define(
 
                         glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, pos);
 
-                        gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix2);
-                        cubeW_geom.render(shader);
+                        gl.uniformMatrix4fv(shader_color.uMVMatrix, false, tmp_mvMatrix2);
+                        cubeW_geom.render(shader_color);
                     }
                     else
                     {
                         // render red cube (smaller -> scalled)
 
                         glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, [
-                            pos[0] + chunk_size*0.15,
-                            pos[1] + chunk_size*0.15,
-                            pos[2] + chunk_size*0.15
+                            pos[0] + k_chunk_size*0.15,
+                            pos[1] + k_chunk_size*0.15,
+                            pos[2] + k_chunk_size*0.15
                         ]);
                         glm.mat4.scale(tmp_mvMatrix2,tmp_mvMatrix2, [0.7,0.7,0.7]);
 
-                        gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix2);
-                        cubeR_geom.render(shader);
+                        gl.uniformMatrix4fv(shader_color.uMVMatrix, false, tmp_mvMatrix2);
+                        cubeR_geom.render(shader_color);
                     }
                 }
 
@@ -564,14 +544,14 @@ define(
                     var pos = my_chunkGenerator.processing_pos
 
                     glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, [
-                        pos[0] + chunk_size*0.2,
-                        pos[1] + chunk_size*0.2,
-                        pos[2] + chunk_size*0.2
+                        pos[0] + k_chunk_size*0.2,
+                        pos[1] + k_chunk_size*0.2,
+                        pos[2] + k_chunk_size*0.2
                     ]);
                     glm.mat4.scale(tmp_mvMatrix2,tmp_mvMatrix2, [0.6,0.6,0.6]);
 
-                    gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix2);
-                    cubeG_geom.render(shader);
+                    gl.uniformMatrix4fv(shader_color.uMVMatrix, false, tmp_mvMatrix2);
+                    cubeG_geom.render(shader_color);
                 }
 
 
@@ -580,10 +560,10 @@ define(
                     glm.mat4.rotate(tmp_mvMatrix,tmp_mvMatrix, g_FreeFlyCamera._theta*3.14/180, [0,0,1]);
                     glm.mat4.rotate(tmp_mvMatrix,tmp_mvMatrix, g_FreeFlyCamera._phi*3.14/180, [0,-1,0]);
 
-                    gl.uniformMatrix4fv(shader.uMVMatrix, false, tmp_mvMatrix);
+                    gl.uniformMatrix4fv(shader_color.uMVMatrix, false, tmp_mvMatrix);
 
-                cross_geom.render(shader);
-                frustum_geom.render(shader);            
+                cross_geom.render(shader_color);
+                frustum_geom.render(shader_color);
 
         }
 
