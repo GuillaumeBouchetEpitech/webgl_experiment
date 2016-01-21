@@ -258,12 +258,16 @@ define(
 
 	//
 
-	chunkRenderer.prototype.render = function(tmp_mvMatrix, tmp_pMatrix, validation_callback) {
+	chunkRenderer.prototype.render = function(tmp_mvMatrix, tmp_pMatrix, tmp_freefly_pos, validation_callback) {
 
         gl.useProgram(this._shader);
 
         gl.uniformMatrix4fv(this._shader.uMVMatrix, false, tmp_mvMatrix);
         gl.uniformMatrix4fv(this._shader.uPMatrix, false, tmp_pMatrix);
+
+        var p = tmp_freefly_pos;
+        gl.uniform3f(this._shader.uCameraPos, p[0],p[1],p[2]);
+
 
 		if (validation_callback)
 		{

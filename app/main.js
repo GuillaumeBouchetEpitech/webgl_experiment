@@ -61,7 +61,7 @@ define(
         vs_id: "shader-vs-experimental",
         fs_id: "shader-fs-experimental",
         arr_attrib: ['aVertexPosition','aVertexColor','aVertexNormal','aVertexBCenter'],
-        arr_uniform: ['uMVMatrix','uPMatrix']
+        arr_uniform: ['uMVMatrix','uPMatrix','uCameraPos']
     }
     g_shaderProgram_experimental = new createShaders( gl, shader_opt );
 
@@ -395,8 +395,10 @@ define(
 
         /// render chunks
 
+            var p = g_FreeFlyCamera._Position;
+
             // this part is already setting up a shader
-            my_chunkGenerator.render(tmp_mvMatrix, tmp_pMatrix, chunk_is_visible);
+            my_chunkGenerator.render(tmp_mvMatrix, tmp_pMatrix, p, chunk_is_visible);
 
         /// render cubes
 
@@ -429,7 +431,7 @@ define(
 
             if (my_chunkGenerator.is_processing_chunk)
             {
-                var pos = my_chunkGenerator.processing_pos
+                var pos = my_chunkGenerator.processing_pos;
 
                 glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, pos);
 
