@@ -104,12 +104,12 @@ define(
 
 		while (true)
 		{
-			finished = this._marchingCube.marchCube_step( 90, pos, marchCube_cb )
+			finished = this._marchingCube.marchCube_step( 60, pos, marchCube_cb )
 
 			if (finished)
 				break;
 
-			if ((last_time - (new Date()).getTime()) > 8)
+			if ((last_time - (new Date()).getTime()) > 4)
 				break;
 		}
 
