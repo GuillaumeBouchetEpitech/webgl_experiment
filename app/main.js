@@ -13,6 +13,8 @@ define(
         , 'webgl/gl-matrix-2.1.0'
         , 'webgl/myShaders'
 
+        , 'fpsmeter' // in /lib
+
         , './geometries/geometryColor.js'
         , './geometries/createCubeVertices.js'
         , './geometries/createFrustumVertices.js'
@@ -28,6 +30,8 @@ define(
         , glm
         , myShaders
 
+        , unused_fpsmeter // <- use window.FPSMeter
+
         , createGeometryColor
         , createCubeVertices
         , createFrustumVertices
@@ -36,7 +40,7 @@ define(
         , createFrustumCulling
 
         , chunkGenerator
-        )
+    )
 {
 
 
@@ -224,8 +228,7 @@ define(
 
 
 
-
-
+    var myFpsmeter = new window.FPSMeter(null, window.FPSMeter.theme.transparent);
 
     tick();
 
@@ -250,6 +253,7 @@ define(
 
 
 
+        myFpsmeter.tickStart();
 
 
             //  check if move to ask chunks
@@ -577,16 +581,7 @@ define(
         //
 
 
-
-
-
-
-
-
-
-
-
-        gl.useProgram(null);
+        myFpsmeter.tick();
     }
 
 });
