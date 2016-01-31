@@ -65,7 +65,7 @@ define(
         vs_id: "shader-vs-experimental",
         fs_id: "shader-fs-experimental",
         arr_attrib: ['aVertexPosition','aVertexColor','aVertexNormal','aVertexBCenter'],
-        arr_uniform: ['uMVMatrix','uPMatrix','uCameraPos']
+        arr_uniform: ['uMVMatrix','uPMatrix','uCameraPos','uSampler']
     }
     g_shaderProgram_experimental = new createShaders( gl, shader_opt );
 
@@ -80,8 +80,6 @@ define(
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
-
-
 
 
 
@@ -230,7 +228,37 @@ define(
 
     var myFpsmeter = new window.FPSMeter(null, window.FPSMeter.theme.transparent);
 
-    tick();
+
+    //
+    //
+    // EXPERIMENTAL
+
+    var crateImage = new Image();
+    var crateTexture = gl.createTexture();
+    crateImage.onload = function () {
+
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+
+        gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, crateTexture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, crateImage);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+            gl.uniform1i(g_shaderProgram_experimental.uSampler, 0);
+
+        tick();
+    }
+
+    crateImage.src = "/textures/texture.png";
+
+    // EXPERIMENTAL
+    //
+    //
+
+
+    // tick();
 
     function tick(in_event) {
 
