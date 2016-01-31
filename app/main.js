@@ -251,7 +251,7 @@ define(
         tick();
     }
 
-    crateImage.src = "/textures/texture.png";
+    crateImage.src = "textures/texture.png";
 
     // EXPERIMENTAL
     //
