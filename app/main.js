@@ -172,6 +172,13 @@ define(
     g_FreeFlyCamera = new createFreeFlyCamera();
     g_FreeFlyCamera.activate();
 
+    g_FreeFlyCamera.setPosition(
+        k_chunk_size/4*3,
+        k_chunk_size/4*3,
+        0
+    );
+
+
     g_FrustumCulling = new createFrustumCulling();
     function chunk_is_visible(pos) {
 

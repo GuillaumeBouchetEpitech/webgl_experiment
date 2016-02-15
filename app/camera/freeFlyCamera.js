@@ -145,9 +145,9 @@ define([
 	//
 
 	FreeFlyCamera.prototype.setPosition	= function (x, y, z) {
-		this._position[0] = x;
-		this._position[1] = y;
-		this._position[2] = z;
+		this._Position[0] = x;
+		this._Position[1] = y;
+		this._Position[2] = z;
 	}
 
 
