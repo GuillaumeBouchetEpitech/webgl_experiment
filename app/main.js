@@ -194,6 +194,21 @@ define(
 
 
 
+    //
+    //
+    //
+
+    if ('ontouchstart' in window) {
+        document.getElementById("touch_id").innerHTML += 'Supported';
+    } else {
+        document.getElementById("touch_id").innerHTML += 'Not Supported';
+    }
+
+    //
+    //
+    //
+
+
 
     //
     //
