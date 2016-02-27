@@ -114,8 +114,7 @@ define([
 
 				e.preventDefault();
 
-
-				if (e.touches.length > 1)
+				if (e.touches.length < 2)
 					return;
 
 				var touch0 = e.touches[0];
