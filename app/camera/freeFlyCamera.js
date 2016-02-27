@@ -106,6 +106,8 @@ define([
 
 			e.preventDefault();
 
+	        document.getElementById("touch_id").innerHTML = e.touches.length+'';
+
 			if (e.touches.length > 1)
 				return;
 
