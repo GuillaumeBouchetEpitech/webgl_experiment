@@ -88,17 +88,17 @@ define([
 
 		var canvas = document.getElementById("main-canvas");
 
-		canvas.addEventListener('mousedown', callback_touch_locked, false);
-		canvas.addEventListener('mouseup', callback_touch_unlocked, false);
+		canvas.addEventListener('touchstart', callback_touch_locked, false);
+		canvas.addEventListener('touchend', callback_touch_unlocked, false);
 
 		//
 
 		function callback_touch_locked(movementX, movementY) {
-			canvas.addEventListener('mousemove', callback_touchmove, false);
+			canvas.addEventListener('touchmove', callback_touchmove, false);
 		}
 
 		function callback_touch_unlocked(movementX, movementY) {
-			canvas.removeEventListener('mousemove', callback_touchmove, false);
+			canvas.removeEventListener('touchmove', callback_touchmove, false);
 		}
 
 		function callback_touchmove(e) {
@@ -110,8 +110,8 @@ define([
 
 			var touch = event.targetTouches[0];
 
-			self._theta	-= touch.pageX;
-			self._phi	-= touch.pageY;
+			self._theta	-= touch.pageX / 5.0;
+			self._phi	-= touch.pageY / 5.0;
 		}
 
 		///
