@@ -116,7 +116,7 @@ define([
 				// self._theta	-= touch0.pageX;
 				// self._phi	-= touch0.pageY;
 
-		        document.getElementById("touch_id").innerHTML = 'touchmove2' + Date.getTime();
+		        document.getElementById("touch_id").innerHTML = 'touchmove2' + (new Date());
 
 			}catch(e){alert(e);} });
 
