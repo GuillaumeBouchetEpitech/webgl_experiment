@@ -96,6 +96,8 @@ define([
 
 			//
 
+			document.getElementById("touch_id").innerHTML = 'test';
+
 			function callback_touch_locked(e) {
 				document.getElementById("touch_id").innerHTML = 'touchstart';
 				// canvas.addEventListener('touchmove', callback_touchmove, false);
