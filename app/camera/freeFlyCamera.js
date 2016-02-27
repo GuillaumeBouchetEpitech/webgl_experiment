@@ -126,8 +126,8 @@ define([
 				var touch0 = e.touches[0];
 				var touch1 = e.touches[1];
 
-				self._theta	-= touch0.pageX - touch1.pageX;
-				self._phi	-= touch0.pageY - touch1.pageY;
+				self._theta	-= (touch0.pageX - touch1.pageX) / 100;
+				self._phi	-= (touch0.pageY - touch1.pageY) / 100;
 				// self._theta	-= touch0.pageX;
 				// self._phi	-= touch0.pageY;
 
