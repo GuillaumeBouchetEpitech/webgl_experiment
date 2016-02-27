@@ -105,6 +105,8 @@ define([
 
 		function callback_touchmove(e) {
 
+			e.preventDefault();
+
 			if (event.targetTouches.length == 0)
 				return;
 
