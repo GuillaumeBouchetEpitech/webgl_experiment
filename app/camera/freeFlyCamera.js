@@ -86,39 +86,45 @@ define([
 		/// TOUCH
 		///
 
-		var canvas = document.getElementById("main-canvas");
+		try {
 
-		canvas.addEventListener('touchstart', callback_touch_locked, false);
-		canvas.addEventListener('touchend', callback_touch_unlocked, false);
-		canvas.addEventListener('touchmove', callback_touchmove, false);
+			var canvas = document.getElementById("main-canvas");
 
-		//
+			canvas.addEventListener('touchstart', callback_touch_locked, false);
+			canvas.addEventListener('touchend', callback_touch_unlocked, false);
+			canvas.addEventListener('touchmove', callback_touchmove, false);
 
-		function callback_touch_locked(e) {
-			document.getElementById("touch_id").innerHTML = 'touchstart';
-			// canvas.addEventListener('touchmove', callback_touchmove, false);
-		}
+			//
 
-		function callback_touch_unlocked(e) {
-			document.getElementById("touch_id").innerHTML = 'touchend';
-			// canvas.removeEventListener('touchmove', callback_touchmove, false);
-		}
+			function callback_touch_locked(e) {
+				document.getElementById("touch_id").innerHTML = 'touchstart';
+				// canvas.addEventListener('touchmove', callback_touchmove, false);
+			}
 
-		function callback_touchmove(e) {
+			function callback_touch_unlocked(e) {
+				document.getElementById("touch_id").innerHTML = 'touchend';
+				// canvas.removeEventListener('touchmove', callback_touchmove, false);
+			}
 
-	        document.getElementById("touch_id").innerHTML = 'touchmove';
+			function callback_touchmove(e) {
 
-			// e.preventDefault();
+		        document.getElementById("touch_id").innerHTML = 'touchmove';
+
+				// e.preventDefault();
 
 
-			// if (e.touches.length > 1)
-			// 	return;
+				// if (e.touches.length > 1)
+				// 	return;
 
-			// var touch0 = e.touches[0];
-			// var touch1 = e.touches[1];
+				// var touch0 = e.touches[0];
+				// var touch1 = e.touches[1];
 
-			// self._theta	-= touch0.pageX - touch1.pageX;
-			// self._phi	-= touch0.pageY - touch1.pageY;
+				// self._theta	-= touch0.pageX - touch1.pageX;
+				// self._phi	-= touch0.pageY - touch1.pageY;
+			}
+
+		} catch (e) {
+			alert(JSON.stringify(e));
 		}
 
 		///
