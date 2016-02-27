@@ -94,21 +94,21 @@ define([
 
 			console.log('step');
 
-			canvas.addEventListener('touchstart', function(e) {
+			canvas.addEventListener('touchstart', function(e) { try{
 				document.getElementById("touch_id").innerHTML = 'touchstart';
 				// canvas.addEventListener('touchmove', callback_touchmove, false);
-			});
+			}catch(e){alert(e);} });
 
 			console.log('step');
 
-			canvas.addEventListener('touchend', function(e) {
+			canvas.addEventListener('touchend', function(e) { try{
 				document.getElementById("touch_id").innerHTML = 'touchend';
 				// canvas.removeEventListener('touchmove', callback_touchmove, false);
-			});
+			}catch(e){alert(e);} });
 
 			console.log('step');
 
-			canvas.addEventListener('touchmove', function (e) {
+			canvas.addEventListener('touchmove', function (e) { try{
 
 		        document.getElementById("touch_id").innerHTML = 'touchmove';
 
@@ -123,7 +123,7 @@ define([
 
 				// self._theta	-= touch0.pageX - touch1.pageX;
 				// self._phi	-= touch0.pageY - touch1.pageY;
-			});
+			}catch(e){alert(e);} });
 
 			console.log('step');
 
