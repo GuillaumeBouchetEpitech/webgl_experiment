@@ -195,6 +195,18 @@ define(
 
 
 
+    var gui_fullscreen = document.getElementById("gui_fullscreen");
+    gui_fullscreen.addEventListener('click', function () {
+
+        var canvas = document.getElementById("main-canvas");
+
+        if (canvas.webkitRequestFullScreen) {
+            canvas.webkitRequestFullScreen();
+        } else {
+            canvas.mozRequestFullScreen();
+        }
+    });
+
     var gui_reset = document.getElementById("gui_reset");
     gui_reset.addEventListener('click', function () {
 
