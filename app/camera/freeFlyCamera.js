@@ -2,13 +2,17 @@
 
 define([
 
-          'webgl/gl-matrix-2.1.0'
+          '../gl-context.js'
+
+        , 'webgl/gl-matrix-2.1.0'
 		, './helpers/keyboardHandler.js'
         , './helpers/pointerLock.js'
 
 	], function(
 
-          glm
+		  gl
+
+        , glm
         , createKeyboardHandler
         , handle_pointerLock
 	) {
@@ -73,65 +77,55 @@ define([
 
 		try {
 
-			console.log('step');
-
 			var canvas = document.getElementById("main-canvas");
 
-			console.log('step');
+			var previous_touch = null;
 
 			canvas.addEventListener('touchstart', function(e) { try{
-				document.getElementById("touch_id").innerHTML = 'touchstart';
-				// canvas.addEventListener('touchmove', callback_touchmove, false);
-			}catch(e){alert(e);} });
-
-			console.log('step');
-
-			canvas.addEventListener('touchend', function(e) { try{
-				document.getElementById("touch_id").innerHTML = 'touchend';
-				// canvas.removeEventListener('touchmove', callback_touchmove, false);
-			}catch(e){alert(e);} });
-
-			console.log('step');
-
-			canvas.addEventListener('touchmove', function (e) { try{
-
-		        document.getElementById("touch_id").innerHTML = 'touchmove';
 
 				e.preventDefault();
 
-				if (e.touches.length < 2)
-				// if (e.touches.length < 1)
-				{
-			        document.getElementById("touch_id").innerHTML = 'touchmove11';
-					return;
-				}
-
-		        document.getElementById("touch_id").innerHTML = 'touchmove12';
-
-				var touch0 = e.touches[0];
-				var touch1 = e.touches[e.touches.length-1];
-
-				self._theta	-= (touch0.pageX - touch1.pageX) / 100;
-				self._phi	-= (touch0.pageY - touch1.pageY) / 100;
-				// self._theta	-= touch0.pageX;
-				// self._phi	-= touch0.pageY;
-
-		        document.getElementById("touch_id").innerHTML = 'touchmove2' + (new Date());
+				previous_touch = null;
 
 			}catch(e){alert(e);} });
 
-			console.log('step');
+			canvas.addEventListener('touchend', function(e) { try{
 
-			//
+				e.preventDefault();
 
-			document.getElementById("touch_id").innerHTML = 'test';
+				previous_touch = null;
 
-			console.log('step');
+			}catch(e){alert(e);} });
 
-			
+			var self = this;
+
+			canvas.addEventListener('touchmove', function (e) { try{
+
+				e.preventDefault();
+
+				var touches = e.targetTouches;
+				if (touches.length == 0)
+					return;
+
+				if (touches.length > 1)
+					self._movementFlag |= 1<<0;
+
+				if (previous_touch)
+				{
+					var step_x = previous_touch.pageX - touches[0].pageX;
+					var step_y = previous_touch.pageY - touches[0].pageY;
+					self._theta	-= (step_x / 5.0);
+					self._phi	-= (step_y / 5.0);
+				}
+
+				previous_touch = touches[0];
+
+			}catch(e){alert(e);} });
+
+			//			
 
 		} catch (e) {
-			alert(JSON.stringify(e));
+			alert('TOUCH='+JSON.stringify(e));
 		}
 
 		///
