@@ -112,17 +112,18 @@ define([
 
 		        document.getElementById("touch_id").innerHTML = 'touchmove';
 
-				// e.preventDefault();
+				e.preventDefault();
 
 
-				// if (e.touches.length > 1)
-				// 	return;
+				if (e.touches.length > 1)
+					return;
 
-				// var touch0 = e.touches[0];
-				// var touch1 = e.touches[1];
+				var touch0 = e.touches[0];
+				var touch1 = e.touches[1];
 
-				// self._theta	-= touch0.pageX - touch1.pageX;
-				// self._phi	-= touch0.pageY - touch1.pageY;
+				self._theta	-= touch0.pageX - touch1.pageX;
+				self._phi	-= touch0.pageY - touch1.pageY;
+
 			}catch(e){alert(e);} });
 
 			console.log('step');
