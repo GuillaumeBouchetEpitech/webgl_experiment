@@ -114,8 +114,8 @@ define([
 
 				e.preventDefault();
 
-				// if (e.touches.length < 2)
-				if (e.touches.length < 1)
+				if (e.touches.length < 2)
+				// if (e.touches.length < 1)
 				{
 			        document.getElementById("touch_id").innerHTML = 'touchmove11';
 					return;
@@ -124,12 +124,12 @@ define([
 		        document.getElementById("touch_id").innerHTML = 'touchmove12';
 
 				var touch0 = e.touches[0];
-				// var touch1 = e.touches[1];
+				var touch1 = e.touches[1];
 
-				// self._theta	-= touch0.pageX - touch1.pageX;
-				// self._phi	-= touch0.pageY - touch1.pageY;
-				self._theta	-= touch0.pageX;
-				self._phi	-= touch0.pageY;
+				self._theta	-= touch0.pageX - touch1.pageX;
+				self._phi	-= touch0.pageY - touch1.pageY;
+				// self._theta	-= touch0.pageX;
+				// self._phi	-= touch0.pageY;
 
 		        document.getElementById("touch_id").innerHTML = 'touchmove2';
 
