@@ -88,27 +88,27 @@ define([
 
 		try {
 
+			console.log('step');
+
 			var canvas = document.getElementById("main-canvas");
 
-			canvas.addEventListener('touchstart', callback_touch_locked, false);
-			canvas.addEventListener('touchend', callback_touch_unlocked, false);
-			canvas.addEventListener('touchmove', callback_touchmove, false);
+			console.log('step');
 
-			//
-
-			document.getElementById("touch_id").innerHTML = 'test';
-
-			function callback_touch_locked(e) {
+			canvas.addEventListener('touchstart', function(e) {
 				document.getElementById("touch_id").innerHTML = 'touchstart';
 				// canvas.addEventListener('touchmove', callback_touchmove, false);
-			}
+			});
 
-			function callback_touch_unlocked(e) {
+			console.log('step');
+
+			canvas.addEventListener('touchend', function(e) {
 				document.getElementById("touch_id").innerHTML = 'touchend';
 				// canvas.removeEventListener('touchmove', callback_touchmove, false);
-			}
+			});
 
-			function callback_touchmove(e) {
+			console.log('step');
+
+			canvas.addEventListener('touchmove', function (e) {
 
 		        document.getElementById("touch_id").innerHTML = 'touchmove';
 
@@ -123,7 +123,17 @@ define([
 
 				// self._theta	-= touch0.pageX - touch1.pageX;
 				// self._phi	-= touch0.pageY - touch1.pageY;
-			}
+			});
+
+			console.log('step');
+
+			//
+
+			document.getElementById("touch_id").innerHTML = 'test';
+
+			console.log('step');
+
+			
 
 		} catch (e) {
 			alert(JSON.stringify(e));
