@@ -94,23 +94,23 @@ define([
 
 		//
 
-		function callback_touch_locked(e) {
-			canvas.addEventListener('touchmove', callback_touchmove, false);
-		}
+		// function callback_touch_locked(e) {
+		// 	canvas.addEventListener('touchmove', callback_touchmove, false);
+		// }
 
-		function callback_touch_unlocked(e) {
-			canvas.removeEventListener('touchmove', callback_touchmove, false);
-		}
+		// function callback_touch_unlocked(e) {
+		// 	canvas.removeEventListener('touchmove', callback_touchmove, false);
+		// }
 
 		function callback_touchmove(e) {
 
 			e.preventDefault();
 
-			if (event.targetTouches.length > 1)
+			if (e.targetTouches.length > 1)
 				return;
 
-			var touch0 = event.targetTouches[0];
-			var touch1 = event.targetTouches[1];
+			var touch0 = e.targetTouches[0];
+			var touch1 = e.targetTouches[1];
 
 			self._theta	-= touch0.pageX - touch1.pageX;
 			self._phi	-= touch0.pageY - touch1.pageY;
