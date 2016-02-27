@@ -88,16 +88,17 @@ define([
 
 		var canvas = document.getElementById("main-canvas");
 
-		canvas.addEventListener('touchstart', callback_touch_locked, false);
-		canvas.addEventListener('touchend', callback_touch_unlocked, false);
+		// canvas.addEventListener('touchstart', callback_touch_locked, false);
+		// canvas.addEventListener('touchend', callback_touch_unlocked, false);
+		canvas.addEventListener('touchmove', callback_touchmove, false);
 
 		//
 
-		function callback_touch_locked(movementX, movementY) {
+		function callback_touch_locked(e) {
 			canvas.addEventListener('touchmove', callback_touchmove, false);
 		}
 
-		function callback_touch_unlocked(movementX, movementY) {
+		function callback_touch_unlocked(e) {
 			canvas.removeEventListener('touchmove', callback_touchmove, false);
 		}
 
@@ -105,13 +106,14 @@ define([
 
 			e.preventDefault();
 
-			if (event.targetTouches.length == 0)
+			if (event.targetTouches.length > 1)
 				return;
 
-			var touch = event.targetTouches[0];
+			var touch0 = event.targetTouches[0];
+			var touch1 = event.targetTouches[1];
 
-			self._theta	-= touch.pageX / 5.0;
-			self._phi	-= touch.pageY / 5.0;
+			self._theta	-= touch0.pageX - touch1.pageX;
+			self._phi	-= touch0.pageY - touch1.pageY;
 		}
 
 		///
