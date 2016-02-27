@@ -67,21 +67,6 @@ define([
 
 
 
-		// ///
-		// /// MOUSE2
-		// ///
-
-		// var canvas = document.getElementById("main-canvas");
-
-		// canvas.addEventListener('mousedown', callback_mouse_locked, false);
-		// canvas.addEventListener('mouseup', callback_mouse_unlocked, false);
-
-		// ///
-		// /// /MOUSE2
-		// ///
-
-
-
 		///
 		/// TOUCH
 		///
@@ -124,7 +109,7 @@ define([
 		        document.getElementById("touch_id").innerHTML = 'touchmove12';
 
 				var touch0 = e.touches[0];
-				var touch1 = e.touches[1];
+				var touch1 = e.touches[e.touches.length-1];
 
 				self._theta	-= (touch0.pageX - touch1.pageX) / 100;
 				self._phi	-= (touch0.pageY - touch1.pageY) / 100;
