@@ -68,19 +68,19 @@ define([
 
 
 
-		// ///
-		// /// MOUSE2
-		// ///
+		///
+		/// MOUSE2
+		///
 
-		// var canvas = document.getElementById("main-canvas");
-		// // handle_pointerLock(canvas, callback_mouse_locked, callback_mouse_unlocked);
+		var canvas = document.getElementById("main-canvas");
+		// handle_pointerLock(canvas, callback_mouse_locked, callback_mouse_unlocked);
 
-		// canvas.addEventListener('mousedown', callback_mouse_locked, false);
-		// canvas.addEventListener('mouseup', callback_mouse_unlocked, false);
+		canvas.addEventListener('mousedown', callback_mouse_locked, false);
+		canvas.addEventListener('mouseup', callback_mouse_unlocked, false);
 
-		// ///
-		// /// /MOUSE2
-		// ///
+		///
+		/// /MOUSE2
+		///
 
 
 
