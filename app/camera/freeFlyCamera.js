@@ -117,9 +117,11 @@ define([
 				// if (e.touches.length < 2)
 				if (e.touches.length < 1)
 				{
-			        document.getElementById("touch_id").innerHTML = 'touchmove1';
+			        document.getElementById("touch_id").innerHTML = 'touchmove11';
 					return;
 				}
+
+		        document.getElementById("touch_id").innerHTML = 'touchmove12';
 
 				var touch0 = e.touches[0];
 				// var touch1 = e.touches[1];
