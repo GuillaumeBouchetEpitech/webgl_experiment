@@ -38,15 +38,16 @@ define([
 		///
 
 		var canvas = document.getElementById("main-canvas");
-		handle_pointerLock(canvas, callback_mouse_locked, callback_mouse_unlocked);
+		// TODO : temporary
+		// handle_pointerLock(canvas, callback_mouse_locked, callback_mouse_unlocked);
 
 		//
 
-		function callback_mouse_locked(movementX, movementY) {
+		function callback_mouse_locked() {
 			canvas.addEventListener('mousemove', callback_mousemove, false);
 		}
 
-		function callback_mouse_unlocked(movementX, movementY) {
+		function callback_mouse_unlocked() {
 			canvas.removeEventListener('mousemove', callback_mousemove, false);
 		}
 
@@ -63,6 +64,58 @@ define([
 
 		///
 		/// /MOUSE
+		///
+
+
+
+		// ///
+		// /// MOUSE2
+		// ///
+
+		// var canvas = document.getElementById("main-canvas");
+		// // handle_pointerLock(canvas, callback_mouse_locked, callback_mouse_unlocked);
+
+		// canvas.addEventListener('mousedown', callback_mouse_locked, false);
+		// canvas.addEventListener('mouseup', callback_mouse_unlocked, false);
+
+		// ///
+		// /// /MOUSE2
+		// ///
+
+
+
+		///
+		/// TOUCH
+		///
+
+		var canvas = document.getElementById("main-canvas");
+
+		canvas.addEventListener('mousedown', callback_touch_locked, false);
+		canvas.addEventListener('mouseup', callback_touch_unlocked, false);
+
+		//
+
+		function callback_touch_locked(movementX, movementY) {
+			canvas.addEventListener('mousemove', callback_touchmove, false);
+		}
+
+		function callback_touch_unlocked(movementX, movementY) {
+			canvas.removeEventListener('mousemove', callback_touchmove, false);
+		}
+
+		function callback_touchmove(e) {
+
+			if (event.targetTouches.length == 0)
+				return;
+
+			var touch = event.targetTouches[0];
+
+			self._theta	-= touch.pageX / 5.0;
+			self._phi	-= touch.pageY / 5.0;
+		}
+
+		///
+		/// /TOUCH
 		///
 
 	}
