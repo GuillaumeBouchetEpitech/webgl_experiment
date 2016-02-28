@@ -7,8 +7,8 @@ define(
 		, './helpers/pnoise.js'
 		, './helpers/randomiser.js'
 
-        , '../geometries/geometryBCenter.js'
-        , '../geometries/geometryLight.js'
+        // , '../geometries/geometryBCenter.js'
+        // , '../geometries/geometryLight.js'
         , '../geometries/geometryExperimental.js'
 
 	],function(
@@ -19,8 +19,8 @@ define(
 		, pnoise
 		, randomiser
 
-        , createGeometryBCenter
-        , createGeometryLight
+        // , createGeometryBCenter
+        // , createGeometryLight
         , createGeometryExperimental
 
 	)
