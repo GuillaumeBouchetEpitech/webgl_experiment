@@ -100,7 +100,7 @@ define(
 
 
 
-		var last_time = (new Date()).getTime();
+		var last_time = Date.now();
 
 		while (true)
 		{
@@ -109,7 +109,7 @@ define(
 			if (finished)
 				break;
 
-			if ((last_time - (new Date()).getTime()) > 4)
+			if ((last_time - Date.now()) > 4)
 				break;
 		}
 
