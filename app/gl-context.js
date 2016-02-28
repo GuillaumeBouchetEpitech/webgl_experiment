@@ -9,8 +9,8 @@ define([
 
     gl = WebGLUtils.setupWebGL(canvas);
 
-    gl.viewportWidth = canvas.width;
-    gl.viewportHeight = canvas.height;
+    gl.viewportWidth = canvas.clientWidth;
+    gl.viewportHeight = canvas.clientHeight;
 
     return gl;
 });
