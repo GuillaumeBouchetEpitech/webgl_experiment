@@ -41,7 +41,7 @@ define([
 		/// MOUSE
 		///
 
-		var canvas = document.getElementById("main-canvas");
+		var canvas = document.getElementById("canvasesdiv");
 		handle_pointerLock(canvas, callback_mouse_locked, callback_mouse_unlocked);
 
 		//
@@ -77,48 +77,69 @@ define([
 
 		try {
 
-			var canvas = document.getElementById("main-canvas");
+			var elem = document.getElementById("canvasesdiv");
 
 			var previous_touch = null;
+			var previous_distance = null;
 
-			canvas.addEventListener('touchstart', function(e) { try{
-
-				e.preventDefault();
-
-				previous_touch = null;
-
-			}catch(e){alert(e);} });
-
-			canvas.addEventListener('touchend', function(e) { try{
+			elem.addEventListener('touchstart', function(e) { try{
 
 				e.preventDefault();
 
 				previous_touch = null;
+				previous_distance = null;
 
 			}catch(e){alert(e);} });
 
-			var self = this;
+			elem.addEventListener('touchend', function(e) { try{
 
-			canvas.addEventListener('touchmove', function (e) { try{
+				e.preventDefault();
+
+				previous_touch = null;
+				previous_distance = null;
+
+			}catch(e){alert(e);} });
+
+			var self = this; // -> this._movementFlag
+
+			elem.addEventListener('touchmove', function (e) { try{
 
 				e.preventDefault();
 
 				var touches = e.targetTouches;
-				if (touches.length == 0)
+
+				if (touches.length == 0 || touches.length > 2)
 					return;
 
-				if (touches.length > 1)
-					self._movementFlag |= 1<<0;
-
-				if (previous_touch)
+				if (touches.length == 2)
 				{
-					var step_x = previous_touch.pageX - touches[0].pageX;
-					var step_y = previous_touch.pageY - touches[0].pageY;
-					self._theta	-= (step_x / 5.0);
-					self._phi	-= (step_y / 5.0);
-				}
+					var x1 = touches[0].pageX-touches[1].pageX;
+					var y1 = touches[0].pageY-touches[1].pageY;
 
-				previous_touch = touches[0];
+					var length = Math.sqrt(x1*x1 + y1*y1);
+
+					if (previous_distance)
+					{
+						if (length < previous_distance)
+							self._movementFlag |= 1<<0; // forward
+						else
+							self._movementFlag |= 1<<1; // backward
+					}
+
+					previous_distance = length;
+				}
+				else
+				{
+					if (previous_touch)
+					{
+						var step_x = previous_touch.pageX - touches[0].pageX;
+						var step_y = previous_touch.pageY - touches[0].pageY;
+						self._theta	-= (step_x / 5.0);
+						self._phi	-= (step_y / 5.0);
+					}
+
+					previous_touch = touches[0];
+				}
 
 			}catch(e){alert(e);} });
 

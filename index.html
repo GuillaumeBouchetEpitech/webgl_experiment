@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html>
 	<head>
+
+		<!-- disable the zoom -->
+		<meta
+			content='width=device-width, initial-scale=0.5, maximum-scale=0.5, user-scalable=0'
+			name='viewport' />
+
+
 		<script data-main="app" src="lib/require.js"></script>
-
-
 
 	<!--  -->
 
@@ -356,8 +361,28 @@
 			<tr>
 
 				<td>
-					<canvas id="main-canvas" style="border: none;" width="800" height="600">
-					</canvas>
+					<div
+						id="canvasesdiv"
+						style="position:relative;width:800px;height:600px"
+						>
+
+						<canvas
+							id="main-canvas"
+							style="border: none; position:relative; left:0px; top:0px;"
+							width="800"
+							height="600"
+							>
+						</canvas>
+
+						<canvas
+							id="second-canvas"
+							style="border: none; position:absolute; left:0px; top:0px;"
+							width="800"
+							height="600"
+							>
+						</canvas>
+
+					</div>
 				</td>
 
 

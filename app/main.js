@@ -217,28 +217,52 @@ define(
     var gui_fullscreen = document.getElementById("gui_fullscreen");
     gui_fullscreen.addEventListener('click', function () {
 
-        var canvas = document.getElementById("main-canvas");
+        var elem = document.getElementById("canvasesdiv");
 
-        if (canvas.webkitRequestFullScreen) {
-            canvas.webkitRequestFullScreen();
-        } else {
-            canvas.mozRequestFullScreen();
-        }
+        // go full-screen
+        if (elem.requestFullscreen)
+            elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen)
+            elem.webkitRequestFullscreen();
+        else if (elem.mozRequestFullScreen)
+            elem.mozRequestFullScreen();
+        else if (elem.msRequestFullscreen)
+            elem.msRequestFullscreen();
     });
 
     function on_fullscreen_change() {
+
+        var elem = document.getElementById("canvasesdiv");
+
+        var canvas = document.getElementById("main-canvas");
+        var s_canvas = document.getElementById("second-canvas");
+
         if(document.mozFullScreen || document.webkitIsFullScreen) {
-            var rect = canvas.getBoundingClientRect();
+            var rect = elem.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
+
+            s_canvas.width = rect.width;
+            s_canvas.height = rect.height;
         }
         else {
             canvas.width = 800;
             canvas.height = 600;
+
+            s_canvas.width = 800;
+            s_canvas.height = 600;
         }
+
 
         gl.viewportWidth = canvas.width;
         gl.viewportHeight = canvas.height;
+
+        //
+
+        aspectRatio = gl.viewportWidth * 0.75 / gl.viewportHeight;
+
+        var vertices = createFrustumVertices(70, aspectRatio, 0.1, 40);
+        frustum_geom = new createGeometryColor(vertices, gl.LINES);
     }
 
     document.addEventListener('mozfullscreenchange', on_fullscreen_change);
@@ -286,9 +310,42 @@ define(
     })
 
 
+    //
+    // FPS METER
+
+    var myFpsmeter_elem = document.getElementById('canvasesdiv');
+    var myFpsmeter = new window.FPSMeter(
+        myFpsmeter_elem,
+        window.FPSMeter.theme.transparent
+    );
+
+    // FPS METER
+    //
 
 
-    var myFpsmeter = new window.FPSMeter(null, window.FPSMeter.theme.transparent);
+
+
+
+    var elem = document.getElementById("canvasesdiv");
+
+    var arr_touches = [];
+
+    function update_touches(e) { try{
+
+        var touches = e.targetTouches;
+
+        arr_touches.length = 0;
+        for (var i = 0; i < touches.length; ++i)
+            arr_touches.push({ x:touches[i].pageX, y:touches[i].pageY });
+
+    }catch(e){alert(e);} }
+
+    elem.addEventListener('touchstart', update_touches);
+    elem.addEventListener('touchend', function(e) {arr_touches.length = 0;});
+    elem.addEventListener('touchmove', update_touches);
+
+
+
 
 
     //
@@ -571,7 +628,7 @@ define(
             gl.clear(gl.DEPTH_BUFFER_BIT);
 
                 var tmp_pMatrix = glm.mat4.create();
-                var aspectRatio2 = 1;
+                var aspectRatio2 = arr_viewport[2]/arr_viewport[3];
                 var ortho_size = 65;
                 glm.mat4.ortho(tmp_pMatrix,
                     -ortho_size*aspectRatio2,ortho_size*aspectRatio2,
@@ -672,6 +729,55 @@ define(
 
 
         myFpsmeter.tick();
+
+
+        // var c = document.getElementById("main-canvas");
+        var c = document.getElementById("second-canvas");
+        var ctx=c.getContext("2d");
+
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        ctx.beginPath();
+        ctx.lineWidth="5";
+        ctx.strokeStyle="green"; // Green path
+        ctx.moveTo(0,0);
+        ctx.lineTo(0,c.height);
+        ctx.lineTo(c.width,c.height);
+        ctx.lineTo(c.width,0);
+        ctx.lineTo(0,0);
+        ctx.stroke(); // Draw it
+
+        try
+        {
+
+            ctx.beginPath();
+            ctx.lineWidth="5";
+            ctx.strokeStyle="red";
+
+            document.getElementById("touch_id").innerHTML = arr_touches.length;
+
+            for (var i = 0; i < arr_touches.length; ++i)
+            {
+                var x = arr_touches[i].x;
+                var y = arr_touches[i].y;
+
+                ctx.moveTo(x,0);
+                ctx.lineTo(x,c.height);
+                ctx.stroke();
+
+                ctx.moveTo(0,y);
+                ctx.lineTo(c.width,y);
+                ctx.stroke();
+            }
+
+            ctx.stroke(); // Draw it
+
+        }
+        catch(e)
+        {
+            alert(e);
+        }
+
     }
 
 });
