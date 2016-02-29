@@ -41,10 +41,10 @@ define(
 
 		var shader = this._shader;
 
-	    gl.enableVertexAttribArray(shader.aVertexPosition);
-	    gl.enableVertexAttribArray(shader.aVertexColor);
-	    gl.enableVertexAttribArray(shader.aVertexNormal);
-	    gl.enableVertexAttribArray(shader.aVertexBCenter);
+		gl.enableVertexAttribArray(shader.aVertexPosition);
+		gl.enableVertexAttribArray(shader.aVertexColor);
+		gl.enableVertexAttribArray(shader.aVertexNormal);
+		gl.enableVertexAttribArray(shader.aVertexBCenter);
 
 			var bpp = 4; // gl.FLOAT -> 4 bytes
 			var stride = 12 * bpp;
@@ -61,10 +61,10 @@ define(
 
 			gl.drawArrays( gl.TRIANGLES, 0, this._vbuffer.numItems );
 
-	    gl.disableVertexAttribArray(shader.aVertexPosition);
-	    gl.disableVertexAttribArray(shader.aVertexColor);
-	    gl.disableVertexAttribArray(shader.aVertexNormal);
-	    gl.disableVertexAttribArray(shader.aVertexBCenter);
+		gl.disableVertexAttribArray(shader.aVertexPosition);
+		gl.disableVertexAttribArray(shader.aVertexColor);
+		gl.disableVertexAttribArray(shader.aVertexNormal);
+		gl.disableVertexAttribArray(shader.aVertexBCenter);
 	};
 
 	//
