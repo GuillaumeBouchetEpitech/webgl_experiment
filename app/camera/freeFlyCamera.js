@@ -95,8 +95,6 @@ define([
 
 				var tmp_time = Date.now();
 
-	            // document.getElementById("touch_id").innerHTML = (tmp_time - saved_time);
-
 				if (e.targetTouches.length == 1 &&
 					saved_time &&
 					(tmp_time - saved_time) < 250)
@@ -138,7 +136,7 @@ define([
 
 					if (previous_distance)
 					{
-						if (length < previous_distance)
+						if (length > previous_distance)
 							self._movementFlag |= 1<<0; // forward
 						else
 							self._movementFlag |= 1<<1; // backward
