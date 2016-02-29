@@ -398,7 +398,7 @@ function vNormalizeVector( vec ) {
 
 MarchinCube.prototype.getNormal = function( fX, fY, fZ ) {
 
-	var step_dec = this.step_size * 0.00001;
+	var step_dec = this.step_size * 0.1;
 
 	var vec = [
 		this.sample( fX - step_dec, fY, fZ ) - this.sample( fX + step_dec, fY, fZ ),
