@@ -31,6 +31,8 @@ define([
 
 	    this._keybrdHdl = new createKeyboardHandler();
 
+	    this._force_forward = false;
+
 
 	    var self = this;
 
@@ -82,12 +84,27 @@ define([
 			var previous_touch = null;
 			var previous_distance = null;
 
+			var saved_time = null;
+
 			elem.addEventListener('touchstart', function(e) { try{
 
 				e.preventDefault();
 
 				previous_touch = null;
 				previous_distance = null;
+
+				var tmp_time = Date.now();
+
+	            // document.getElementById("touch_id").innerHTML = (tmp_time - saved_time);
+
+				if (e.targetTouches.length == 1 &&
+					saved_time &&
+					(tmp_time - saved_time) < 250)
+				{
+					self._force_forward = true;
+				}
+
+				saved_time = tmp_time;
 
 			}catch(e){alert(e);} });
 
@@ -98,9 +115,10 @@ define([
 				previous_touch = null;
 				previous_distance = null;
 
-			}catch(e){alert(e);} });
+				// saved_time = null;
+				self._force_forward = false;
 
-			var self = this; // -> this._movementFlag
+			}catch(e){alert(e);} });
 
 			elem.addEventListener('touchmove', function (e) { try{
 
@@ -165,11 +183,9 @@ define([
 
 		this.handleKeys();
 
-
-
 		var speed = 16;
 
-		if      (this._movementFlag & 1<<0)
+		if      (this._movementFlag & 1<<0 || this._force_forward == true)
 		{
 	        for (var i = 0; i < 3; ++i)
 	            this._Position[i] += this._Forward[i] * elapsed_sec * speed;

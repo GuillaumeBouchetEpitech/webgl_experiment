@@ -232,30 +232,35 @@ define(
 
     function on_fullscreen_change() {
 
-        var elem = document.getElementById("canvasesdiv");
-
         var canvas = document.getElementById("main-canvas");
         var s_canvas = document.getElementById("second-canvas");
 
-        if(document.mozFullScreen || document.webkitIsFullScreen) {
-            var rect = elem.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
+        if (document.fullscreen ||
+            document.mozFullScreen ||
+            document.webkitIsFullScreen ||
+            document.msFullscreenElement)
+        {
+            console.log('fullscreen');
 
-            s_canvas.width = rect.width;
-            s_canvas.height = rect.height;
+            var elem = document.getElementById("canvasesdiv");
+
+            var rect = elem.getBoundingClientRect();
+
+            canvas.width = s_canvas.width = rect.width;
+            canvas.height = s_canvas.height = rect.height;
+
+            // canvas.width = s_canvas.width = window.innerWidth;
+            // canvas.height = s_canvas.height = window.innerHeight;
         }
         else {
-            canvas.width = 800;
-            canvas.height = 600;
-
-            s_canvas.width = 800;
-            s_canvas.height = 600;
+            console.log('windows screen');
+            gl.canvas.width = s_canvas.width = 800;
+            gl.canvas.height = s_canvas.height = 600;
         }
 
 
-        gl.viewportWidth = canvas.width;
-        gl.viewportHeight = canvas.height;
+        gl.viewportWidth = gl.canvas.clientWidth;
+        gl.viewportHeight = gl.canvas.clientHeight;
 
         //
 
@@ -265,8 +270,10 @@ define(
         frustum_geom = new createGeometryColor(vertices, gl.LINES);
     }
 
-    document.addEventListener('mozfullscreenchange', on_fullscreen_change);
-    document.addEventListener('webkitfullscreenchange', on_fullscreen_change);
+    document.addEventListener('fullscreenchange',       on_fullscreen_change, false);
+    document.addEventListener('mozfullscreenchange',    on_fullscreen_change, false);
+    document.addEventListener('webkitfullscreenchange', on_fullscreen_change, false);
+    document.addEventListener('msfullscreenchange',     on_fullscreen_change, false);
 
     // /FULLSCREEN
     //
@@ -754,20 +761,31 @@ define(
             ctx.lineWidth="5";
             ctx.strokeStyle="red";
 
-            document.getElementById("touch_id").innerHTML = arr_touches.length;
+            // document.getElementById("touch_id").innerHTML = arr_touches.length;
 
             for (var i = 0; i < arr_touches.length; ++i)
             {
                 var x = arr_touches[i].x;
                 var y = arr_touches[i].y;
 
-                ctx.moveTo(x,0);
-                ctx.lineTo(x,c.height);
+                ctx.moveTo(x,y-150);
+                ctx.lineTo(x,y+150);
                 ctx.stroke();
 
-                ctx.moveTo(0,y);
-                ctx.lineTo(c.width,y);
+                ctx.moveTo(x-150,y);
+                ctx.lineTo(x+150,y);
                 ctx.stroke();
+
+                if (g_FreeFlyCamera._force_forward)
+                {
+                    ctx.moveTo(x-100,y-100);
+                    ctx.lineTo(x+100,y+100);
+                    ctx.stroke();
+
+                    ctx.moveTo(x-100,y+100);
+                    ctx.lineTo(x+100,y-100);
+                    ctx.stroke();
+                }
             }
 
             ctx.stroke(); // Draw it
