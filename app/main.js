@@ -21,6 +21,7 @@ define(
 
         , './camera/freeFlyCamera.js'
         , './camera/frustumCulling.js'
+        , './camera/glhProject.js'
 
         , './generation/chunkGenerator.js'
     ],
@@ -38,6 +39,7 @@ define(
 
         , createFreeFlyCamera
         , createFrustumCulling
+        , glhProject
 
         , chunkGenerator
     )
@@ -541,6 +543,9 @@ define(
 
 
 
+
+
+
         //
         //
         ////// render 3d scene
@@ -602,6 +607,7 @@ define(
         ////// /render 3d scene
         //
         //
+
 
 
 
@@ -738,6 +744,11 @@ define(
         myFpsmeter.tick();
 
 
+        //
+        //
+        //
+        // CANVAS STUFF
+
         // var c = document.getElementById("main-canvas");
         var c = document.getElementById("second-canvas");
         var ctx=c.getContext("2d");
@@ -753,6 +764,61 @@ define(
         ctx.lineTo(c.width,0);
         ctx.lineTo(0,0);
         ctx.stroke(); // Draw it
+
+        ctx.font = "20px Arial";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "white";
+
+        for (var i = 0; i < my_chunkGenerator._chunks.length; ++i)
+        {
+            var pos = my_chunkGenerator._chunks[i].pos;
+
+            // 
+
+            if (!g_FrustumCulling.pointInFrustum(pos[0],pos[1],pos[2]))
+                continue;
+
+            // 
+
+            var viewport = [0, 0, gl.viewportWidth*0.75, gl.viewportHeight];
+
+            var tmp_2d_position = glhProject(
+                pos[0],pos[1],pos[2],
+                tmp_mvMatrix,
+                tmp_pMatrix,
+                viewport
+            );
+
+            tmp_2d_position[1] = viewport[3] - tmp_2d_position[1];
+
+            // 
+
+            {
+                var x = tmp_2d_position[0];
+                var y = tmp_2d_position[1];
+        
+                ctx.beginPath();
+                ctx.lineWidth="10";
+                ctx.strokeStyle="green";
+
+                ctx.moveTo(x,y-15);
+                ctx.lineTo(x,y+15);
+                ctx.stroke();
+
+                ctx.moveTo(x-15,y);
+                ctx.lineTo(x+15,y);
+                ctx.stroke();
+
+
+                var str = '';
+                str += pos[0]/15 + '/'
+                str += pos[1]/15 + '/'
+                str += pos[2]/15
+
+                ctx.fillText(str,x,y);
+            }
+        }
+
 
         try
         {
@@ -795,6 +861,11 @@ define(
         {
             alert(e);
         }
+
+        // CANVAS STUFF
+        //
+        //
+        //
 
     }
 
