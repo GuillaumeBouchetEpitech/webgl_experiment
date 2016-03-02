@@ -234,32 +234,36 @@ define(
 
     function on_fullscreen_change() {
 
+        var elem = document.getElementById("canvasesdiv");
         var canvas = document.getElementById("main-canvas");
         var s_canvas = document.getElementById("second-canvas");
+
+        var tmp_width = null;
+        var tmp_height = null;
 
         if (document.fullscreen ||
             document.mozFullScreen ||
             document.webkitIsFullScreen ||
             document.msFullscreenElement)
         {
-            console.log('fullscreen');
+            elem.style.position = "absolute";
 
-            var elem = document.getElementById("canvasesdiv");
-
-            var rect = elem.getBoundingClientRect();
-
-            canvas.width = s_canvas.width = rect.width;
-            canvas.height = s_canvas.height = rect.height;
-
-            // canvas.width = s_canvas.width = window.innerWidth;
-            // canvas.height = s_canvas.height = window.innerHeight;
+            tmp_width = window.innerWidth;
+            tmp_height = window.innerHeight;
         }
-        else {
-            console.log('windows screen');
-            gl.canvas.width = s_canvas.width = 800;
-            gl.canvas.height = s_canvas.height = 600;
+        else
+        {
+            elem.style.position = "relative";
+
+            tmp_width = 800;
+            tmp_height = 600;
         }
 
+        elem.style.left = "0px";
+        elem.style.top = "0px";
+
+        canvas.width = s_canvas.width = tmp_width;
+        canvas.height = s_canvas.height = tmp_height;
 
         gl.viewportWidth = gl.canvas.clientWidth;
         gl.viewportHeight = gl.canvas.clientHeight;
@@ -354,6 +358,17 @@ define(
     elem.addEventListener('touchmove', update_touches);
 
 
+
+    //
+    //
+    // CANVAS HUD
+
+    var second_canvas = document.getElementById("second-canvas");
+    var ctx = second_canvas.getContext("2d");
+
+    // CANVAS HUD
+    //
+    //
 
 
 
@@ -749,19 +764,15 @@ define(
         //
         // CANVAS STUFF
 
-        // var c = document.getElementById("main-canvas");
-        var c = document.getElementById("second-canvas");
-        var ctx=c.getContext("2d");
-
-        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.clearRect(0, 0, second_canvas.width, second_canvas.height);
 
         ctx.beginPath();
         ctx.lineWidth="5";
         ctx.strokeStyle="green"; // Green path
         ctx.moveTo(0,0);
-        ctx.lineTo(0,c.height);
-        ctx.lineTo(c.width,c.height);
-        ctx.lineTo(c.width,0);
+        ctx.lineTo(0,second_canvas.height);
+        ctx.lineTo(second_canvas.width,second_canvas.height);
+        ctx.lineTo(second_canvas.width,0);
         ctx.lineTo(0,0);
         ctx.stroke(); // Draw it
 
