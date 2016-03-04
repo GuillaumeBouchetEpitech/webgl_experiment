@@ -23,14 +23,55 @@ define(
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
 
 		this._vbuffer.numItems = vertices.length / 6;
+
+
+
+		//
+		// tmp
+
+		this._ext = gl.getExtension("OES_vertex_array_object");
+
+		// /tmp
+		//
 	}
 
 	//
 
 	createGeometryColor.prototype.render = function(shader) {
 
-	    gl.enableVertexAttribArray(shader.aVertexPosition);
-	    gl.enableVertexAttribArray(shader.aVertexColor);
+		if (this._ext)
+		{
+			if (this._vao)
+			{
+				this._ext.bindVertexArrayOES( this._vao );
+
+					gl.drawArrays( this._primitive, 0, this._vbuffer.numItems );
+
+				this._ext.bindVertexArrayOES( null );
+			}
+			else
+			{
+				this._vao = this._ext.createVertexArrayOES();
+
+				this._ext.bindVertexArrayOES( this._vao );
+
+					this.render_backup(shader, true);
+
+				this._ext.bindVertexArrayOES( null );
+			}
+		}
+		else
+		{
+			this.render_backup(shader);
+		}
+	};
+
+	//
+
+	createGeometryColor.prototype.render_backup = function(shader, no_clear) {
+
+		gl.enableVertexAttribArray(shader.aVertexPosition);
+		gl.enableVertexAttribArray(shader.aVertexColor);
 
 			var bpp = 4; // gl.FLOAT -> 4 bytes
 			var stride = 6 * bpp;
@@ -43,9 +84,13 @@ define(
 
 			gl.drawArrays( this._primitive, 0, this._vbuffer.numItems );
 
-	    gl.disableVertexAttribArray(shader.aVertexPosition);
-	    gl.disableVertexAttribArray(shader.aVertexColor);
+		if (!no_clear)
+		{
+			gl.disableVertexAttribArray(shader.aVertexPosition);
+			gl.disableVertexAttribArray(shader.aVertexColor);
+		}
 	};
+
 
 	//
 

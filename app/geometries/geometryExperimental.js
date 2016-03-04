@@ -24,6 +24,15 @@ define(
 		this._vbuffer.numItems = vertices.length / 12;
 
 		console.log('create called');
+
+
+		//
+		// tmp
+
+		this._ext = gl.getExtension("OES_vertex_array_object");
+
+		// /tmp
+		//
 	}
 
 	//
@@ -32,12 +41,48 @@ define(
 
 		gl.deleteBuffer(this._vbuffer);
 
+		if (this._vao)
+			this._ext.deleteVertexArrayOES( this._vao );
+
 		console.log('dispose called');
 	}
 
 	//
 
 	createGeometryLight.prototype.render = function() {
+
+		var shader = this._shader;
+
+		if (this._ext)
+		{
+			if (this._vao)
+			{
+				this._ext.bindVertexArrayOES( this._vao );
+
+					gl.drawArrays( gl.TRIANGLES, 0, this._vbuffer.numItems );
+
+				this._ext.bindVertexArrayOES( null );
+			}
+			else
+			{
+				this._vao = this._ext.createVertexArrayOES();
+
+				this._ext.bindVertexArrayOES( this._vao );
+
+					this.render_backup(true);
+
+				this._ext.bindVertexArrayOES( null );
+			}
+		}
+		else
+		{
+			this.render_backup();
+		}
+	};
+
+	//
+
+	createGeometryLight.prototype.render_backup = function(no_clear) {
 
 		var shader = this._shader;
 
@@ -61,10 +106,13 @@ define(
 
 			gl.drawArrays( gl.TRIANGLES, 0, this._vbuffer.numItems );
 
-		gl.disableVertexAttribArray(shader.aVertexPosition);
-		gl.disableVertexAttribArray(shader.aVertexColor);
-		gl.disableVertexAttribArray(shader.aVertexNormal);
-		gl.disableVertexAttribArray(shader.aVertexBCenter);
+		if (!no_clear)
+		{
+			gl.disableVertexAttribArray(shader.aVertexPosition);
+			gl.disableVertexAttribArray(shader.aVertexColor);
+			gl.disableVertexAttribArray(shader.aVertexNormal);
+			gl.disableVertexAttribArray(shader.aVertexBCenter);
+		}
 	};
 
 	//
