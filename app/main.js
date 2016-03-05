@@ -822,9 +822,9 @@ define(
 
 
                 var str = '';
-                str += pos[0]/15 + '/'
-                str += pos[1]/15 + '/'
-                str += pos[2]/15
+                str += pos[0]/k_chunk_size + '/'
+                str += pos[1]/k_chunk_size + '/'
+                str += pos[2]/k_chunk_size
 
                 ctx.fillText(str,x,y);
             }
