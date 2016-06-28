@@ -433,23 +433,28 @@ define(
             //          include chunk in range
 
 
+        // compute the current chunk in use
         var curr_index = [
             Math.floor(g_FreeFlyCamera._Position[0] / k_chunk_size)|0,
             Math.floor(g_FreeFlyCamera._Position[1] / k_chunk_size)|0,
             Math.floor(g_FreeFlyCamera._Position[2] / k_chunk_size)|0
         ];
 
+        // did we move to another chunk?
         if (curr_index[0] != saved_index[0] ||
             curr_index[1] != saved_index[1] ||
             curr_index[2] != saved_index[2])
         {
+            // yes -> save as the new current chunk
             saved_index[0] = curr_index[0];
             saved_index[1] = curr_index[1];
             saved_index[2] = curr_index[2];
 
+            // clear the generation queue
             my_chunkGenerator._chunk_queue.length = 0;
 
-            var range = 2|0;
+            // the range of chunk generation/exclusion
+            var range = 3|0;
 
             var min_index = new Int32Array([
                 (curr_index[0] - range)|0,
@@ -463,6 +468,7 @@ define(
             ]);
 
             //
+            // exclude the chunks that are too far away
 
             for (var i = 0; i < my_chunkGenerator._chunks.length; ++i)
             {
@@ -470,7 +476,7 @@ define(
                     (my_chunkGenerator._chunks[i].pos[0]/k_chunk_size)|0,
                     (my_chunkGenerator._chunks[i].pos[1]/k_chunk_size)|0,
                     (my_chunkGenerator._chunks[i].pos[2]/k_chunk_size)|0
-                ]
+                ];
 
                 if (curr_pos[0] < min_index[0] || curr_pos[0] > max_index[0] ||
                     curr_pos[1] < min_index[1] || curr_pos[1] > max_index[1] ||
@@ -483,6 +489,7 @@ define(
             }
 
             //
+            // include in the generation queue the close enough chunks
 
             for (var z = min_index[2]; z <= max_index[2]; ++z)
             for (var y = min_index[1]; y <= max_index[1]; ++y)
@@ -509,7 +516,7 @@ define(
         // set the projection matrix
 
         var tmp_pMatrix = glm.mat4.create();
-        glm.mat4.perspective(tmp_pMatrix, 70, aspectRatio, 0.1, 40);
+        glm.mat4.perspective(tmp_pMatrix, 70, aspectRatio, 0.1, 70);
 
         // set the modelview matrix
 
@@ -536,19 +543,23 @@ define(
             var p = g_FreeFlyCamera._Position;
             var f = g_FreeFlyCamera._Forward;
 
+            // here we do not use the true position of the camera but just a bit forward instead
             var camera_pos = [
                 p[0] + f[0] * k_chunk_size / 4,
                 p[1] + f[1] * k_chunk_size / 4,
                 p[2] + f[2] * k_chunk_size / 4
             ];
 
-            my_chunkGenerator.update(camera_pos, function (try_pos, best_pos) {
+            // this callback simply prioritise visible unprocessed chunks
+            function priority_callback (try_pos, best_pos) {
 
                 if (chunk_is_visible(try_pos))
                     return true;
 
                 return false;
-            });
+            }
+
+            my_chunkGenerator.update(camera_pos, priority_callback);
         }
 
         ////// /generation
@@ -878,6 +889,6 @@ define(
         //
         //
 
-    }
+    } // function tick(in_event)
 
 });
