@@ -261,41 +261,41 @@ define([
 
 	FreeFlyCamera.prototype.handleKeys = function() { try{
 
-	    // forward
-	    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_Z ) ||
-	        this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_W ))
+		// forward
+		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_Z ) ||
+			this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_W ))
 			this._movementFlag |= 1<<0
 
-	    // backward
-	    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_S ))
+		// backward
+		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_S ))
 			this._movementFlag |= 1<<1
 
 		// strafe left
-	    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_A ) ||
-	        this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_Q ))
+		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_A ) ||
+			this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_Q ))
 			this._movementFlag |= 1<<2
 
 		// strafe right
-	    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_D ))
+		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_D ))
 			this._movementFlag |= 1<<3
 
 		/// /// ///
 
 		// look up
-	    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_UP ))
-	        this._phi++;
+		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_UP ))
+			this._phi++;
 
 		// look down
-	    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_DOWN ))
-	        this._phi--;
+		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_DOWN ))
+			this._phi--;
 
 		// look left
-	    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_LEFT ))
-	        this._theta++;
+		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_LEFT ))
+			this._theta++;
 
 		// look right
-	    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_RIGHT ))
-	        this._theta--;
+		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_RIGHT ))
+			this._theta--;
 
 	}catch(err){alert(err);} }
 
