@@ -176,8 +176,8 @@
 			varying vec3 vVertPos2;
 			varying vec3 vNormalInterp2;
 
-			const vec3 lightPos = vec3(0.0,0.0,0.0);
-			const vec3 specColor = vec3(1.0, 1.0, 1.0);
+			const vec3 k_lightPos = vec3(0.0,0.0,0.0);
+			const vec3 k_specColor = vec3(1.0, 1.0, 1.0);
 
 			void main(void) {
 
@@ -189,8 +189,9 @@
 				if (gl_FrontFacing)
 				{
 
-					// if (vDistance < 20.5)
-					if (vDistance > 20.0 && vDistance < 21.0)
+					// "bumped wireframe" effect on the front facing
+
+					if (vDistance > 20.0 && vDistance < 23.0)
 					{
 
 						if (all(greaterThan(vBCenter, vec3(0.03))) &&
@@ -205,6 +206,8 @@
 				}
 				else
 				{
+					// normal wireframe effect on the back facing
+
 					if (any(lessThan(vBCenter, vec3(0.06))))
 					{
 						gl_FragColor = vec4(1);
@@ -222,13 +225,13 @@
 
 				// lighting
 				vec3 normal = normalize(vNormalInterp);
-				vec3 lightDir = normalize(lightPos - vVertPos);
+				vec3 lightDir = normalize(k_lightPos - vVertPos);
 
 				// TODO -> this is dirty
 				vec3 test = vec3(
-					 vVertPos2.x - floor(vVertPos2.x)
-					,vVertPos2.y - floor(vVertPos2.y)
-					,vVertPos2.z - floor(vVertPos2.z)
+					vVertPos2.x - floor(vVertPos2.x),
+					vVertPos2.y - floor(vVertPos2.y),
+					vVertPos2.z - floor(vVertPos2.z)
 				);
 
 				vec3 tmp_color = vColor.xyz;
@@ -275,7 +278,7 @@
 				}
 
 				// lighting output
-				gl_FragColor = vec4(tmp_color.xyz*0.2 + lambertian*tmp_color.xyz + specular*specColor, 1.0);
+				gl_FragColor = vec4(tmp_color.xyz*0.2 + lambertian*tmp_color.xyz + specular*k_specColor, 1.0);
 			}
 		</script>
 
@@ -315,25 +318,22 @@
 
 				vDistance = tmp_dist;
 
-				if (tmp_dist < 20.0 || tmp_dist > 21.0)
-				{
-					vColor = vec4(aVertexColor, 1);
+				vColor = vec4(aVertexColor, 1);
+				vBCenter = aVertexBCenter;
 
+				if (tmp_dist < 20.0 || tmp_dist > 23.0)
+				{
 					gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
 				}
 				else
 				{
-					vColor = vec4(1);
+					// bump effect -> bump in the direction of the normal
 
-					vec3 tmp_pos = (aVertexPosition + aVertexNormal);
-					gl_Position = uPMatrix * uMVMatrix * vec4(tmp_pos, 1.0);
+					gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition + aVertexNormal, 1.0);
 				}
 
 				//
 
-
-				// vColor = vec4(aVertexColor, 1);
-				vBCenter = aVertexBCenter;
 			}
 		</script>
 
