@@ -1,11 +1,4 @@
 
-// define(function (require) {
-
-//     var WebGLUtils = require('webgl/WebGLUtils');
-//     var glm = require('webgl/gl-matrix-2.1.0');
-//     var createShaders = require('webgl/myShaders').createShaders;
-//     var createWireframeCube = require('./geometries/WireframeCube.js');
-
 define(
     [
           './gl-context.js'
@@ -139,7 +132,6 @@ define(
     var vertices = createCubeVertices(k_chunk_size,[1,0,0], true);
     var cubeR_geom = new createGeometryColor(vertices, gl.LINES);
 
-    // var vertices = createCubeVertices(k_chunk_size,[0.5,0.5,0.5]);
     var vertices = createCubeVertices(k_chunk_size,[1,1,1]);
     var cubeW_geom = new createGeometryColor(vertices, gl.LINES);
 
@@ -147,7 +139,6 @@ define(
     var cubeG_geom = new createGeometryColor(vertices, gl.LINES);
 
 
-    // var aspectRatio = gl.viewportWidth / gl.viewportHeight;
     var aspectRatio = gl.viewportWidth * 0.75 / gl.viewportHeight;
 
     var vertices = createFrustumVertices(70, aspectRatio, 0.1, 40);
@@ -166,8 +157,10 @@ define(
 
 
     //
+    //
+    // CAMERA
 
-    var last_time = 0
+    var time_last = 0
 
     //
 
@@ -192,13 +185,20 @@ define(
         );
     }
 
-    var saved_index = [1,0,0]
+    // CAMERA
+    //
+    //
+
+
+
+    // position used to detect a move in the current chunk
+    var saved_index = [1,0,0]; // <- currently 1/0/0 but any other value than 0/0/0 will work
 
 
 
     //
     //
-    //
+    // GUI (touch supported indicator)
 
     if ('ontouchstart' in window) {
         document.getElementById("touch_id").innerHTML += 'Supported';
@@ -206,7 +206,7 @@ define(
         document.getElementById("touch_id").innerHTML += 'Not Supported';
     }
 
-    //
+    // GUI (touch supported indicator)
     //
     //
 
@@ -214,7 +214,7 @@ define(
 
     //
     //
-    // FULLSCREEN
+    // GUI (fullscreen button)
 
     var gui_fullscreen = document.getElementById("gui_fullscreen");
     gui_fullscreen.addEventListener('click', function () {
@@ -281,11 +281,15 @@ define(
     document.addEventListener('webkitfullscreenchange', on_fullscreen_change, false);
     document.addEventListener('msfullscreenchange',     on_fullscreen_change, false);
 
-    // /FULLSCREEN
+    // GUI (fullscreen button)
     //
     //
 
 
+
+    //
+    //
+    // GUI (reset button)
 
     var gui_reset = document.getElementById("gui_reset");
     gui_reset.addEventListener('click', function () {
@@ -322,6 +326,11 @@ define(
         saved_index = [curr_index_x +1,0,0]
     })
 
+    // GUI (reset button)
+    //
+    //
+
+
 
     //
     // FPS METER
@@ -337,7 +346,9 @@ define(
 
 
 
-
+    //
+    //
+    // HUD (touch positions recorder)
 
     var elem = document.getElementById("canvasesdiv");
 
@@ -347,15 +358,19 @@ define(
 
         var touches = e.targetTouches;
 
-        arr_touches.length = 0;
+        arr_touches.length = 0; // clear array
         for (var i = 0; i < touches.length; ++i)
             arr_touches.push({ x:touches[i].pageX, y:touches[i].pageY });
 
     }catch(e){alert(e);} }
 
     elem.addEventListener('touchstart', update_touches);
-    elem.addEventListener('touchend', function(e) {arr_touches.length = 0;});
+    elem.addEventListener('touchend', function(e) {arr_touches.length = 0;}); // clear array
     elem.addEventListener('touchmove', update_touches);
+
+    // HUD (touch positions recorder)
+    //
+    //
 
 
 
@@ -374,14 +389,13 @@ define(
 
     //
     //
-    // EXPERIMENTAL
+    // TEXTURE (load and startup)
 
     var crateImage = new Image();
     var crateTexture = gl.createTexture();
     crateImage.onload = function () {
 
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // flip vertically the texture
 
         gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, crateTexture);
@@ -389,14 +403,16 @@ define(
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
+            // send the texture to the shader
             gl.uniform1i(g_shaderProgram_experimental.uSampler, 0);
 
+        // starting point
         tick();
     }
 
     crateImage.src = "textures/texture.png";
 
-    // EXPERIMENTAL
+    // TEXTURE (load and startup)
     //
     //
 
@@ -405,23 +421,36 @@ define(
 
     function tick(in_event) {
 
+        // plan the next frame
         window.requestAnimFrame( tick ); // webgl-utils.js
 
-            var current_time = performance.now() || (new Date()).getTime();
 
-            if (!last_time)
-                last_time = current_time;
+            //
+            // obtain the elapsed time
 
-            var elapsed = current_time - last_time;
+            var time_current = performance.now() || (new Date()).getTime();
 
-            last_time = current_time;
+            if (!time_last)
+                time_last = time_current;
+
+            var elapsed = time_current - time_last;
+
+            time_last = time_current;
+
+            // obtain the elapsed time
+            //
 
         ///
+
+            //
+            // update the camera
 
             g_FreeFlyCamera.handleKeys();
 
             g_FreeFlyCamera.update( elapsed / 1000.0 );
 
+            // update the camera
+            //
 
 
         myFpsmeter.tickStart();
@@ -550,7 +579,7 @@ define(
                 p[2] + f[2] * k_chunk_size / 4
             ];
 
-            // this callback simply prioritise visible unprocessed chunks
+            // this callback simply prioritise visible and unprocessed chunks
             function priority_callback (try_pos, best_pos) {
 
                 if (chunk_is_visible(try_pos))
@@ -576,7 +605,6 @@ define(
         //
         ////// render 3d scene
 
-        // gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.viewport(0, 0, gl.viewportWidth*0.75, gl.viewportHeight);
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -773,9 +801,14 @@ define(
         //
         //
         //
-        // CANVAS STUFF
+        // CANVAS STUFF (in fact, this still the HUD...)
 
         ctx.clearRect(0, 0, second_canvas.width, second_canvas.height);
+
+        //
+        // make a rectangle around the viewport
+        // -> was a debug for the fullscreen, but I still like it <3
+        //
 
         ctx.beginPath();
         ctx.lineWidth="5";
@@ -787,9 +820,16 @@ define(
         ctx.lineTo(0,0);
         ctx.stroke(); // Draw it
 
+        //
+        // render text
+        //
+
         ctx.font = "20px Arial";
         ctx.textAlign = "center";
         ctx.fillStyle = "white";
+
+        ctx.lineWidth="10";
+        ctx.strokeStyle="green";
 
         for (var i = 0; i < my_chunkGenerator._chunks.length; ++i)
         {
@@ -811,6 +851,7 @@ define(
                 viewport
             );
 
+            // flip the 'y' value
             tmp_2d_position[1] = viewport[3] - tmp_2d_position[1];
 
             // 
@@ -820,8 +861,6 @@ define(
                 var y = tmp_2d_position[1];
         
                 ctx.beginPath();
-                ctx.lineWidth="10";
-                ctx.strokeStyle="green";
 
                 ctx.moveTo(x,y-15);
                 ctx.lineTo(x,y+15);
@@ -841,50 +880,42 @@ define(
             }
         }
 
+        //
+        // render touches
+        //
 
-        try
+        ctx.beginPath();
+        ctx.lineWidth="5";
+        ctx.strokeStyle="red";
+
+        for (var i = 0; i < arr_touches.length; ++i)
         {
+            var x = arr_touches[i].x;
+            var y = arr_touches[i].y;
 
-            ctx.beginPath();
-            ctx.lineWidth="5";
-            ctx.strokeStyle="red";
+            ctx.moveTo(x,y-150);
+            ctx.lineTo(x,y+150);
+            ctx.stroke();
 
-            // document.getElementById("touch_id").innerHTML = arr_touches.length;
+            ctx.moveTo(x-150,y);
+            ctx.lineTo(x+150,y);
+            ctx.stroke();
 
-            for (var i = 0; i < arr_touches.length; ++i)
+            if (g_FreeFlyCamera._force_forward)
             {
-                var x = arr_touches[i].x;
-                var y = arr_touches[i].y;
-
-                ctx.moveTo(x,y-150);
-                ctx.lineTo(x,y+150);
+                ctx.moveTo(x-100,y-100);
+                ctx.lineTo(x+100,y+100);
                 ctx.stroke();
 
-                ctx.moveTo(x-150,y);
-                ctx.lineTo(x+150,y);
+                ctx.moveTo(x-100,y+100);
+                ctx.lineTo(x+100,y-100);
                 ctx.stroke();
-
-                if (g_FreeFlyCamera._force_forward)
-                {
-                    ctx.moveTo(x-100,y-100);
-                    ctx.lineTo(x+100,y+100);
-                    ctx.stroke();
-
-                    ctx.moveTo(x-100,y+100);
-                    ctx.lineTo(x+100,y-100);
-                    ctx.stroke();
-                }
             }
-
-            ctx.stroke(); // Draw it
-
-        }
-        catch(e)
-        {
-            alert(e);
         }
 
-        // CANVAS STUFF
+        ctx.stroke(); // Draw it
+
+        // CANVAS STUFF (in fact, this still the HUD...)
         //
         //
         //
