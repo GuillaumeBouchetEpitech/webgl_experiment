@@ -12,7 +12,7 @@ define(
 
 	//
 
-	var createGeometryLight = function (vertices,shader) {
+	var createGeometryExperimental = function (vertices,shader) {
 
 		this._vbuffer = gl.createBuffer();
 		this._shader = shader;
@@ -23,7 +23,7 @@ define(
 
 		this._vbuffer.numItems = vertices.length / 12;
 
-		console.log('create called');
+		// console.log('create called');
 
 
 		//
@@ -37,19 +37,19 @@ define(
 
 	//
 
-	createGeometryLight.prototype.dispose = function() {
+	createGeometryExperimental.prototype.dispose = function() {
 
 		gl.deleteBuffer(this._vbuffer);
 
 		if (this._vao)
 			this._ext.deleteVertexArrayOES( this._vao );
 
-		console.log('dispose called');
+		// console.log('dispose called');
 	}
 
 	//
 
-	createGeometryLight.prototype.render = function() {
+	createGeometryExperimental.prototype.render = function() {
 
 		var shader = this._shader;
 
@@ -82,7 +82,7 @@ define(
 
 	//
 
-	createGeometryLight.prototype.render_backup = function(no_clear) {
+	createGeometryExperimental.prototype.render_backup = function(no_clear) {
 
 		var shader = this._shader;
 
@@ -117,5 +117,5 @@ define(
 
 	//
 
-	return createGeometryLight;
+	return createGeometryExperimental;
 })
