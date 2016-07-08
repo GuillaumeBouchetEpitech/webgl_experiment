@@ -574,9 +574,9 @@ define(
 
             // here we do not use the true position of the camera but just a bit forward instead
             var camera_pos = [
-                p[0] + f[0] * k_chunk_size / 4,
-                p[1] + f[1] * k_chunk_size / 4,
-                p[2] + f[2] * k_chunk_size / 4
+                p[0],
+                p[1],
+                p[2]
             ];
 
             // this callback simply prioritise visible and unprocessed chunks
