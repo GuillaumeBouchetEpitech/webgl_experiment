@@ -262,6 +262,9 @@ define(
 
         gl.useProgram(this._shader);
 
+        // send the texture to the shader
+        gl.uniform1i(g_shaderProgram_experimental.uSampler, 0);
+
         gl.uniformMatrix4fv(this._shader.uMVMatrix, false, tmp_mvMatrix);
         gl.uniformMatrix4fv(this._shader.uPMatrix, false, tmp_pMatrix);
 
