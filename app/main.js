@@ -5,6 +5,7 @@ define(
 
         , 'webgl/gl-matrix-2.1.0'
         , 'webgl/myShaders'
+        , 'webgl/texture'
 
         , 'fpsmeter' // in /lib
 
@@ -23,6 +24,7 @@ define(
 
         , glm
         , myShaders
+        , textureHelper
 
         , unused_fpsmeter // <- use window.FPSMeter
 
@@ -395,11 +397,16 @@ define(
     var crateTexture = gl.createTexture();
     crateImage.onload = function () {
 
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // flip vertically the texture
+        // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // flip vertically the texture
+
+        var buf = textureHelper.imageToUint8Array(crateImage);
+        buf = textureHelper.flipYImageArray(buf, crateImage.width, crateImage.height);
 
         gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, crateTexture);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, crateImage);
+                // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, crateImage);
+                // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, crateImage.width, crateImage.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, buf);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
