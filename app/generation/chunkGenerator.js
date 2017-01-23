@@ -35,14 +35,53 @@ define(
 		this._chunk_queue = [];
 		this._chunk_size = chunk_size;
 
-		var myRand = new Randomiser();
 
-		var myNoise2 = new ClassicalNoise(myRand, octaves, freq, amp);
+		this._myWorker_buffer = new Float32Array(100000);
+	    this._myWorker = new window.Worker("app_worker.js");
+	    this._myWorker_status = 0; // not ready
+	    var self = this;
+        this._myWorker.onmessage = function(e) {
+	        if (e.data.ready)
+	        {
+	        	console.log("self._myWorker_status=" + self._myWorker_status);
+	        	self._myWorker_status = 1; // ready/available
+	        }
+	        else if (self._myWorker_status == 2) // working
+	        {
+	        	// console.log("result from main script=" + self._myWorker_status);
+	        	self._myWorker_status = 1; // ready/available
 
-		this._marchingCube = new MarchinCube(chunk_size, 0.0, function(x, y, z) {
+	        	var pos = e.data.pos;
+	        	var vertices = e.data.vertices;
 
-			return myNoise2.noise_ex(x, y, z);
-		}, tetra);
+	        	// console.log("vertices.length=" + vertices.length);
+
+				// var geom = new createGeometryExperimental(new Float32Array(vertices), self._shader, true);
+				var geom = new createGeometryExperimental(vertices, self._shader, true);
+
+				self._myWorker_buffer = vertices;
+
+				// save
+
+				self._chunks.push({
+					  pos: pos
+					, geom: geom
+				});
+
+				self.is_processing_chunk = false;
+
+	        }
+	    }
+
+
+		// var myRand = new Randomiser();
+
+		// var myNoise2 = new ClassicalNoise(myRand, octaves, freq, amp);
+
+		// this._marchingCube = new MarchinCube(chunk_size, 0.0, function(x, y, z) {
+
+		// 	return myNoise2.noise_ex(x, y, z);
+		// }, tetra);
 	}
 
 	//
@@ -64,88 +103,98 @@ define(
 
 	//
 
-	chunkRenderer.prototype._partially_generate = function(pos) {
+	// chunkRenderer.prototype._partially_generate = function(pos) {
 
-		//
-		// generate
+	// 	//
+	// 	// generate
 
-		if (!this.chunk_vertices)
-			this.chunk_vertices = [];
-
-
-		var tmp_index = 0;
-		var arr_indexes = [ [1,0,0], [0,1,0], [0,0,1] ];
-
-		// this._marchingCube.marchCube(pos, marchCube_cb);
-
-		// while (!this._marchingCube.marchCube_step(3*50, pos, marchCube_cb))
-		// 	;
+	// 	if (!this.chunk_vertices)
+	// 		this.chunk_vertices = [];
 
 
-		// var finished = this._marchingCube.marchCube_step( 3*150, pos, marchCube_cb );
+	// 	var tmp_index = 0;
+	// 	var arr_indexes = [ [1,0,0], [0,1,0], [0,0,1] ];
 
-		var chunk_vertices = this.chunk_vertices;
-		function marchCube_cb(vertex, color, normal) {
+	// 	// this._marchingCube.marchCube(pos, marchCube_cb);
 
-		    chunk_vertices.push( vertex[0], vertex[1], vertex[2] );
-		    chunk_vertices.push( color[0],  color[1],  color[2]  );
-		    chunk_vertices.push( normal[0], normal[1], normal[2] );
-
-
-		    var index = arr_indexes[tmp_index];
-		    tmp_index = (tmp_index + 1) % 3;
-
-		    chunk_vertices.push( index[0], index[1], index[2] );
-		}
+	// 	// while (!this._marchingCube.marchCube_step(3*50, pos, marchCube_cb))
+	// 	// 	;
 
 
+	// 	// var finished = this._marchingCube.marchCube_step( 3*150, pos, marchCube_cb );
 
-		var last_time = Date.now();
+	// 	var chunk_vertices = this.chunk_vertices;
+	// 	function marchCube_cb(vertex, color, normal) {
 
-		while (true)
-		{
-			finished = this._marchingCube.marchCube_step( 60, pos, marchCube_cb )
+	// 	    chunk_vertices.push( vertex[0], vertex[1], vertex[2] );
+	// 	    chunk_vertices.push( color[0],  color[1],  color[2]  );
+	// 	    chunk_vertices.push( normal[0], normal[1], normal[2] );
 
-			if (finished)
-				break;
 
-			if ((last_time - Date.now()) > 4)
-				break;
-		}
+	// 	    var index = arr_indexes[tmp_index];
+	// 	    tmp_index = (tmp_index + 1) % 3;
+
+	// 	    chunk_vertices.push( index[0], index[1], index[2] );
+	// 	}
 
 
 
+	// 	var last_time = Date.now();
 
-		// generate
-		//
+	// 	// while (true)
+	// 	{
+	// 		// finished = this._marchingCube.marchCube_step( 60, pos, marchCube_cb )
+	// 		this._marchingCube.marchCube( pos, marchCube_cb )
+	// 		finished = true;
 
-		if (finished)
-		{
-			var geom = new createGeometryExperimental(chunk_vertices, this._shader);
+	// 		// if (finished)
+	// 		// 	break;
 
-			// this.chunk_vertices = [];
-			chunk_vertices.length = 0;
+	// 		// if ((last_time - Date.now()) > 4)
+	// 		// 	break;
+	// 	}
 
-			// save
 
-			this._chunks.push({
-				  pos: pos
-				, geom: geom
-			});
 
-			this.is_processing_chunk = false;
-		}
 
-	};
+	// 	// generate
+	// 	//
+
+	// 	if (finished)
+	// 	{
+	// 		var geom = new createGeometryExperimental(chunk_vertices, this._shader);
+
+	// 		// this.chunk_vertices = [];
+	// 		chunk_vertices.length = 0;
+
+	// 		// save
+
+	// 		this._chunks.push({
+	// 			  pos: pos
+	// 			, geom: geom
+	// 		});
+
+	// 		this.is_processing_chunk = false;
+	// 	}
+
+	// };
 
 	//
 
 	chunkRenderer.prototype.update = function(camera_pos, priority_cb) {
 
+		// webworker ready/available?
+
+		if (this._myWorker_status != 1)
+			return;
+
 		// are we already processing a chunk?
 
-		if (this.is_processing_chunk)
-			return this._partially_generate(this.processing_pos); // yes...
+		// if (this.is_processing_chunk)
+		// 	return this._partially_generate(this.processing_pos); // yes...
+
+		// if (this.is_processing_chunk)
+		// 	return;
 
 		// no -> determine the next chunk to process
 
@@ -165,6 +214,16 @@ define(
 
 			this.is_processing_chunk = true;
 
+			this._myWorker_status = 2; // working
+	        this._myWorker.postMessage({
+	        	pos: this.processing_pos,
+	        	buf: this._myWorker_buffer
+	        }
+			, [
+				this._myWorker_buffer.buffer
+			]
+	        );
+
 			return;
 		}
 
@@ -176,14 +235,6 @@ define(
 		function calc_length(in_x, in_y, in_z) {
 			return Math.sqrt(in_x*in_x + in_y*in_y + in_z*in_z);
 		}
-
-		// function compute_chunk_center(pos) {
-		// 	return [
-		// 		pos[0] * this._chunk_size + this._chunk_size / 2,
-		// 		pos[1] * this._chunk_size + this._chunk_size / 2,
-		// 		pos[2] * this._chunk_size + this._chunk_size / 2
-		// 	];
-		// }
 
 		var chunks = this._chunks;
 		function is_already_processed(pos) {
@@ -252,6 +303,18 @@ define(
 		this._chunk_queue.splice(best_index,1);
 
 		this.is_processing_chunk = true;
+
+		// this._myWorker_status = 2; // working
+		// this._myWorker.postMessage({pos:this.processing_pos});
+		this._myWorker_status = 2; // working
+		this._myWorker.postMessage({
+			pos: this.processing_pos,
+			buf: this._myWorker_buffer
+		}
+		, [
+			this._myWorker_buffer.buffer
+		]
+		);
 	}
 
 

@@ -12,14 +12,17 @@ define(
 
 	//
 
-	var createGeometryExperimental = function (vertices,shader) {
+	var createGeometryExperimental = function (vertices,shader, vertices_is_buffer) {
 
 		this._vbuffer = gl.createBuffer();
 		this._shader = shader;
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._vbuffer);
 
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+		if (!vertices_is_buffer)
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+		else
+			gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
 		this._vbuffer.numItems = vertices.length / 12;
 
@@ -29,7 +32,8 @@ define(
 		//
 		// tmp
 
-		this._ext = gl.getExtension("OES_vertex_array_object");
+		if (gl.getExtension)
+			this._ext = gl.getExtension("OES_vertex_array_object");
 
 		// /tmp
 		//
