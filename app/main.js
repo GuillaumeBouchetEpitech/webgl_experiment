@@ -289,59 +289,79 @@ define(
 
 
 
-    //
-    //
-    // GUI (reset button)
+    // //
+    // //
+    // // GUI (reset button)
 
-    var gui_reset = document.getElementById("gui_reset");
-    gui_reset.addEventListener('click', function () {
+    // var gui_reset = document.getElementById("gui_reset");
+    // gui_reset.addEventListener('click', function () {
 
-        //
-        // reset all the chunks in use and queued
+    //     //
+    //     // reset all the chunks in use and queued
 
-        my_chunkGenerator._chunks.length = 0;
-        my_chunkGenerator._chunk_queue.length = 0;
-        my_chunkGenerator = null;
+    //     my_chunkGenerator._chunks.length = 0;
+    //     my_chunkGenerator._chunk_queue.length = 0;
+    //     my_chunkGenerator = null;
 
-        //
-        // retrieve the values
+    //     //
+    //     // retrieve the values
 
-        var tmp_octave = document.getElementById("range_octaves").value;
-        var tmp_frequency = document.getElementById("range_frequency").value / 100;
-        var tmp_amplitude = 0.5;
+    //     var tmp_octave = document.getElementById("range_octaves").value;
+    //     var tmp_frequency = document.getElementById("range_frequency").value / 100;
+    //     var tmp_amplitude = 0.5;
 
-        var tmp_tetra = document.getElementById("check_tetra").checked || false;
+    //     var tmp_tetra = document.getElementById("check_tetra").checked || false;
 
-        //
-        // set the new values
+    //     //
+    //     // set the new values
 
-        my_chunkGenerator = new chunkGenerator(
-            k_chunk_size, shader_exp,
-            tmp_octave, tmp_frequency, tmp_amplitude,
-            tmp_tetra
-        );
+    //     my_chunkGenerator = new chunkGenerator(
+    //         k_chunk_size, shader_exp,
+    //         tmp_octave, tmp_frequency, tmp_amplitude,
+    //         tmp_tetra
+    //     );
 
-        //
-        // this part is like saying "the user have moved, generate your stuff now"
+    //     //
+    //     // this part is like saying "the user have moved, generate your stuff now"
 
-        var curr_index_x = Math.floor(g_FreeFlyCamera._Position[0] / k_chunk_size);
-        saved_index = [curr_index_x +1,0,0]
-    })
+    //     var curr_index_x = Math.floor(g_FreeFlyCamera._Position[0] / k_chunk_size);
+    //     saved_index = [curr_index_x +1,0,0]
+    // })
 
-    // GUI (reset button)
-    //
-    //
+    // // GUI (reset button)
+    // //
+    // //
 
 
 
     //
     // FPS METER
 
-    var myFpsmeter_elem = document.getElementById('canvasesdiv');
+    // var myFpsmeter_elem = document.getElementById('canvasesdiv');
+    // var myFpsmeter = new window.FPSMeter(
+    //     myFpsmeter_elem,
+    //     window.FPSMeter.theme.transparent
+    // );
+
+
+    //
+    // FPS METER
+
+    var myFpsmeter_elem = document.getElementById('fpsmeter1');
     var myFpsmeter = new window.FPSMeter(
         myFpsmeter_elem,
         window.FPSMeter.theme.transparent
     );
+
+    var myFpsmeter2_elem = document.getElementById('fpsmeter2');
+    var myFpsmeter2 = new window.FPSMeter(
+        myFpsmeter2_elem,
+        window.FPSMeter.theme.transparent
+    );
+
+    // FPS METER
+    //
+
 
     // FPS METER
     //
@@ -603,9 +623,10 @@ define(
         //
 
 
+        myFpsmeter.tick();
 
 
-
+        myFpsmeter2.tickStart();
 
 
         //
@@ -671,6 +692,7 @@ define(
 
 
 
+        myFpsmeter2.tick();
 
 
 
