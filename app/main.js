@@ -692,7 +692,6 @@ define(
 
 
 
-        myFpsmeter2.tick();
 
 
 
@@ -824,7 +823,7 @@ define(
         //
 
 
-        myFpsmeter.tick();
+        myFpsmeter2.tick();
 
 
         //
