@@ -823,8 +823,6 @@ define(
         //
 
 
-        myFpsmeter2.tick();
-
 
         //
         //
@@ -947,6 +945,8 @@ define(
         //
         //
         //
+
+        myFpsmeter2.tick();
 
     } // function tick(in_event)
 
