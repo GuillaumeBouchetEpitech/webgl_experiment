@@ -1,16 +1,14 @@
 
-define([
-        'webgl/WebGLUtils'
-    ], function(
-        WebGLUtils
-    ) {
+var WebGLUtils = require('../lib/webgl/WebGLUtils');
 
-	var canvas = document.getElementById("main-canvas");
+var canvas = document.getElementById("main-canvas");
 
-    gl = WebGLUtils.setupWebGL(canvas);
+console.log('document=' + document);
+console.log('canvas=' + canvas);
 
-    gl.viewportWidth = canvas.clientWidth;
-    gl.viewportHeight = canvas.clientHeight;
+gl = WebGLUtils.setupWebGL(canvas);
 
-    return gl;
-});
+gl.viewportWidth = canvas.clientWidth;
+gl.viewportHeight = canvas.clientHeight;
+
+module.exports = gl;

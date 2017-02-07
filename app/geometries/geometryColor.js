@@ -1,98 +1,83 @@
 
-define(
-	[
+var gl = require('../gl-context.js');
 
-		  '../gl-context.js'
+var createGeometryColor = function (vertices, primitive) {
 
-	],function(
+    this._primitive = primitive;
 
-		  gl
-	)
-{
+    this._vbuffer = gl.createBuffer();
 
-	//
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._vbuffer);
 
-	var createGeometryColor = function (vertices, primitive) {
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
 
-		this._primitive = primitive;
-
-		this._vbuffer = gl.createBuffer();
-
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._vbuffer);
-
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
-
-		this._vbuffer.numItems = vertices.length / 6;
+    this._vbuffer.numItems = vertices.length / 6;
 
 
 
-		//
-		// tmp
+    //
+    // tmp
 
-		this._ext = gl.getExtension("OES_vertex_array_object");
+    this._ext = gl.getExtension("OES_vertex_array_object");
 
-		// /tmp
-		//
-	}
+    // /tmp
+    //
+}
 
-	//
+//
 
-	createGeometryColor.prototype.render = function(shader) {
+createGeometryColor.prototype.render = function(shader) {
 
-		if (this._ext)
-		{
-			if (this._vao)
-			{
-				this._ext.bindVertexArrayOES( this._vao );
+    if (this._ext)
+    {
+        if (this._vao)
+        {
+            this._ext.bindVertexArrayOES( this._vao );
 
-					gl.drawArrays( this._primitive, 0, this._vbuffer.numItems );
+                gl.drawArrays( this._primitive, 0, this._vbuffer.numItems );
 
-				this._ext.bindVertexArrayOES( null );
-			}
-			else
-			{
-				this._vao = this._ext.createVertexArrayOES();
+            this._ext.bindVertexArrayOES( null );
+        }
+        else
+        {
+            this._vao = this._ext.createVertexArrayOES();
 
-				this._ext.bindVertexArrayOES( this._vao );
+            this._ext.bindVertexArrayOES( this._vao );
 
-					this.render_backup(shader, true);
+                this.render_backup(shader, true);
 
-				this._ext.bindVertexArrayOES( null );
-			}
-		}
-		else
-		{
-			this.render_backup(shader);
-		}
-	};
+            this._ext.bindVertexArrayOES( null );
+        }
+    }
+    else
+    {
+        this.render_backup(shader);
+    }
+};
 
-	//
+//
 
-	createGeometryColor.prototype.render_backup = function(shader, no_clear) {
+createGeometryColor.prototype.render_backup = function(shader, no_clear) {
 
-		gl.enableVertexAttribArray(shader.aVertexPosition);
-		gl.enableVertexAttribArray(shader.aVertexColor);
+    gl.enableVertexAttribArray(shader.aVertexPosition);
+    gl.enableVertexAttribArray(shader.aVertexColor);
 
-			var bpp = 4; // gl.FLOAT -> 4 bytes
-			var stride = 6 * bpp;
-			var index_pos    = 0 * bpp;
-			var index_color  = 3 * bpp;
+        var bpp = 4; // gl.FLOAT -> 4 bytes
+        var stride = 6 * bpp;
+        var index_pos    = 0 * bpp;
+        var index_color  = 3 * bpp;
 
-			gl.bindBuffer(gl.ARRAY_BUFFER, this._vbuffer);
-			gl.vertexAttribPointer(shader.aVertexPosition,3,gl.FLOAT,false,stride,index_pos);
-			gl.vertexAttribPointer(shader.aVertexColor,3,gl.FLOAT,false,stride,index_color);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vbuffer);
+        gl.vertexAttribPointer(shader.aVertexPosition,3,gl.FLOAT,false,stride,index_pos);
+        gl.vertexAttribPointer(shader.aVertexColor,3,gl.FLOAT,false,stride,index_color);
 
-			gl.drawArrays( this._primitive, 0, this._vbuffer.numItems );
+        gl.drawArrays( this._primitive, 0, this._vbuffer.numItems );
 
-		if (!no_clear)
-		{
-			gl.disableVertexAttribArray(shader.aVertexPosition);
-			gl.disableVertexAttribArray(shader.aVertexColor);
-		}
-	};
+    if (!no_clear)
+    {
+        gl.disableVertexAttribArray(shader.aVertexPosition);
+        gl.disableVertexAttribArray(shader.aVertexColor);
+    }
+};
 
-
-	//
-
-	return createGeometryColor;
-})
+module.exports = createGeometryColor;

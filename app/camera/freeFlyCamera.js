@@ -1,320 +1,307 @@
 
+var gl = require('../gl-context.js');
 
-define([
+var glm = require('../../lib/webgl/gl-matrix-2.1.0');
+var createKeyboardHandler = require('./helpers/keyboardHandler.js');
+var handle_pointerLock = require('./helpers/pointerLock.js');
 
-          '../gl-context.js'
 
-        , 'webgl/gl-matrix-2.1.0'
-		, './helpers/keyboardHandler.js'
-        , './helpers/pointerLock.js'
+FreeFlyCamera = function () {
 
-	], function(
+    this._phi = 0;
+    this._theta = 0;
 
-		  gl
+    this._Forward = [1,0,0];
+    this._Left = [0,0,0];
+    this._Position = [0,0,0];
+    this._Target = [0,0,0];
 
-        , glm
-        , createKeyboardHandler
-        , handle_pointerLock
-	) {
+    this._movementFlag = 0;
 
-	FreeFlyCamera = function () {
+    this._keybrdHdl = new createKeyboardHandler();
 
-	    this._phi = 0;
-	    this._theta = 0;
+    this._force_forward = false;
 
-	    this._Forward = [1,0,0];
-	    this._Left = [0,0,0];
-	    this._Position = [0,0,0];
-	    this._Target = [0,0,0];
 
-	    this._movementFlag = 0;
+    var self = this;
 
-	    this._keybrdHdl = new createKeyboardHandler();
 
-	    this._force_forward = false;
 
 
-	    var self = this;
+    ///
+    /// MOUSE
+    ///
 
+    var canvas = document.getElementById("canvasesdiv");
+    handle_pointerLock(canvas, callback_mouse_locked, callback_mouse_unlocked);
 
+    //
 
+    function callback_mouse_locked() {
+        canvas.addEventListener('mousemove', callback_mousemove, false);
+    }
 
-		///
-		/// MOUSE
-		///
+    function callback_mouse_unlocked() {
+        canvas.removeEventListener('mousemove', callback_mousemove, false);
+    }
 
-		var canvas = document.getElementById("canvasesdiv");
-		handle_pointerLock(canvas, callback_mouse_locked, callback_mouse_unlocked);
+    function callback_mousemove(e) {
 
-		//
+        var movementX = e.movementX || e.mozMovementX || e.webkitMovementX || 0;
+        var movementY = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
 
-		function callback_mouse_locked() {
-			canvas.addEventListener('mousemove', callback_mousemove, false);
-		}
+        // console.log('Mouse movement: ' + movementX + ',' + movementY);
 
-		function callback_mouse_unlocked() {
-			canvas.removeEventListener('mousemove', callback_mousemove, false);
-		}
+        self._theta -= movementX / 5.0;
+        self._phi   -= movementY / 5.0;
+    }
 
-		function callback_mousemove(e) {
+    ///
+    /// /MOUSE
+    ///
 
-			var movementX = e.movementX || e.mozMovementX || e.webkitMovementX || 0;
-			var movementY = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
 
-			// console.log('Mouse movement: ' + movementX + ',' + movementY);
 
-			self._theta	-= movementX / 5.0;
-			self._phi	-= movementY / 5.0;
-		}
+    ///
+    /// TOUCH
+    ///
 
-		///
-		/// /MOUSE
-		///
+    try {
 
+        var elem = document.getElementById("canvasesdiv");
 
+        var previous_touch = null;
+        var previous_distance = null;
 
-		///
-		/// TOUCH
-		///
+        var saved_time = null;
 
-		try {
+        elem.addEventListener('touchstart', function(e) { try{
 
-			var elem = document.getElementById("canvasesdiv");
+            e.preventDefault();
 
-			var previous_touch = null;
-			var previous_distance = null;
+            previous_touch = null;
+            previous_distance = null;
 
-			var saved_time = null;
+            var tmp_time = Date.now();
 
-			elem.addEventListener('touchstart', function(e) { try{
+            if (e.targetTouches.length == 1 &&
+                saved_time &&
+                (tmp_time - saved_time) < 250)
+            {
+                self._force_forward = true;
+            }
 
-				e.preventDefault();
+            saved_time = tmp_time;
 
-				previous_touch = null;
-				previous_distance = null;
+        }catch(e){alert(e);} });
 
-				var tmp_time = Date.now();
+        elem.addEventListener('touchend', function(e) { try{
 
-				if (e.targetTouches.length == 1 &&
-					saved_time &&
-					(tmp_time - saved_time) < 250)
-				{
-					self._force_forward = true;
-				}
+            e.preventDefault();
 
-				saved_time = tmp_time;
+            previous_touch = null;
+            previous_distance = null;
 
-			}catch(e){alert(e);} });
+            // saved_time = null;
+            self._force_forward = false;
 
-			elem.addEventListener('touchend', function(e) { try{
+        }catch(e){alert(e);} });
 
-				e.preventDefault();
+        elem.addEventListener('touchmove', function (e) { try{
 
-				previous_touch = null;
-				previous_distance = null;
+            e.preventDefault();
 
-				// saved_time = null;
-				self._force_forward = false;
+            var touches = e.targetTouches;
 
-			}catch(e){alert(e);} });
+            if (touches.length == 0 || touches.length > 2)
+                return;
 
-			elem.addEventListener('touchmove', function (e) { try{
+            if (touches.length == 2)
+            {
+                var x1 = touches[0].pageX-touches[1].pageX;
+                var y1 = touches[0].pageY-touches[1].pageY;
 
-				e.preventDefault();
+                var length = Math.sqrt(x1*x1 + y1*y1);
 
-				var touches = e.targetTouches;
+                if (previous_distance)
+                {
+                    if (length > previous_distance)
+                        self._movementFlag |= 1<<0; // forward
+                    else
+                        self._movementFlag |= 1<<1; // backward
+                }
 
-				if (touches.length == 0 || touches.length > 2)
-					return;
+                previous_distance = length;
+            }
+            else
+            {
+                if (previous_touch)
+                {
+                    var step_x = previous_touch.pageX - touches[0].pageX;
+                    var step_y = previous_touch.pageY - touches[0].pageY;
+                    self._theta -= (step_x / 5.0);
+                    self._phi   -= (step_y / 5.0);
+                }
 
-				if (touches.length == 2)
-				{
-					var x1 = touches[0].pageX-touches[1].pageX;
-					var y1 = touches[0].pageY-touches[1].pageY;
+                previous_touch = touches[0];
+            }
 
-					var length = Math.sqrt(x1*x1 + y1*y1);
+        }catch(e){alert(e);} });
 
-					if (previous_distance)
-					{
-						if (length > previous_distance)
-							self._movementFlag |= 1<<0; // forward
-						else
-							self._movementFlag |= 1<<1; // backward
-					}
+        //          
 
-					previous_distance = length;
-				}
-				else
-				{
-					if (previous_touch)
-					{
-						var step_x = previous_touch.pageX - touches[0].pageX;
-						var step_y = previous_touch.pageY - touches[0].pageY;
-						self._theta	-= (step_x / 5.0);
-						self._phi	-= (step_y / 5.0);
-					}
+    } catch (e) {
+        alert('TOUCH='+JSON.stringify(e));
+    }
 
-					previous_touch = touches[0];
-				}
+    ///
+    /// /TOUCH
+    ///
 
-			}catch(e){alert(e);} });
+}
 
-			//			
+//
 
-		} catch (e) {
-			alert('TOUCH='+JSON.stringify(e));
-		}
+// FreeFlyCamera.prototype._degToRad = function (degrees) { return degrees * Math.PI / 180; }
 
-		///
-		/// /TOUCH
-		///
+//
 
-	}
+FreeFlyCamera.prototype.update = function (elapsed_sec) {
 
-	//
+    this.handleKeys();
 
-	// FreeFlyCamera.prototype._degToRad = function (degrees) { return degrees * Math.PI / 180; }
+    var speed = 16;
 
-	//
+    if      (this._movementFlag & 1<<0 || this._force_forward == true)
+    {
+        for (var i = 0; i < 3; ++i)
+            this._Position[i] += this._Forward[i] * elapsed_sec * speed;
+    }
+    else if (this._movementFlag & 1<<1)
+    {
+        for (var i = 0; i < 3; ++i)
+            this._Position[i] -= this._Forward[i] * elapsed_sec * speed;
+    }
 
-	FreeFlyCamera.prototype.update = function (elapsed_sec) {
 
-		this.handleKeys();
+    if      (this._movementFlag & 1<<2)
+    {
+        for (var i = 0; i < 3; ++i)
+            this._Position[i] -= this._Left[i] * elapsed_sec * speed;
+    }
+    else if (this._movementFlag & 1<<3)
+    {
+        for (var i = 0; i < 3; ++i)
+            this._Position[i] += this._Left[i] * elapsed_sec * speed;
+    }
 
-		var speed = 16;
 
-		if      (this._movementFlag & 1<<0 || this._force_forward == true)
-		{
-	        for (var i = 0; i < 3; ++i)
-	            this._Position[i] += this._Forward[i] * elapsed_sec * speed;
-		}
-		else if (this._movementFlag & 1<<1)
-		{
-	        for (var i = 0; i < 3; ++i)
-	            this._Position[i] -= this._Forward[i] * elapsed_sec * speed;
-		}
+    this._movementFlag = 0;
 
 
-		if      (this._movementFlag & 1<<2)
-		{
-	        for (var i = 0; i < 3; ++i)
-	            this._Position[i] -= this._Left[i] * elapsed_sec * speed;
-		}
-		else if (this._movementFlag & 1<<3)
-		{
-	        for (var i = 0; i < 3; ++i)
-	            this._Position[i] += this._Left[i] * elapsed_sec * speed;
-		}
 
+    
 
-	    this._movementFlag = 0;
+    this._phi = Math.max(Math.min(this._phi, 89), -89)
 
+    var Up = [0,0,1];
 
+    var upRadius = Math.cos((this._phi - 90) * 3.14 / 180);
+    Up[2] = Math.sin( (this._phi - 90) * 3.14 / 180);
+    Up[0] = upRadius * Math.cos(this._theta * 3.14 / 180);
+    Up[1] = upRadius * Math.sin(this._theta * 3.14 / 180);
 
-		
+    var forwardRadius = Math.cos(this._phi * 3.14 / 180);
+    this._Forward[2] = Math.sin(this._phi * 3.14 / 180);
+    this._Forward[0] = forwardRadius * Math.cos(this._theta * 3.14 / 180);
+    this._Forward[1] = forwardRadius * Math.sin(this._theta * 3.14 / 180);
 
-		this._phi = Math.max(Math.min(this._phi, 89), -89)
+    this._Left[0] = Up[1] * this._Forward[2] - Up[2] * this._Forward[1];
+    this._Left[1] = Up[2] * this._Forward[0] - Up[0] * this._Forward[2];
+    this._Left[2] = Up[0] * this._Forward[1] - Up[1] * this._Forward[0];
 
-	    var Up = [0,0,1];
+    this._Target[0] = this._Position[0] + this._Forward[0];
+    this._Target[1] = this._Position[1] + this._Forward[1];
+    this._Target[2] = this._Position[2] + this._Forward[2];
 
-	    var upRadius = Math.cos((this._phi - 90) * 3.14 / 180);
-	    Up[2] = Math.sin( (this._phi - 90) * 3.14 / 180);
-	    Up[0] = upRadius * Math.cos(this._theta * 3.14 / 180);
-	    Up[1] = upRadius * Math.sin(this._theta * 3.14 / 180);
+}
 
-	    var forwardRadius = Math.cos(this._phi * 3.14 / 180);
-	    this._Forward[2] = Math.sin(this._phi * 3.14 / 180);
-	    this._Forward[0] = forwardRadius * Math.cos(this._theta * 3.14 / 180);
-	    this._Forward[1] = forwardRadius * Math.sin(this._theta * 3.14 / 180);
+//
 
-	    this._Left[0] = Up[1] * this._Forward[2] - Up[2] * this._Forward[1];
-	    this._Left[1] = Up[2] * this._Forward[0] - Up[0] * this._Forward[2];
-	    this._Left[2] = Up[0] * this._Forward[1] - Up[1] * this._Forward[0];
+FreeFlyCamera.prototype.updateViewMatrix = function (viewMatrix) {
 
-	    this._Target[0] = this._Position[0] + this._Forward[0];
-	    this._Target[1] = this._Position[1] + this._Forward[1];
-	    this._Target[2] = this._Position[2] + this._Forward[2];
+    glm.mat4.lookAt( viewMatrix, this._Position, this._Target, [0,0,1] );
+}
 
-	}
+//
 
-	//
+FreeFlyCamera.prototype.setPosition = function (x, y, z) {
+    this._Position[0] = x;
+    this._Position[1] = y;
+    this._Position[2] = z;
+}
 
-	FreeFlyCamera.prototype.updateViewMatrix = function (viewMatrix) {
 
-        glm.mat4.lookAt( viewMatrix, this._Position, this._Target, [0,0,1] );
-	}
 
-	//
+///
+///
+///
+/// KEYBOARD
 
-	FreeFlyCamera.prototype.setPosition	= function (x, y, z) {
-		this._Position[0] = x;
-		this._Position[1] = y;
-		this._Position[2] = z;
-	}
+FreeFlyCamera.prototype.handleKeys = function() { try{
 
+    // forward
+    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_Z ) ||
+        this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_W ))
+        this._movementFlag |= 1<<0
 
+    // backward
+    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_S ))
+        this._movementFlag |= 1<<1
 
-	///
-	///
-	///
-	/// KEYBOARD
+    // strafe left
+    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_A ) ||
+        this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_Q ))
+        this._movementFlag |= 1<<2
 
-	FreeFlyCamera.prototype.handleKeys = function() { try{
+    // strafe right
+    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_D ))
+        this._movementFlag |= 1<<3
 
-		// forward
-		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_Z ) ||
-			this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_W ))
-			this._movementFlag |= 1<<0
+    /// /// ///
 
-		// backward
-		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_S ))
-			this._movementFlag |= 1<<1
+    // look up
+    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_UP ))
+        this._phi++;
 
-		// strafe left
-		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_A ) ||
-			this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_Q ))
-			this._movementFlag |= 1<<2
+    // look down
+    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_DOWN ))
+        this._phi--;
 
-		// strafe right
-		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_D ))
-			this._movementFlag |= 1<<3
+    // look left
+    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_LEFT ))
+        this._theta++;
 
-		/// /// ///
+    // look right
+    if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_RIGHT ))
+        this._theta--;
 
-		// look up
-		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_UP ))
-			this._phi++;
+}catch(err){alert(err);} }
 
-		// look down
-		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_DOWN ))
-			this._phi--;
 
-		// look left
-		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_LEFT ))
-			this._theta++;
+FreeFlyCamera.prototype.activate    = function () {
 
-		// look right
-		if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.ARROW_RIGHT ))
-			this._theta--;
+    this._keybrdHdl.activate();
+}
 
-	}catch(err){alert(err);} }
+FreeFlyCamera.prototype.deactivate  = function () {
 
+    this._keybrdHdl.deactivate();
+}
 
-	FreeFlyCamera.prototype.activate	= function () {
+/// KEYBOARD
+///
+///
+///
 
-	    this._keybrdHdl.activate();
-	}
-
-	FreeFlyCamera.prototype.deactivate	= function () {
-
-	    this._keybrdHdl.deactivate();
-	}
-
-	/// KEYBOARD
-	///
-	///
-	///
-
-
-	return FreeFlyCamera
-});
+module.exports = FreeFlyCamera;

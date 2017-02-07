@@ -1,64 +1,61 @@
 
-define(function() {
+function createKeyboardHandler(){
 
-    function createKeyboardHandler(){
+    this.keyCodes = {
+          KEY_Z : 90, KEY_W : 87
+        , KEY_S : 83
+        , KEY_A : 65, KEY_Q : 81
+        , KEY_D : 68
 
-        this.keyCodes = {
-              KEY_Z : 90, KEY_W : 87
-            , KEY_S : 83
-            , KEY_A : 65, KEY_Q : 81
-            , KEY_D : 68
+        , ARROW_LEFT  : 37
+        , ARROW_RIGHT : 39
+        , ARROW_UP    : 38
+        , ARROW_DOWN  : 40
+    };
 
-            , ARROW_LEFT  : 37
-            , ARROW_RIGHT : 39
-            , ARROW_UP    : 38
-            , ARROW_DOWN  : 40
-        };
+    this._pressedKeys = {};       
 
-        this._pressedKeys = {};       
-
-        function handleKeyDown(event) {
-            this._pressedKeys[event.keyCode] = true;
-        }
-        function handleKeyUp(event) {
-            this._pressedKeys[event.keyCode] = false;
-        }
-
-        this._activated = false;
-        this._handleKeyDown = handleKeyDown.bind(this);
-        this._handleKeyUp   = handleKeyUp.bind(this);
+    function handleKeyDown(event) {
+        this._pressedKeys[event.keyCode] = true;
+    }
+    function handleKeyUp(event) {
+        this._pressedKeys[event.keyCode] = false;
     }
 
-    //
+    this._activated = false;
+    this._handleKeyDown = handleKeyDown.bind(this);
+    this._handleKeyUp   = handleKeyUp.bind(this);
+}
 
-    createKeyboardHandler.prototype.isPressed = function (code) {
+//
 
-        return this._pressedKeys[code];
-    }
+createKeyboardHandler.prototype.isPressed = function (code) {
 
-    //
+    return this._pressedKeys[code];
+}
 
-    createKeyboardHandler.prototype.activate = function () {
+//
 
-        if (this._activated)
-            return;
+createKeyboardHandler.prototype.activate = function () {
 
-        document.addEventListener('keydown',    this._handleKeyDown);
-        document.addEventListener('keyup',      this._handleKeyUp);
+    if (this._activated)
+        return;
 
-        this._activated = true;
-    }
+    document.addEventListener('keydown',    this._handleKeyDown);
+    document.addEventListener('keyup',      this._handleKeyUp);
 
-    createKeyboardHandler.prototype.deactivate = function () {
+    this._activated = true;
+}
 
-        if (!this._activated)
-            return;
+createKeyboardHandler.prototype.deactivate = function () {
 
-        document.removeEventListener('keydown',    this._handleKeyDown);
-        document.removeEventListener('keyup',      this._handleKeyUp);
+    if (!this._activated)
+        return;
 
-        this._activated = false;
-    }
+    document.removeEventListener('keydown',    this._handleKeyDown);
+    document.removeEventListener('keyup',      this._handleKeyUp);
 
-    return createKeyboardHandler;
-});
+    this._activated = false;
+}
+
+module.exports = createKeyboardHandler;
