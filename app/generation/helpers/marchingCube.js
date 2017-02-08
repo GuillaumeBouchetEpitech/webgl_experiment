@@ -1,4 +1,6 @@
 
+"use strict"
+
 var MarchingCube = function(in_chunk_size, in_fTv, in_sample_cb, tetra) {
 
     this.chunk_size = in_chunk_size

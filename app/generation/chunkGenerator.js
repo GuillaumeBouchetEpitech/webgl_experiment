@@ -1,4 +1,6 @@
 
+"use strict"
+
 var gl = require('../gl-context.js');
 
 var marchingCube = require('./helpers/marchingCube.js');

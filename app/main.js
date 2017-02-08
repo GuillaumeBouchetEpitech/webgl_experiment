@@ -1,10 +1,11 @@
 
+"use strict"
 
 var gl = require('./gl-context.js');
 
-var glm = require('../lib/webgl/gl-matrix-2.1.0.js');
+var glm = require('../lib/webgl/gl-matrix-2.3.2.min.js');
 var myShaders = require('../lib/webgl/myShaders.js');
-var textureHelper = require('../lib/webgl/texture.js');
+var myTexture = require('../lib/webgl/myTexture.js');
 
 var unused_fpsmeter = require('../lib/fpsmeter.js');
 
@@ -398,8 +399,8 @@ crateImage.onload = function () {
 
     // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // flip vertically the texture
 
-    var buf = textureHelper.imageToUint8Array(crateImage);
-    buf = textureHelper.flipYImageArray(buf, crateImage.width, crateImage.height);
+    var buf = myTexture.imageToUint8Array(crateImage);
+    buf = myTexture.flipYImageArray(buf, crateImage.width, crateImage.height);
 
     gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, crateTexture);

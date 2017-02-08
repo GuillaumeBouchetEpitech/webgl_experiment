@@ -1,4 +1,6 @@
 
+"use strict"
+
 var gl = require('../gl-context.js');
 
 var createGeometryExperimental = function (vertices,shader, vertices_is_buffer) {

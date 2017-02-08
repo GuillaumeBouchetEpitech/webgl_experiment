@@ -1,7 +1,9 @@
 
+"use strict"
+
 var gl = require('../gl-context.js');
 
-var glm = require('../../lib/webgl/gl-matrix-2.1.0');
+var glm = require('../../lib/webgl/gl-matrix-2.3.2.min.js');
 var createKeyboardHandler = require('./helpers/keyboardHandler.js');
 var handle_pointerLock = require('./helpers/pointerLock.js');
 

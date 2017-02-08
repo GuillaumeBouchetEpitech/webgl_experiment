@@ -1,4 +1,6 @@
 
+"use strict"
+
 // https://www.opengl.org/wiki/GluProject_and_gluUnProject_code
 
 

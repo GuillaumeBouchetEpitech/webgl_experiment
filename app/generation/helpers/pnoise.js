@@ -1,4 +1,6 @@
 
+"use strict"
+
 var ClassicalNoise = function(r, octaves, freq, amp) {
 
     this._octaves       = octaves || 1;

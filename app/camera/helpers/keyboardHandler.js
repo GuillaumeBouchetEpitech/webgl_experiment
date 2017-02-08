@@ -1,4 +1,6 @@
 
+"use strict"
+
 function createKeyboardHandler(){
 
     this.keyCodes = {

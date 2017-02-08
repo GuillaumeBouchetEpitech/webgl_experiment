@@ -1,4 +1,6 @@
 
+"use strict"
+
 function createCubeVertices(size, arr_color, no_inside) {
 
     var outer_side = size / 2;

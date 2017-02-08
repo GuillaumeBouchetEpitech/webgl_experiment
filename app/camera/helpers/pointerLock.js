@@ -1,4 +1,6 @@
 
+"use strict"
+
 function handle_pointerLock (canvas, cb_enabled, cb_disabled, cb_error) {
 
     //

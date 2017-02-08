@@ -1,4 +1,6 @@
 
+"use strict"
+
 var FrustumCulling = function() {
 
     this.e_FrustumSide = { eRight : 0, eLeft : 1, eBottom : 2, eTop : 3, eBack : 4, eFront : 5 };

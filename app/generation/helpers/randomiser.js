@@ -1,4 +1,6 @@
 
+"use strict"
+
 var Randomiser = function() {
 
     this.RAND_MAX = 2147483648|0;
