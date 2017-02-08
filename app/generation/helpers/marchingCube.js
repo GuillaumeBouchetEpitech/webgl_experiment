@@ -1,5 +1,5 @@
 
-var MarchinCube = function(in_chunk_size, in_fTv, in_sample_cb, tetra) {
+var MarchingCube = function(in_chunk_size, in_fTv, in_sample_cb, tetra) {
 
     this.chunk_size = in_chunk_size
     this.fTv = in_fTv;
@@ -396,7 +396,7 @@ function vNormalizeVector( vec ) {
 }
 
 
-MarchinCube.prototype.getNormal = function( fX, fY, fZ ) {
+MarchingCube.prototype.getNormal = function( fX, fY, fZ ) {
 
     var step_dec = this.step_size * 0.1;
 
@@ -409,7 +409,7 @@ MarchinCube.prototype.getNormal = function( fX, fY, fZ ) {
     return vNormalizeVector( vec );
 }
 
-MarchinCube.prototype.getNormal2 = function( t1, t2, t3 ) {
+MarchingCube.prototype.getNormal2 = function( t1, t2, t3 ) {
  
     var Ux = t2[0] - t1[0];
     var Uy = t2[1] - t1[1];
@@ -433,7 +433,7 @@ MarchinCube.prototype.getNormal2 = function( t1, t2, t3 ) {
     return normal2
 }
 
-MarchinCube.prototype.marchCube = function( pos, geom_callback ) {
+MarchingCube.prototype.marchCube = function( pos, geom_callback ) {
 
     this.current_geom_callback = geom_callback;
 
@@ -445,7 +445,7 @@ MarchinCube.prototype.marchCube = function( pos, geom_callback ) {
     this.current_geom_callback = null;
 }
 
-MarchinCube.prototype.marchCube_step = function( step, pos, geom_callback ) {
+MarchingCube.prototype.marchCube_step = function( step, pos, geom_callback ) {
 
     this.current_geom_callback = geom_callback;
 
@@ -480,7 +480,7 @@ MarchinCube.prototype.marchCube_step = function( step, pos, geom_callback ) {
     return false;
 }
 
-MarchinCube.prototype.marchCube_single = function( iX, iY, iZ ) {
+MarchingCube.prototype.marchCube_single = function( iX, iY, iZ ) {
 
     var iCorner,
         iVertex,
@@ -653,7 +653,7 @@ MarchinCube.prototype.marchCube_single = function( iX, iY, iZ ) {
 
 
 
-MarchinCube.prototype.vMarchCube2 = function(iX, iY, iZ) {
+MarchingCube.prototype.vMarchCube2 = function(iX, iY, iZ) {
 
     /// add chunk pos here
     var fX = iX * this.step_size,
@@ -701,7 +701,7 @@ MarchinCube.prototype.vMarchCube2 = function(iX, iY, iZ) {
     }
 }
 
-MarchinCube.prototype.vMarchTetrahedron = function(pasTetrahedronPosition, pafTetrahedronValue) {
+MarchingCube.prototype.vMarchTetrahedron = function(pasTetrahedronPosition, pafTetrahedronValue) {
 
     var iEdge, iVert0, iVert1, iEdgeFlags, iTriangle, iCorner, iVertex, iFlagIndex = 0;
     var fOffset, fInvOffset, fValue = 0.0;
@@ -776,4 +776,4 @@ MarchinCube.prototype.vMarchTetrahedron = function(pasTetrahedronPosition, pafTe
 
 
 
-module.exports = MarchinCube
+module.exports = MarchingCube
