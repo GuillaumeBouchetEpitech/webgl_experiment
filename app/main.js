@@ -33,7 +33,7 @@ var shader_opt = {
     arr_attrib: ['aVertexPosition','aVertexColor'],
     arr_uniform: ['uMVMatrix','uPMatrix']
 }
-g_shaderProgram_color = new createShaders( gl, shader_opt );
+var g_shaderProgram_color = new createShaders( gl, shader_opt );
 
 //
 
@@ -43,7 +43,7 @@ var shader_opt = {
     arr_attrib: ['aVertexPosition','aVertexColor','aVertexNormal','aVertexBCenter'],
     arr_uniform: ['uMVMatrix','uPMatrix','uCameraPos','uSampler']
 }
-g_shaderProgram_experimental = new createShaders( gl, shader_opt );
+var g_shaderProgram_experimental = new createShaders( gl, shader_opt );
 
 //
 
@@ -145,7 +145,7 @@ var time_last = 0
 
 //
 
-g_FreeFlyCamera = new createFreeFlyCamera();
+var g_FreeFlyCamera = new createFreeFlyCamera();
 g_FreeFlyCamera.activate();
 
 g_FreeFlyCamera.setPosition(
@@ -155,7 +155,7 @@ g_FreeFlyCamera.setPosition(
 );
 
 
-g_FrustumCulling = new createFrustumCulling();
+var g_FrustumCulling = new createFrustumCulling();
 function chunk_is_visible(pos) {
 
     return g_FrustumCulling.cubeInFrustum(
@@ -831,11 +831,11 @@ function tick(in_event) {
     // render text
     //
 
-    ctx.font = "20px Arial";
+    ctx.font = "15px Arial";
     ctx.textAlign = "center";
     ctx.fillStyle = "white";
 
-    ctx.lineWidth="10";
+    ctx.lineWidth="7";
     ctx.strokeStyle="green";
 
     for (var i = 0; i < my_chunkGenerator._chunks.length; ++i)

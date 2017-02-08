@@ -8,7 +8,7 @@ var createKeyboardHandler = require('./helpers/keyboardHandler.js');
 var handle_pointerLock = require('./helpers/pointerLock.js');
 
 
-FreeFlyCamera = function () {
+var FreeFlyCamera = function () {
 
     this._phi = 0;
     this._theta = 0;
