@@ -3,7 +3,7 @@
 
 var gl = require('../gl-context.js');
 
-var createGeometryExperimental = function (vertices,shader, vertices_is_buffer) {
+var createGeometryExperimental = function (vertices, shader, vertices_is_buffer) {
 
     this._vbuffer = gl.createBuffer();
     this._shader = shader;
