@@ -26,7 +26,9 @@ var ClassicalNoise = function(r, octaves, freq, amp) {
 
 ///
 
-ClassicalNoise.prototype.noise_ex = function(x2, y2, z2) { 
+var proto = ClassicalNoise.prototype
+
+proto.noise_ex = function(x2, y2, z2) { 
 
     var result = 0.0;
     var amp = this._amplitude;
@@ -51,12 +53,12 @@ ClassicalNoise.prototype.noise_ex = function(x2, y2, z2) {
 
 ///
 
-ClassicalNoise.prototype.dot = function(g, x, y, z) { return g[0]*x + g[1]*y + g[2]*z; }; 
-ClassicalNoise.prototype.mix = function(a, b, t) { return (1.0-t)*a + t*b; };
-ClassicalNoise.prototype.fade = function(t) {  return t*t*t*(t*(t*6.0-15.0)+10.0); };
+proto.dot = function(g, x, y, z) { return g[0]*x + g[1]*y + g[2]*z; }; 
+proto.mix = function(a, b, t) { return (1.0-t)*a + t*b; };
+proto.fade = function(t) {  return t*t*t*(t*(t*6.0-15.0)+10.0); };
  
 // Classic Perlin noise, 3D version 
-ClassicalNoise.prototype.noise = function(x, y, z) { 
+proto.noise = function(x, y, z) { 
 
     // Find unit grid cell containing point 
     var X = Math.floor(x)|0;

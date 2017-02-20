@@ -3,13 +3,13 @@
 
 var gl = require('../gl-context.js');
 
-var createGeometryExperimental = require('../geometries/geometryExperimental.js');
+var createGeometryExperimental = require('../geometries/GeometryExperimental.js');
 
 
 var webworkify = require('webworkify');
 
 
-var chunkRenderer = function(chunk_size, shader, octaves, freq, amp, tetra) {
+var ChunkGenerator = function(chunk_size, shader, octaves, freq, amp, tetra) {
 
     this._shader = shader; // shader used
     this._chunks = []; // live chunks
@@ -24,7 +24,7 @@ var chunkRenderer = function(chunk_size, shader, octaves, freq, amp, tetra) {
     // no copy involed, it should be as fast as a possible
 
 
-    this._myWorker = webworkify(require('./chunkGenerator_worker.js'));
+    this._myWorker = webworkify(require('./ChunkGenerator_worker.js'));
     this._myWorker_status = 1; // worker available
     var self = this;
     this._myWorker.addEventListener('message', function (e) {
@@ -46,7 +46,7 @@ var chunkRenderer = function(chunk_size, shader, octaves, freq, amp, tetra) {
 
 //
 
-var proto = chunkRenderer.prototype;
+var proto = ChunkGenerator.prototype;
 
 proto.update = function(camera_pos, priority_cb) {
 
@@ -151,4 +151,4 @@ proto.render = function(tmp_mvMatrix, tmp_pMatrix, tmp_freefly_pos, validation_c
 
 //
 
-module.exports = chunkRenderer
+module.exports = ChunkGenerator

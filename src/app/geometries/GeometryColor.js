@@ -3,7 +3,7 @@
 
 var gl = require('../gl-context.js');
 
-var createGeometryColor = function (vertices, primitive) {
+var GeometryColor = function (vertices, primitive) {
 
     this._primitive = primitive;
 
@@ -28,7 +28,9 @@ var createGeometryColor = function (vertices, primitive) {
 
 //
 
-createGeometryColor.prototype.render = function(shader) {
+var proto = GeometryColor.prototype
+
+proto.render = function(shader) {
 
     if (this._ext)
     {
@@ -59,7 +61,7 @@ createGeometryColor.prototype.render = function(shader) {
 
 //
 
-createGeometryColor.prototype.render_backup = function(shader, no_clear) {
+proto.render_backup = function(shader, no_clear) {
 
     gl.enableVertexAttribArray(shader.aVertexPosition);
     gl.enableVertexAttribArray(shader.aVertexColor);
@@ -82,4 +84,6 @@ createGeometryColor.prototype.render_backup = function(shader, no_clear) {
     }
 };
 
-module.exports = createGeometryColor;
+//
+
+module.exports = GeometryColor;

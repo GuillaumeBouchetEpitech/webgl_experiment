@@ -5,11 +5,14 @@ var FrustumCulling = function() {
 
     this.e_FrustumSide = { eRight : 0, eLeft : 1, eBottom : 2, eTop : 3, eBack : 4, eFront : 5 };
     this.e_PlaneData = { eA : 0, eB : 1, eC : 2, eD : 3 };
-    // this._Frustum = [ [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ];
     this._Frustum = new Float32Array(24); // 6 * 4 values
 }
 
-FrustumCulling.prototype.normalizePlane = function (side) {
+//
+
+var proto = FrustumCulling.prototype;
+
+proto.normalizePlane = function (side) {
 
     var index = side * 4;
 
@@ -25,7 +28,7 @@ FrustumCulling.prototype.normalizePlane = function (side) {
     this._Frustum[index + this.e_PlaneData.eD] /= magnitude;
 }
 
-FrustumCulling.prototype.calculateFrustum = function ( proj, modl ) {
+proto.calculateFrustum = function ( proj, modl ) {
 
     var clip = new Float32Array(16);
 
@@ -96,7 +99,7 @@ FrustumCulling.prototype.calculateFrustum = function ( proj, modl ) {
     this.normalizePlane(this.e_FrustumSide.eFront);
 }
 
-FrustumCulling.prototype.pointInFrustum = function ( x, y, z )
+proto.pointInFrustum = function ( x, y, z )
 {
     for (var i = 0; i < 6; ++i)
         if (this._Frustum[i * 4 + this.e_PlaneData.eA] * x +
@@ -108,7 +111,7 @@ FrustumCulling.prototype.pointInFrustum = function ( x, y, z )
     return true;
 }
 
-FrustumCulling.prototype.sphereInFrustum = function ( x, y, z, radius )
+proto.sphereInFrustum = function ( x, y, z, radius )
 {
     for (var i = 0; i < 6; ++i)
         if (this._Frustum[i * 4 + this.e_PlaneData.eA] * x +
@@ -121,7 +124,7 @@ FrustumCulling.prototype.sphereInFrustum = function ( x, y, z, radius )
 }
 
 
-FrustumCulling.prototype.cubeInFrustum = function ( x, y, z, size ) {
+proto.cubeInFrustum = function ( x, y, z, size ) {
 
     for (var i = 0; i < 6; ++i) {
 

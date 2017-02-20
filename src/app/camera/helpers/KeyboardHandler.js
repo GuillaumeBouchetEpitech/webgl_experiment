@@ -1,7 +1,7 @@
 
 "use strict"
 
-function createKeyboardHandler(){
+function KeyboardHandler(){
 
     this.keyCodes = {
           KEY_Z : 90, KEY_W : 87
@@ -31,14 +31,16 @@ function createKeyboardHandler(){
 
 //
 
-createKeyboardHandler.prototype.isPressed = function (code) {
+var proto = KeyboardHandler.prototype;
+
+proto.isPressed = function (code) {
 
     return this._pressedKeys[code];
 }
 
 //
 
-createKeyboardHandler.prototype.activate = function () {
+proto.activate = function () {
 
     if (this._activated)
         return;
@@ -49,7 +51,7 @@ createKeyboardHandler.prototype.activate = function () {
     this._activated = true;
 }
 
-createKeyboardHandler.prototype.deactivate = function () {
+proto.deactivate = function () {
 
     if (!this._activated)
         return;
@@ -60,4 +62,4 @@ createKeyboardHandler.prototype.deactivate = function () {
     this._activated = false;
 }
 
-module.exports = createKeyboardHandler;
+module.exports = KeyboardHandler;

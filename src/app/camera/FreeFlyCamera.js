@@ -4,7 +4,7 @@
 var gl = require('../gl-context.js');
 
 var glm = require('../../lib/webgl/gl-matrix-2.3.2.min.js');
-var createKeyboardHandler = require('./helpers/keyboardHandler.js');
+var createKeyboardHandler = require('./helpers/KeyboardHandler.js');
 var handle_pointerLock = require('./helpers/pointerLock.js');
 
 
@@ -164,11 +164,9 @@ var FreeFlyCamera = function () {
 
 //
 
-// FreeFlyCamera.prototype._degToRad = function (degrees) { return degrees * Math.PI / 180; }
+var proto = FreeFlyCamera.prototype
 
-//
-
-FreeFlyCamera.prototype.update = function (elapsed_sec) {
+proto.update = function (elapsed_sec) {
 
     this.handleKeys();
 
@@ -230,14 +228,14 @@ FreeFlyCamera.prototype.update = function (elapsed_sec) {
 
 //
 
-FreeFlyCamera.prototype.updateViewMatrix = function (viewMatrix) {
+proto.updateViewMatrix = function (viewMatrix) {
 
     glm.mat4.lookAt( viewMatrix, this._Position, this._Target, [0,0,1] );
 }
 
 //
 
-FreeFlyCamera.prototype.setPosition = function (x, y, z) {
+proto.setPosition = function (x, y, z) {
     this._Position[0] = x;
     this._Position[1] = y;
     this._Position[2] = z;
@@ -250,7 +248,7 @@ FreeFlyCamera.prototype.setPosition = function (x, y, z) {
 ///
 /// KEYBOARD
 
-FreeFlyCamera.prototype.handleKeys = function() { try{
+proto.handleKeys = function() { try{
 
     // forward
     if (this._keybrdHdl.isPressed( this._keybrdHdl.keyCodes.KEY_Z ) ||
@@ -291,12 +289,12 @@ FreeFlyCamera.prototype.handleKeys = function() { try{
 }catch(err){alert(err);} }
 
 
-FreeFlyCamera.prototype.activate    = function () {
+proto.activate    = function () {
 
     this._keybrdHdl.activate();
 }
 
-FreeFlyCamera.prototype.deactivate  = function () {
+proto.deactivate  = function () {
 
     this._keybrdHdl.deactivate();
 }

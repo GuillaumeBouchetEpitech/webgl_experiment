@@ -7,7 +7,8 @@ var MarchingCube = function(in_chunk_size, in_fTv, in_sample_cb, tetra) {
     this.fTv = in_fTv;
     this.sample = in_sample_cb;
 
-    this.tetra = tetra || false;
+    // this.tetra = tetra || false;
+    this.tetra = true;
 
 
     this.current_index = 0;
@@ -397,8 +398,9 @@ function vNormalizeVector( vec ) {
     ];
 }
 
+var proto = MarchingCube.prototype;
 
-MarchingCube.prototype.getNormal = function( fX, fY, fZ ) {
+proto.getNormal = function( fX, fY, fZ ) {
 
     var step_dec = this.step_size * 0.1;
 
@@ -411,7 +413,7 @@ MarchingCube.prototype.getNormal = function( fX, fY, fZ ) {
     return vNormalizeVector( vec );
 }
 
-MarchingCube.prototype.getNormal2 = function( t1, t2, t3 ) {
+proto.getNormal2 = function( t1, t2, t3 ) {
  
     var Ux = t2[0] - t1[0];
     var Uy = t2[1] - t1[1];
@@ -435,7 +437,7 @@ MarchingCube.prototype.getNormal2 = function( t1, t2, t3 ) {
     return normal2
 }
 
-MarchingCube.prototype.marchCube = function( pos, geom_callback ) {
+proto.marchCube = function( pos, geom_callback ) {
 
     this.current_geom_callback = geom_callback;
 
@@ -443,46 +445,12 @@ MarchingCube.prototype.marchCube = function( pos, geom_callback ) {
     for (var iY = 0; iY < this.chunk_size; ++iY)
     for (var iZ = 0; iZ < this.chunk_size; ++iZ)
         this.marchCube_single( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
+        // this.vMarchCube2( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
 
     this.current_geom_callback = null;
 }
 
-MarchingCube.prototype.marchCube_step = function( step, pos, geom_callback ) {
-
-    this.current_geom_callback = geom_callback;
-
-    var tmp_index = 0;
-
-    for (var iX = 0; iX < this.chunk_size; ++iX)
-    for (var iY = 0; iY < this.chunk_size; ++iY)
-    for (var iZ = 0; iZ < this.chunk_size; ++iZ)
-    {
-        ++tmp_index;
-
-        if (tmp_index >= this.current_index &&
-            tmp_index < this.current_index + step)
-        {
-            if (!this.tetra)
-                this.marchCube_single( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
-            else
-                this.vMarchCube2( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
-        }
-    }
-
-    this.current_index += step;
-
-    this.current_geom_callback = null;
-
-    if (this.current_index >= this.chunk_size*this.chunk_size*this.chunk_size)
-    {
-        this.current_index = 0;
-        return true;
-    }
-
-    return false;
-}
-
-MarchingCube.prototype.marchCube_single = function( iX, iY, iZ ) {
+proto.marchCube_single = function( iX, iY, iZ ) {
 
     var iCorner,
         iVertex,
@@ -655,7 +623,7 @@ MarchingCube.prototype.marchCube_single = function( iX, iY, iZ ) {
 
 
 
-MarchingCube.prototype.vMarchCube2 = function(iX, iY, iZ) {
+proto.vMarchCube2 = function(iX, iY, iZ) {
 
     /// add chunk pos here
     var fX = iX * this.step_size,
@@ -703,7 +671,7 @@ MarchingCube.prototype.vMarchCube2 = function(iX, iY, iZ) {
     }
 }
 
-MarchingCube.prototype.vMarchTetrahedron = function(pasTetrahedronPosition, pafTetrahedronValue) {
+proto.vMarchTetrahedron = function(pasTetrahedronPosition, pafTetrahedronValue) {
 
     var iEdge, iVert0, iVert1, iEdgeFlags, iTriangle, iCorner, iVertex, iFlagIndex = 0;
     var fOffset, fInvOffset, fValue = 0.0;

@@ -9,15 +9,15 @@ var myTexture = require('../lib/webgl/myTexture.js');
 
 var unused_fpsmeter = require('../lib/fpsmeter.js');
 
-var createGeometryColor = require('./geometries/geometryColor.js');
+var createGeometryColor = require('./geometries/GeometryColor.js');
 var createCubeVertices = require('./geometries/createCubeVertices.js');
 var createFrustumVertices = require('./geometries/createFrustumVertices.js');
 
-var createFreeFlyCamera = require('./camera/freeFlyCamera.js')
-var createFrustumCulling = require('./camera/frustumCulling.js')
+var createFreeFlyCamera = require('./camera/FreeFlyCamera.js')
+var createFrustumCulling = require('./camera/FrustumCulling.js')
 var glhProject = require('./camera/glhProject.js')
 
-var chunkGenerator = require('./generation/chunkGenerator.js')
+var ChunkGenerator = require('./generation/ChunkGenerator.js')
 
 
 
@@ -127,7 +127,7 @@ var frustum_geom = new createGeometryColor(vertices, gl.LINES);
 
 
 
-var my_chunkGenerator = new chunkGenerator( k_chunk_size, shader_exp );
+var my_chunkGenerator = new ChunkGenerator( k_chunk_size, shader_exp );
 
 
 

@@ -3,7 +3,7 @@
 
 var gl = require('../gl-context.js');
 
-var createGeometryExperimental = function (vertices, shader, vertices_is_buffer) {
+var GeometryExperimental = function (vertices, shader, vertices_is_buffer) {
 
     this._vbuffer = gl.createBuffer();
     this._shader = shader;
@@ -32,7 +32,9 @@ var createGeometryExperimental = function (vertices, shader, vertices_is_buffer)
 
 //
 
-createGeometryExperimental.prototype.dispose = function() {
+var proto = GeometryExperimental.prototype;
+
+proto.dispose = function() {
 
     gl.deleteBuffer(this._vbuffer);
 
@@ -44,7 +46,7 @@ createGeometryExperimental.prototype.dispose = function() {
 
 //
 
-createGeometryExperimental.prototype.render = function() {
+proto.render = function() {
 
     var shader = this._shader;
 
@@ -77,7 +79,7 @@ createGeometryExperimental.prototype.render = function() {
 
 //
 
-createGeometryExperimental.prototype.render_backup = function(no_clear) {
+proto.render_backup = function(no_clear) {
 
     var shader = this._shader;
 
@@ -110,4 +112,4 @@ createGeometryExperimental.prototype.render_backup = function(no_clear) {
     }
 };
 
-module.exports = createGeometryExperimental;
+module.exports = GeometryExperimental;
