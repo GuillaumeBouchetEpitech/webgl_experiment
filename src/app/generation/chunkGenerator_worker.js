@@ -1,7 +1,7 @@
 
-var MarchinCube = require("./app/generation/helpers/marchingCube.js");
-var ClassicalNoise = require("./app/generation/helpers/pnoise.js");
-var Randomiser = require("./app/generation/helpers/randomiser.js");
+var MarchinCube = require("./helpers/marchingCube.js");
+var ClassicalNoise = require("./helpers/pnoise.js");
+var Randomiser = require("./helpers/randomiser.js");
 
 
 module.exports = function (self) {

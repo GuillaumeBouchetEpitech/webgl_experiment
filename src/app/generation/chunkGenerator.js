@@ -24,7 +24,7 @@ var chunkRenderer = function(chunk_size, shader, octaves, freq, amp, tetra) {
     this._myWorker_buffer = new Float32Array(100000);
 
 
-    this._myWorker = work(require('../../app_worker.js'));
+    this._myWorker = work(require('./chunkGenerator_worker.js'));
     this._myWorker_status = 0; // not ready
     var self = this;
     this._myWorker.addEventListener('message', function (e) {
