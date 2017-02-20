@@ -7,29 +7,27 @@ var Randomiser = require("./helpers/randomiser.js");
 module.exports = function (self) {
 
     var chunk_size = 15;
-    var tetra = false;
 
     var myRand = new Randomiser();
-
     var myNoise2 = new ClassicalNoise(myRand);
 
-    var _marchingCube = new MarchinCube(chunk_size, 0.0, function(x, y, z) {
-
+    function sample_cb (x, y, z) {
         return myNoise2.noise_ex(x, y, z);
-    }, tetra);
+    }
 
+    var _marchingCube = new MarchinCube(chunk_size, 0.0, sample_cb, true);
 
     self.addEventListener('message',function (e) {
 
         var pos = e.data.pos;
-        var buf = e.data.buf;
+        var buf = e.data.buf; // we now own the vertices buffer
 
         var buf_inc = 0;
 
         //
         // generate
 
-        var tmp_index = 0;
+        var curr_index = 0;
         var arr_indexes = [ [1,0,0], [0,1,0], [0,0,1] ];
 
         function marchCube_cb(vertex, color, normal) {
@@ -44,11 +42,8 @@ module.exports = function (self) {
             buf[buf_inc++] = normal[1];
             buf[buf_inc++] = normal[2];
 
-
-            var index = arr_indexes[tmp_index];
-            tmp_index = (tmp_index + 1) % 3;
-
-            // chunk_vertices.push( index[0], index[1], index[2] );
+            var index = arr_indexes[curr_index];
+            curr_index = (curr_index + 1) % 3;
 
             buf[buf_inc++] = index[0];
             buf[buf_inc++] = index[1];
@@ -61,14 +56,7 @@ module.exports = function (self) {
 
         self.postMessage({
             pos:pos,
-            // vertices:chunk_vertices
             vertices:buf
-        }
-        , [
-            buf.buffer
-        ]
-        );
+        }, [ buf.buffer ]); // we now transfer the ownership of the vertices buffer
     });
-
-    self.postMessage({ready:true});
 }

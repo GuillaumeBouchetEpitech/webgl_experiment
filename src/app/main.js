@@ -267,62 +267,6 @@ document.addEventListener('msfullscreenchange',     on_fullscreen_change, false)
 //
 
 
-
-// //
-// //
-// // GUI (reset button)
-
-// var gui_reset = document.getElementById("gui_reset");
-// gui_reset.addEventListener('click', function () {
-
-//     //
-//     // reset all the chunks in use and queued
-
-//     my_chunkGenerator._chunks.length = 0;
-//     my_chunkGenerator._chunk_queue.length = 0;
-//     my_chunkGenerator = null;
-
-//     //
-//     // retrieve the values
-
-//     var tmp_octave = document.getElementById("range_octaves").value;
-//     var tmp_frequency = document.getElementById("range_frequency").value / 100;
-//     var tmp_amplitude = 0.5;
-
-//     var tmp_tetra = document.getElementById("check_tetra").checked || false;
-
-//     //
-//     // set the new values
-
-//     my_chunkGenerator = new chunkGenerator(
-//         k_chunk_size, shader_exp,
-//         tmp_octave, tmp_frequency, tmp_amplitude,
-//         tmp_tetra
-//     );
-
-//     //
-//     // this part is like saying "the user have moved, generate your stuff now"
-
-//     var curr_index_x = Math.floor(g_FreeFlyCamera._Position[0] / k_chunk_size);
-//     saved_index = [curr_index_x +1,0,0]
-// })
-
-// // GUI (reset button)
-// //
-// //
-
-
-
-//
-// FPS METER
-
-// var myFpsmeter_elem = document.getElementById('canvasesdiv');
-// var myFpsmeter = new window.FPSMeter(
-//     myFpsmeter_elem,
-//     window.FPSMeter.theme.transparent
-// );
-
-
 //
 // FPS METER
 
@@ -337,10 +281,6 @@ var myFpsmeter2 = new window.FPSMeter(
     myFpsmeter2_elem,
     window.FPSMeter.theme.transparent
 );
-
-// FPS METER
-//
-
 
 // FPS METER
 //
@@ -464,11 +404,16 @@ function tick(in_event) {
     myFpsmeter.tickStart();
 
 
-        //  check if move to ask chunks
-        //      -> if yes
-        //          exclude chunk out of range
-        //          include chunk in range
 
+
+    //
+    //
+    ////// generation
+
+    //  check if move to ask chunks
+    //      -> if yes
+    //          exclude chunk out of range
+    //          include chunk in range
 
     // compute the current chunk in use
     var curr_index = [
@@ -532,17 +477,54 @@ function tick(in_event) {
         for (var y = min_index[1]; y <= max_index[1]; ++y)
         for (var x = min_index[0]; x <= max_index[0]; ++x)
         {
-            my_chunkGenerator._chunk_queue.push([
+            var pos = [
                 x * k_chunk_size,
                 y * k_chunk_size,
                 z * k_chunk_size
-            ]);
+            ]
+
+            /// already processed ?
+            var found = false;
+            for (var j = 0; j < my_chunkGenerator._chunks.length; ++j)
+                if (my_chunkGenerator._chunks[j].pos[0] === pos[0] &&
+                    my_chunkGenerator._chunks[j].pos[1] === pos[1] &&
+                    my_chunkGenerator._chunks[j].pos[2] === pos[2])
+                {
+                    found = true;
+                    break;
+                }
+
+            if (found) // is already processed
+                continue;
+
+            my_chunkGenerator._chunk_queue.push(pos);
         }
 
     }
 
+    {
+        var p = g_FreeFlyCamera._Position;
 
+        // here we do not use the true position of the camera but just a bit forward instead
+        var camera_pos = [
+            p[0],
+            p[1],
+            p[2]
+        ];
 
+        // this callback will prioritise the unprocessed
+        // chunks in the field of view of the camera
+        function priority_callback (try_pos, best_pos) {
+
+            return chunk_is_visible(try_pos);
+        }
+
+        my_chunkGenerator.update(camera_pos, priority_callback);
+    }
+
+    ////// /generation
+    //
+    //
 
 
 
@@ -568,40 +550,6 @@ function tick(in_event) {
     //
     //
 
-
-
-
-
-    //
-    //
-    ////// generation
-
-    {
-        var p = g_FreeFlyCamera._Position;
-        var f = g_FreeFlyCamera._Forward;
-
-        // here we do not use the true position of the camera but just a bit forward instead
-        var camera_pos = [
-            p[0],
-            p[1],
-            p[2]
-        ];
-
-        // this callback simply prioritise visible and unprocessed chunks
-        function priority_callback (try_pos, best_pos) {
-
-            if (chunk_is_visible(try_pos))
-                return true;
-
-            return false;
-        }
-
-        my_chunkGenerator.update(camera_pos, priority_callback);
-    }
-
-    ////// /generation
-    //
-    //
 
 
     myFpsmeter.tick();
