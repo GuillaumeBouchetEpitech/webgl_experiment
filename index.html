@@ -51,115 +51,6 @@
     <!--  -->
 
 
-<!-- 
-        <script id="shader-fs-light" type="x-shader/x-fragment">
-
-            precision mediump float;
-
-            varying vec4 vColor;
-
-            varying vec3 normalInterp;
-            varying vec3 vertPos;
-
-
-            const vec3 lightPos = vec3(0.0,0.0,0.0);
-            const vec3 specColor = vec3(1.0, 1.0, 1.0);
-
-            void main(void) {
-
-                vec3 normal = normalize(normalInterp);
-                vec3 lightDir = normalize(lightPos - vertPos);
-
-                float lambertian = max(dot(lightDir,normal), 0.0);
-                float specular = 0.0;
-
-                if (lambertian > 0.0) {
-
-                    vec3 reflectDir = reflect(-lightDir, normal);
-                    vec3 viewDir = normalize(-vertPos);
-
-                    float specAngle = max(dot(reflectDir, viewDir), 0.0);
-                    if (specAngle > 0)
-                        specular = pow(specAngle, 4.0);
-                }
-
-                gl_FragColor = vec4( vColor.xyz * 0.2 + lambertian * vColor.xyz + specular * specColor, 1.0);
-            }
-        </script>
-
-        <script id="shader-vs-light" type="x-shader/x-vertex">
-
-            attribute vec3 aVertexPosition, aVertexColor, aVertexNormal;
-
-            uniform mat4 uMVMatrix;
-            uniform mat4 uPMatrix;
-
-            varying vec4 vColor;
-
-            varying vec3 normalInterp, vertPos;
-
-            void main(void) {
-
-                vec4 vertPos4 = uMVMatrix * vec4(aVertexPosition, 1.0);
-                vertPos = vec3(vertPos4) / vertPos4.w;
-                normalInterp = vec3( uMVMatrix * vec4(aVertexNormal, 0.0) );
-
-                //
-
-                gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-
-                vColor = vec4(aVertexColor, 1);
-            }
-        </script>
- -->
-
-
-    <!--  -->
-
-
-<!-- 
-        <script id="shader-fs-bcenter" type="x-shader/x-fragment">
-
-            precision mediump float;
-
-            varying vec4 vColor;
-            varying vec3 vBCenter;
-
-            void main(void) {
-
-                if (any(lessThan(vBCenter, vec3(0.02))))
-                    gl_FragColor = vec4(1);
-                else
-                    gl_FragColor = vColor;
-            }
-        </script>
-
-        <script id="shader-vs-bcenter" type="x-shader/x-vertex">
-
-            attribute vec3 aVertexPosition;
-            attribute vec3 aVertexColor;
-            attribute vec3 aVertexBCenter;
-
-            varying vec4 vColor;
-            varying vec3 vBCenter;
-
-            uniform mat4 uMVMatrix;
-            uniform mat4 uPMatrix;
-
-            void main(void) {
-
-                vColor = vec4(aVertexColor,1.0);
-                vBCenter = aVertexBCenter;
-
-                gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-            }
-        </script>
- -->
-
-
-    <!--  -->
-
-
 
         <script id="shader-fs-experimental" type="x-shader/x-fragment">
 
@@ -167,120 +58,122 @@
 
             uniform sampler2D uSampler;
 
-            varying vec4 vColor;
+            varying vec3 vColor;
             varying vec3 vBCenter;
 
             varying vec3 vNormalInterp;
             varying vec3 vVertPos;
             varying float vDistance;
 
-            // TODO -> this is dirty
-            varying vec3 vVertPos2;
-            varying vec3 vNormalInterp2;
+            varying vec3 vPureVertexPos;
+            varying vec3 vPureNormalInterp;
 
             const vec3 k_lightPos = vec3(0.0,0.0,0.0);
             const vec3 k_specColor = vec3(1.0, 1.0, 1.0);
 
-            void main(void) {
+            const float k_range_min = 20.0;
+            const float k_range_max = 23.0;
 
+            void main(void)
+            {
 
-                //
-                //
-                // wireframe
+                { // wireframe
 
-                if (gl_FrontFacing)
-                {
-
-                    // "bumped wireframe" effect on the front facing
-
-                    if (vDistance > 20.0 && vDistance < 23.0)
+                    if (gl_FrontFacing)
                     {
+                        // "bumped wireframe" effect on the front facing
 
-                        if (all(greaterThan(vBCenter, vec3(0.03))) &&
-                            any(lessThan(vBCenter, vec3(0.08))))
+                        if (vDistance > k_range_min &&
+                            vDistance < k_range_max)
                         {
-                            gl_FragColor = vColor;
+
+                            if (all(greaterThan(vBCenter, vec3(0.03))) &&
+                                any(lessThan(vBCenter, vec3(0.08))))
+                            {
+                                gl_FragColor = vec4(vColor, 1.0);
+                                return;
+                            }
+                                
+                        }
+
+                    }
+                    else
+                    {
+                        // normal wireframe effect on the back facing
+
+                        if (any(lessThan(vBCenter, vec3(0.06))))
+                        {
+                            gl_FragColor = vec4(1);
                             return;
                         }
-                            
                     }
 
-                }
-                else
-                {
-                    // normal wireframe effect on the back facing
+                    // wireframe only for the backface
+                    if (!gl_FrontFacing)
+                        discard;
 
-                    if (any(lessThan(vBCenter, vec3(0.06))))
-                    {
-                        gl_FragColor = vec4(1);
-                        return;
-                    }
-                }
+                } // /wireframe
 
-                // /wireframe
-                //
-                //
+                vec3 tmp_color = vColor;
 
-                // lines only for the backface
-                if (!gl_FrontFacing)
-                    discard;
+                { // texture
 
-                // lighting
-                vec3 normal = normalize(vNormalInterp);
-                vec3 lightDir = normalize(k_lightPos - vVertPos);
+                    // current 3d texture coordinate
+                    vec3 flooredPos = vec3(
+                        vPureVertexPos.x - floor(vPureVertexPos.x),
+                        vPureVertexPos.y - floor(vPureVertexPos.y),
+                        vPureVertexPos.z - floor(vPureVertexPos.z)
+                    );
 
-                // TODO -> this is dirty
-                vec3 test = vec3(
-                    vVertPos2.x - floor(vVertPos2.x),
-                    vVertPos2.y - floor(vVertPos2.y),
-                    vVertPos2.z - floor(vVertPos2.z)
-                );
-
-                vec3 tmp_color = vColor.xyz;
-                vec3 tmp_normal = vNormalInterp.xyz;
-
-                {
-                    // TODO -> this is dirty
-                    vec3 normal2 = normalize( vNormalInterp2.xyz );
-                    vec3 blend_weights = abs( normal2 );
-                    blend_weights = ( blend_weights - 0.2 ) * 7.;  
-                    blend_weights = max( blend_weights, 0. );
+                    vec3 blend_weights = abs( normalize( vPureNormalInterp.xyz ) );
+                    blend_weights = max( ( blend_weights - 0.2 ) * 7., 0. );
                     blend_weights /= ( blend_weights.x + blend_weights.y + blend_weights.z );
 
-                    vec2 coord1 = test.yz * 0.5 + 0.5;
-                    vec2 coord2 = test.xz * 0.5 + 0.5;
-                    vec2 coord3 = test.xy * 0.5;
+                    // horizontal texture coordinates -> shoudl be a wall
+                    vec2 texcoord1 = flooredPos.yz * 0.5 + 0.5;
+                    vec2 texcoord2 = flooredPos.xz * 0.5 + 0.5;
+                    // vertical texture coord -> should be green grass
+                    vec2 texcoord3 = flooredPos.xy * 0.5;
 
-                    // dirt on the ceilling instead of grass
-                    if (vNormalInterp2.z < 0.0)
-                        coord3 = vec2(test.x * 0.5, test.y * 0.5 + 0.5);
+                    if (vPureNormalInterp.z < 0.0)
+                        texcoord3.y += 0.5; // switch the texture Y -> dirt on the ceilling instead of grass
 
-                    vec3 bump1 = texture2D( uSampler, coord1 ).rgb;
-                    vec3 bump2 = texture2D( uSampler, coord2 ).rgb;
-                    vec3 bump3 = texture2D( uSampler, coord3 ).rgb;
+                    // horizontal color
+                    vec3 texColor1 = texture2D( uSampler, texcoord1 ).rgb;
+                    vec3 texColor2 = texture2D( uSampler, texcoord2 ).rgb;
+                    // vertical color
+                    vec3 texColor3 = texture2D( uSampler, texcoord3 ).rgb;
 
-                    vec3 blended_bump = bump1 * blend_weights.xxx +
-                                        bump2 * blend_weights.yyy +
-                                        bump3 * blend_weights.zzz;
+                    tmp_color = texColor1 * blend_weights.xxx +
+                                texColor2 * blend_weights.yyy +
+                                texColor3 * blend_weights.zzz;
 
-                    tmp_color = blended_bump;
-                }
+                } // texture
 
-                float lambertian = max(dot(lightDir,tmp_normal), 0.0);
-                float specular = 0.0;
+                { // lighting
 
-                // lighting specular
-                if (lambertian > 0.0)
-                {
-                    vec3 reflectDir = reflect(-lightDir, normal);
-                    vec3 viewDir = normalize(-vVertPos);
+                    vec3 normal = normalize(vNormalInterp);
+                    vec3 lightDir = normalize(k_lightPos - vVertPos);
 
-                    float specAngle = max(dot(reflectDir, viewDir), 0.0);
-                    specular = pow(specAngle, 8.0);
-                }
+                    float lambertian = max(dot(lightDir,vNormalInterp.xyz), 0.0);
+                    float specular = 0.0;
 
-                // lighting output
-                gl_FragColor = vec4(tmp_color.xyz*0.2 + lambertian*tmp_color.xyz + specular*k_specColor, 1.0);
+                    // lighting specular
+                    if (lambertian > 0.0)
+                    {
+                        vec3 reflectDir = reflect(-lightDir, normal);
+                        vec3 viewDir = normalize(-vVertPos);
+
+                        float specAngle = max(dot(reflectDir, viewDir), 0.0);
+                        specular = pow(specAngle, 16.0);
+                    }
+
+                    // lighting output
+                    tmp_color = tmp_color.xyz*0.05 + tmp_color.xyz*lambertian + specular*k_specColor;
+
+                } // lighting
+
+                gl_FragColor = vec4(tmp_color, 1.0);
             }
         </script>
 
@@ -292,27 +185,28 @@
             uniform mat4 uPMatrix;
             uniform vec3 uCameraPos;
 
-            varying vec4 vColor;
+            varying vec3 vColor;
             varying vec3 vBCenter;
 
             varying vec3 vNormalInterp;
             varying vec3 vVertPos;
             varying float vDistance;
-            varying vec3 vVertPos2;
-            varying vec3 vNormalInterp2;
 
-            const float k_range = 10.0;
-            const float k_range_width = 3.0;
+            varying vec3 vPureVertexPos;
+            varying vec3 vPureNormalInterp;
+
+            const float k_range_min = 20.0;
+            const float k_range_max = 23.0;
 
 
-            void main(void) {
-
+            void main(void)
+            {
                 vec4 vertPos4 = uMVMatrix * vec4(aVertexPosition, 1.0);
+                vVertPos = vec3(vertPos4) / vertPos4.w;
                 vNormalInterp = vec3( uMVMatrix * vec4(aVertexNormal, 0.0) );
 
-                vVertPos = vec3(vertPos4) / vertPos4.w;
-                vVertPos2 = aVertexPosition;
-                vNormalInterp2 = aVertexNormal;
+                vPureVertexPos = aVertexPosition;
+                vPureNormalInterp = aVertexNormal;
 
                 //
 
@@ -320,10 +214,11 @@
 
                 vDistance = tmp_dist;
 
-                vColor = vec4(aVertexColor, 1);
+                vColor = aVertexColor;
                 vBCenter = aVertexBCenter;
 
-                if (tmp_dist < 20.0 || tmp_dist > 23.0)
+                if (tmp_dist < k_range_min ||
+                    tmp_dist > k_range_max)
                 {
                     gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
                 }
