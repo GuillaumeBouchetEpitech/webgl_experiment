@@ -79,16 +79,16 @@ proto.update = function(camera_pos, priority_cb) {
         var best_dist = 9999;
         var best_pos = null;
 
-        for (var i = 1; i < this._chunk_queue.length; ++i)
+        for (var i = 0; i < this._chunk_queue.length; ++i)
         {
             var try_pos = this._chunk_queue[i];
 
             if (best_index == -1 || priority_cb( try_pos, best_pos ))
             {
                 var chunk_center = [
-                    try_pos[0] * this._chunk_size + this._chunk_size / 2,
-                    try_pos[1] * this._chunk_size + this._chunk_size / 2,
-                    try_pos[2] * this._chunk_size + this._chunk_size / 2
+                    try_pos[0] + this._chunk_size / 2,
+                    try_pos[1] + this._chunk_size / 2,
+                    try_pos[2] + this._chunk_size / 2
                 ];
 
                 var dist = calc_length( camera_pos[0] - chunk_center[0],
