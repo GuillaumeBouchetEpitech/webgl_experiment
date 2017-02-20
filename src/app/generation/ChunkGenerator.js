@@ -85,15 +85,9 @@ proto.update = function(camera_pos, priority_cb) {
 
             if (best_index == -1 || priority_cb( try_pos, best_pos ))
             {
-                var chunk_center = [
-                    try_pos[0] + this._chunk_size / 2,
-                    try_pos[1] + this._chunk_size / 2,
-                    try_pos[2] + this._chunk_size / 2
-                ];
-
-                var dist = calc_length( camera_pos[0] - chunk_center[0],
-                                        camera_pos[1] - chunk_center[1],
-                                        camera_pos[2] - chunk_center[2] );
+                var dist = calc_length( camera_pos[0] - try_pos[0] - this._chunk_size / 2,
+                                        camera_pos[1] - try_pos[1] - this._chunk_size / 2,
+                                        camera_pos[2] - try_pos[2] - this._chunk_size / 2 );
 
                 if (best_dist < dist)
                     continue;
