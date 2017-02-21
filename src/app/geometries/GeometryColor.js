@@ -14,16 +14,6 @@ var GeometryColor = function (vertices, primitive) {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
 
     this._vbuffer.numItems = vertices.length / 6;
-
-
-
-    //
-    // tmp
-
-    this._ext = gl.getExtension("OES_vertex_array_object");
-
-    // /tmp
-    //
 }
 
 //
@@ -32,25 +22,25 @@ var proto = GeometryColor.prototype
 
 proto.render = function(shader) {
 
-    if (this._ext)
+    if (gl._extension_vao)
     {
         if (this._vao)
         {
-            this._ext.bindVertexArrayOES( this._vao );
+            gl._extension_vao.bindVertexArrayOES( this._vao );
 
                 gl.drawArrays( this._primitive, 0, this._vbuffer.numItems );
 
-            this._ext.bindVertexArrayOES( null );
+            gl._extension_vao.bindVertexArrayOES( null );
         }
         else
         {
-            this._vao = this._ext.createVertexArrayOES();
+            this._vao = gl._extension_vao.createVertexArrayOES();
 
-            this._ext.bindVertexArrayOES( this._vao );
+            gl._extension_vao.bindVertexArrayOES( this._vao );
 
                 this.render_backup(shader, true);
 
-            this._ext.bindVertexArrayOES( null );
+            gl._extension_vao.bindVertexArrayOES( null );
         }
     }
     else

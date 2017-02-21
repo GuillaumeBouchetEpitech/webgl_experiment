@@ -10,36 +10,30 @@ var GeometryExperimental = function (vertices, shader, vertices_is_buffer) {
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this._vbuffer);
 
-    if (!vertices_is_buffer)
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-    else
-        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
 
     this._vbuffer.numItems = vertices.length / 12;
-
-    // console.log('create called');
-
-
-    //
-    // tmp
-
-    if (gl.getExtension)
-        this._ext = gl.getExtension("OES_vertex_array_object");
-
-    // /tmp
-    //
 }
 
 //
 
 var proto = GeometryExperimental.prototype;
 
+proto.update = function(vertices) {
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._vbuffer);
+
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
+
+    this._vbuffer.numItems = vertices.length / 12;
+}
+
 proto.dispose = function() {
 
     gl.deleteBuffer(this._vbuffer);
 
     if (this._vao)
-        this._ext.deleteVertexArrayOES( this._vao );
+        gl._extension_vao.deleteVertexArrayOES( this._vao );
 
     // console.log('dispose called');
 }
@@ -50,25 +44,25 @@ proto.render = function() {
 
     var shader = this._shader;
 
-    if (this._ext)
+    if (gl._extension_vao)
     {
         if (this._vao)
         {
-            this._ext.bindVertexArrayOES( this._vao );
+            gl._extension_vao.bindVertexArrayOES( this._vao );
 
                 gl.drawArrays( gl.TRIANGLES, 0, this._vbuffer.numItems );
 
-            this._ext.bindVertexArrayOES( null );
+            gl._extension_vao.bindVertexArrayOES( null );
         }
         else
         {
-            this._vao = this._ext.createVertexArrayOES();
+            this._vao = gl._extension_vao.createVertexArrayOES();
 
-            this._ext.bindVertexArrayOES( this._vao );
+            gl._extension_vao.bindVertexArrayOES( this._vao );
 
                 this.render_backup(true);
 
-            this._ext.bindVertexArrayOES( null );
+            gl._extension_vao.bindVertexArrayOES( null );
         }
     }
     else
