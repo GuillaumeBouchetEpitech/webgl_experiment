@@ -64,7 +64,7 @@ function createCubeVertices(fovY, aspect, zNear, zFar) {
         for (var j = 0; j < 3; ++j)
             fvertices.push( vertices[curr_index + j] );
 
-        fvertices.push( 1,1,1 );
+        fvertices.push( 1,1,0 );
     }
 
     return fvertices;
