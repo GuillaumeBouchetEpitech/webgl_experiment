@@ -9,7 +9,7 @@ var createGeometryExperimental = require('../geometries/GeometryExperimental.js'
 var webworkify = require('webworkify');
 
 
-var ChunkGenerator = function(chunk_size, shader, octaves, freq, amp, tetra) {
+var ChunkGenerator = function(chunk_size, shader) {
 
     this._shader = shader; // shader used
     this._chunks = []; // live chunks
