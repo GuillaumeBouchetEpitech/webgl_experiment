@@ -270,15 +270,9 @@ document.addEventListener('msfullscreenchange',     on_fullscreen_change, false)
 //
 // FPS METER
 
-var myFpsmeter_elem = document.getElementById('fpsmeter1');
+var myFpsmeter_elem = document.getElementById('fpsmeter');
 var myFpsmeter = new window.FPSMeter(
     myFpsmeter_elem,
-    window.FPSMeter.theme.transparent
-);
-
-var myFpsmeter2_elem = document.getElementById('fpsmeter2');
-var myFpsmeter2 = new window.FPSMeter(
-    myFpsmeter2_elem,
     window.FPSMeter.theme.transparent
 );
 
@@ -552,11 +546,6 @@ function tick(in_event) {
     //
 
 
-
-    myFpsmeter.tick();
-
-
-    myFpsmeter2.tickStart();
 
 
     //
@@ -876,6 +865,6 @@ function tick(in_event) {
     //
     //
 
-    myFpsmeter2.tick();
+    myFpsmeter.tick();
 
 } // function tick(in_event)
