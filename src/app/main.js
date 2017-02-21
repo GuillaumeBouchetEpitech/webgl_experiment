@@ -464,7 +464,8 @@ function tick(in_event) {
                 curr_pos[1] < min_index[1] || curr_pos[1] > max_index[1] ||
                 curr_pos[2] < min_index[2] || curr_pos[2] > max_index[2])
             {
-                my_chunkGenerator._chunks[i].geom.dispose();
+                // my_chunkGenerator._chunks[i].geom.dispose();
+                my_chunkGenerator._geoms.push(my_chunkGenerator._chunks[i].geom);
                 my_chunkGenerator._chunks.splice(i, 1);
                 i--;
             }

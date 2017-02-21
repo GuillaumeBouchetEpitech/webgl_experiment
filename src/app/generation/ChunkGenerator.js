@@ -13,8 +13,10 @@ var ChunkGenerator = function(chunk_size, shader, octaves, freq, amp, tetra) {
 
     this._shader = shader; // shader used
     this._chunks = []; // live chunks
-    this._chunk_queue = []; // 
+    this._chunk_queue = []; // position to be processed
     this._chunk_size = chunk_size;
+
+    this._geoms = []; // position to be processed
 
 
     // massive buffer of 100k float32 that will act as a
@@ -34,7 +36,16 @@ var ChunkGenerator = function(chunk_size, shader, octaves, freq, amp, tetra) {
         var pos = e.data.pos;
         self._myWorker_buffer = e.data.vertices; // we now own the vertices buffer
 
-        var geom = new createGeometryExperimental(self._myWorker_buffer, self._shader, true);
+        var geom = null;
+        if (self._geoms.length == 0)
+        {
+            geom = new createGeometryExperimental(self._myWorker_buffer, self._shader);
+        }
+        else
+        {
+            geom = self._geoms.pop();
+            geom.update(self._myWorker_buffer);
+        }
 
         // save
 
