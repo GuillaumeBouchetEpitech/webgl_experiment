@@ -15,6 +15,12 @@ function RendererCanvas ()
 
 var proto = RendererCanvas.prototype;
 
+proto.resize = function (width, height)
+{
+    ctx.width = width;
+    ctx.height = height;
+}
+
 proto.render = function ()
 {
     ctx.clearRect(0, 0, ctx.width, ctx.height);

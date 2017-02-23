@@ -38,78 +38,6 @@ if ('ontouchstart' in window) {
 
 
 
-// //
-// //
-// // GUI (fullscreen button)
-
-// var gui_fullscreen = document.getElementById("gui_fullscreen");
-// gui_fullscreen.addEventListener('click', function () {
-
-//     var elem = document.getElementById("canvasesdiv");
-
-//     // go full-screen
-//     if (elem.requestFullscreen)
-//         elem.requestFullscreen();
-//     else if (elem.webkitRequestFullscreen)
-//         elem.webkitRequestFullscreen();
-//     else if (elem.mozRequestFullScreen)
-//         elem.mozRequestFullScreen();
-//     else if (elem.msRequestFullscreen)
-//         elem.msRequestFullscreen();
-// });
-
-// function on_fullscreen_change() {
-
-//     var elem = document.getElementById("canvasesdiv");
-//     var canvas = document.getElementById("main-canvas");
-//     var s_canvas = document.getElementById("second-canvas");
-
-//     var tmp_width = null;
-//     var tmp_height = null;
-
-//     if (document.fullscreen ||
-//         document.mozFullScreen ||
-//         document.webkitIsFullScreen ||
-//         document.msFullscreenElement)
-//     {
-//         elem.style.position = "absolute";
-
-//         tmp_width = window.innerWidth;
-//         tmp_height = window.innerHeight;
-//     }
-//     else
-//     {
-//         elem.style.position = "relative";
-
-//         tmp_width = 800;
-//         tmp_height = 600;
-//     }
-
-//     elem.style.left = "0px";
-//     elem.style.top = "0px";
-
-//     canvas.width = s_canvas.width = tmp_width;
-//     canvas.height = s_canvas.height = tmp_height;
-
-//     gl.viewportWidth = gl.canvas.clientWidth;
-//     gl.viewportHeight = gl.canvas.clientHeight;
-
-//     //
-
-//     aspectRatio = gl.viewportWidth * 0.75 / gl.viewportHeight;
-
-//     var vertices = createFrustumVertices(70, aspectRatio, 0.1, 40);
-//     frustum_geom = new createGeometryColor(vertices, gl.LINES);
-// }
-
-// document.addEventListener('fullscreenchange',       on_fullscreen_change, false);
-// document.addEventListener('mozfullscreenchange',    on_fullscreen_change, false);
-// document.addEventListener('webkitfullscreenchange', on_fullscreen_change, false);
-// document.addEventListener('msfullscreenchange',     on_fullscreen_change, false);
-
-// // GUI (fullscreen button)
-// //
-// //
 
 
 //
@@ -185,6 +113,84 @@ g_data.add_geom = function(buffer)
 {
     return RendererWebGL.add_geom(buffer);
 }
+
+
+
+
+
+
+
+//
+//
+// GUI (fullscreen button)
+
+var gui_fullscreen = document.getElementById("gui_fullscreen");
+gui_fullscreen.addEventListener('click', function () {
+
+    var elem = document.getElementById("canvasesdiv");
+
+    // go full-screen
+    if (elem.requestFullscreen)
+        elem.requestFullscreen();
+    else if (elem.webkitRequestFullscreen)
+        elem.webkitRequestFullscreen();
+    else if (elem.mozRequestFullScreen)
+        elem.mozRequestFullScreen();
+    else if (elem.msRequestFullscreen)
+        elem.msRequestFullscreen();
+});
+
+function on_fullscreen_change() {
+
+    var elem = document.getElementById("canvasesdiv");
+    var canvas = document.getElementById("main-canvas");
+    var s_canvas = document.getElementById("second-canvas");
+
+    var tmp_width = null;
+    var tmp_height = null;
+
+    if (document.fullscreen ||
+        document.mozFullScreen ||
+        document.webkitIsFullScreen ||
+        document.msFullscreenElement)
+    {
+        elem.style.position = "absolute";
+
+        tmp_width = window.innerWidth;
+        tmp_height = window.innerHeight;
+    }
+    else
+    {
+        elem.style.position = "relative";
+
+        tmp_width = 800;
+        tmp_height = 600;
+    }
+
+    elem.style.left = "0px";
+    elem.style.top = "0px";
+
+    canvas.width = s_canvas.width = tmp_width;
+    canvas.height = s_canvas.height = tmp_height;
+
+    RendererWebGL.resize(tmp_width, tmp_height);
+    RendererCanvas.resize(tmp_width, tmp_height)
+}
+
+document.addEventListener('fullscreenchange',       on_fullscreen_change, false);
+document.addEventListener('mozfullscreenchange',    on_fullscreen_change, false);
+document.addEventListener('webkitfullscreenchange', on_fullscreen_change, false);
+document.addEventListener('msfullscreenchange',     on_fullscreen_change, false);
+
+// GUI (fullscreen button)
+//
+//
+
+
+
+
+
+
 
 
 

@@ -66,6 +66,18 @@ proto.getCameraPosition = function ()
 	];
 }
 
+proto.resize = function (width, height)
+{
+    gl.viewportWidth = width;
+    gl.viewportHeight = height;
+
+    this.aspectRatio = gl.viewportWidth * 0.75 / gl.viewportHeight;
+
+    // TODO: dispose the previous geometry
+    var vertices = createFrustumVertices(70, this.aspectRatio, 0.1, 40);
+    this.geom_frustum = new createGeometryColor(vertices, gl.LINES);
+}
+
 //
 
 proto.init = function (onFinish)
