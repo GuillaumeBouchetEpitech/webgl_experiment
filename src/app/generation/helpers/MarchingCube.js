@@ -441,9 +441,9 @@ proto.marchCube = function( pos, geom_callback ) {
 
     this.current_geom_callback = geom_callback;
 
-    for (var iX = 0; iX < this.chunk_size; ++iX)
-    for (var iY = 0; iY < this.chunk_size; ++iY)
-    for (var iZ = 0; iZ < this.chunk_size; ++iZ)
+    for (var iX = 0; iX <= this.chunk_size; ++iX)
+    for (var iY = 0; iY <= this.chunk_size; ++iY)
+    for (var iZ = 0; iZ <= this.chunk_size; ++iZ)
         this.marchCube_single( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
         // this.vMarchCube2( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
 

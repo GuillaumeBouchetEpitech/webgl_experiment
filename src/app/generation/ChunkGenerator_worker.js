@@ -1,24 +1,24 @@
 
-var MarchinCube = require("./helpers/marchingCube.js");
-var ClassicalNoise = require("./helpers/pnoise.js");
-var Randomiser = require("./helpers/randomiser.js");
+var createMarchinCube = require("./helpers/MarchingCube.js");
+var createClassicalNoise = require("./helpers/ClassicalNoise.js");
+var createRandomiser = require("./helpers/Randomiser.js");
 
 
-module.exports = function (self) {
-
+module.exports = function (self)
+{
     var chunk_size = 15;
 
-    var myRand = new Randomiser();
-    var myNoise2 = new ClassicalNoise(myRand);
+    var myRand = new createRandomiser();
+    var myNoise = new createClassicalNoise(myRand);
 
     function sample_cb (x, y, z) {
-        return myNoise2.noise_ex(x, y, z);
+        return myNoise.noise_ex(x, y, z);
     }
 
-    var _marchingCube = new MarchinCube(chunk_size, 0.0, sample_cb, true);
+    var myMarchingCube = new createMarchinCube(chunk_size, 0.0, sample_cb);
 
-    self.addEventListener('message',function (e) {
-
+    self.addEventListener('message',function (e)
+    {
         var pos = e.data.pos;
         var buf = e.data.buf; // we now own the vertices buffer
 
@@ -50,7 +50,7 @@ module.exports = function (self) {
             buf[buf_inc++] = index[2];              
         }
 
-        _marchingCube.marchCube( pos, marchCube_cb )
+        myMarchingCube.marchCube( pos, marchCube_cb );
 
         //
 
