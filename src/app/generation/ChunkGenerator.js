@@ -1,20 +1,19 @@
 
 "use strict"
 
-var gl = require('../gl-context.js');
+var g_data = require('../data/index.js');
 
-var createGeometryExperimental = require('../geometries/GeometryExperimental.js');
+// var gl = require('../gl-context.js');
 
-
+// var createGeometryExperimental = require('./geometries/GeometryExperimental.js');
 var webworkify = require('webworkify');
 
+//
 
-var ChunkGenerator = function(chunk_size, shader) {
-
-    this._shader = shader; // shader used
+var ChunkGenerator = function()
+{
     this._chunks = []; // live chunks
     this._chunk_queue = []; // position to be processed
-    this._chunk_size = chunk_size;
 
     this._geoms = []; // position to be processed
 
@@ -39,7 +38,7 @@ var ChunkGenerator = function(chunk_size, shader) {
         var geom = null;
         if (self._geoms.length == 0)
         {
-            geom = new createGeometryExperimental(self._myWorker_buffer, self._shader);
+            geom = g_data.add_geom(self._myWorker_buffer);
         }
         else
         {
@@ -59,8 +58,8 @@ var ChunkGenerator = function(chunk_size, shader) {
 
 var proto = ChunkGenerator.prototype;
 
-proto.update = function(camera_pos, priority_cb) {
-
+proto.update = function(camera_pos)
+{
     // webworker available?
 
     if (this._myWorker_status != 1) // worker working
@@ -74,7 +73,7 @@ proto.update = function(camera_pos, priority_cb) {
 
     // if just 1 chunk left to process (or no priority callback)
     // -> just pop and process the next/last chunk in the queue
-    if (!priority_cb || this._chunk_queue.length == 1)
+    if (this._chunk_queue.length == 1)
     {
         this.processing_pos = this._chunk_queue.pop();
     }
@@ -94,11 +93,11 @@ proto.update = function(camera_pos, priority_cb) {
         {
             var try_pos = this._chunk_queue[i];
 
-            if (best_index == -1 || priority_cb( try_pos, best_pos ))
+            if (best_index == -1 || g_data.chunk_is_visible(try_pos))
             {
-                var dist = calc_length( camera_pos[0] - try_pos[0] - this._chunk_size / 2,
-                                        camera_pos[1] - try_pos[1] - this._chunk_size / 2,
-                                        camera_pos[2] - try_pos[2] - this._chunk_size / 2 );
+                var dist = calc_length( camera_pos[0] - try_pos[0] - g_data.logic.k_chunk_size / 2,
+                                        camera_pos[1] - try_pos[1] - g_data.logic.k_chunk_size / 2,
+                                        camera_pos[2] - try_pos[2] - g_data.logic.k_chunk_size / 2 );
 
                 if (best_dist < dist)
                     continue;
@@ -124,35 +123,6 @@ proto.update = function(camera_pos, priority_cb) {
     }, [ this._myWorker_buffer.buffer ]); // we now transfer the ownership of the vertices buffer
 
 }
-
-//
-
-proto.render = function(tmp_mvMatrix, tmp_pMatrix, tmp_freefly_pos, validation_callback) {
-
-    gl.useProgram(this._shader);
-
-    // send the texture to the shader
-    gl.uniform1i(this._shader.uSampler, 0);
-
-    gl.uniformMatrix4fv(this._shader.uMVMatrix, false, tmp_mvMatrix);
-    gl.uniformMatrix4fv(this._shader.uPMatrix, false, tmp_pMatrix);
-
-    var p = tmp_freefly_pos;
-    gl.uniform3f(this._shader.uCameraPos, p[0],p[1],p[2]);
-
-
-    if (validation_callback)
-    {
-        for (var i = 0; i < this._chunks.length; ++i)
-            if (validation_callback(this._chunks[i].pos))
-                this._chunks[i].geom.render();
-    }
-    else
-    {
-        for (var i = 0; i < this._chunks.length; ++i)
-            this._chunks[i].geom.render();
-    }
-};
 
 //
 

@@ -1,7 +1,7 @@
 
 "use strict"
 
-var gl = require('../gl-context.js');
+var gl = require('../context.js');
 
 var GeometryColor = function (vertices, primitive) {
 

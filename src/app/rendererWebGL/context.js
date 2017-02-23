@@ -1,7 +1,7 @@
 
 "use strict"
 
-var WebGLUtils = require('../lib/webgl/WebGLUtils');
+var WebGLUtils = require('./utils/WebGLUtils');
 
 var canvas = document.getElementById("main-canvas");
 
