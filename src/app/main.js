@@ -17,7 +17,6 @@ g_data.logic.ChunkGenerator = new createChunkGenerator();
 require('./utils/fpsmeter.js'); // <- in window.FPSMeter
 
 
-var time_last = 0
 
 
 
@@ -77,12 +76,6 @@ elem.addEventListener('touchmove', update_touches);
 // HUD (touch positions recorder)
 //
 //
-
-
-
-// // position used to detect a move in the current chunk
-// var saved_index = [1,0,0]; // <- currently 1/0/0 but any other value than 0/0/0 will work
-
 
 
 
@@ -193,6 +186,7 @@ document.addEventListener('msfullscreenchange',     on_fullscreen_change, false)
 
 
 
+var time_last = 0
 
 RendererWebGL.init(function()
 {
