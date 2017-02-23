@@ -89,6 +89,37 @@ proto.render = function ()
             ctx.fillText(str,x,y);
         }
     }
+
+	// 
+
+    ctx.beginPath();
+    ctx.lineWidth="5";
+    ctx.strokeStyle="red";
+
+    for (var i = 0; i < g_data.arr_touches.length; ++i)
+    {
+        var x = arr_touches[i].x;
+        var y = arr_touches[i].y;
+
+        ctx.moveTo(x,y-150);
+        ctx.lineTo(x,y+150);
+        ctx.stroke();
+
+        ctx.moveTo(x-150,y);
+        ctx.lineTo(x+150,y);
+        ctx.stroke();
+
+        if (g_data.FreeFlyCamera._force_forward)
+        {
+            ctx.moveTo(x-100,y-100);
+            ctx.lineTo(x+100,y+100);
+            ctx.stroke();
+
+            ctx.moveTo(x-100,y+100);
+            ctx.lineTo(x+100,y-100);
+            ctx.stroke();
+        }
+    }
 }
 
 //

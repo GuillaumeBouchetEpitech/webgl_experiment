@@ -3,6 +3,7 @@
 
 var g_data = require('./data/index.js');
 
+g_data.arr_touches = [];
 g_data.logic = {};
 
 g_data.logic.k_chunk_size = 15;
@@ -125,31 +126,29 @@ var myFpsmeter = new window.FPSMeter(
 
 
 
-// //
-// //
-// // HUD (touch positions recorder)
+//
+//
+// HUD (touch positions recorder)
 
-// var elem = document.getElementById("canvasesdiv");
+var elem = document.getElementById("canvasesdiv");
 
-// var arr_touches = [];
+function update_touches(e) { try{
 
-// function update_touches(e) { try{
+    var touches = e.targetTouches;
 
-//     var touches = e.targetTouches;
+    g_data.arr_touches.length = 0; // clear array
+    for (var i = 0; i < touches.length; ++i)
+        g_data.arr_touches.push({ x:touches[i].pageX, y:touches[i].pageY });
 
-//     arr_touches.length = 0; // clear array
-//     for (var i = 0; i < touches.length; ++i)
-//         arr_touches.push({ x:touches[i].pageX, y:touches[i].pageY });
+}catch(e){alert(e);} }
 
-// }catch(e){alert(e);} }
+elem.addEventListener('touchstart', update_touches);
+elem.addEventListener('touchend', function(e) {g_data.arr_touches.length = 0;}); // clear array
+elem.addEventListener('touchmove', update_touches);
 
-// elem.addEventListener('touchstart', update_touches);
-// elem.addEventListener('touchend', function(e) {arr_touches.length = 0;}); // clear array
-// elem.addEventListener('touchmove', update_touches);
-
-// // HUD (touch positions recorder)
-// //
-// //
+// HUD (touch positions recorder)
+//
+//
 
 
 
@@ -193,9 +192,6 @@ RendererWebGL.init(function()
 {
     tick();
 });
-
-
-// tick();
 
 function tick(in_event) {
 
@@ -257,55 +253,8 @@ function tick(in_event) {
 
     RendererWebGL.renderHUD();
 
-
     RendererCanvas.render();
 
-
-    // //
-    // //
-    // //
-    // // CANVAS STUFF (in fact, this still the HUD...)
-
-
-    //
-    // render touches
-    //
-
-    // ctx.beginPath();
-    // ctx.lineWidth="5";
-    // ctx.strokeStyle="red";
-
-    // for (var i = 0; i < arr_touches.length; ++i)
-    // {
-    //     var x = arr_touches[i].x;
-    //     var y = arr_touches[i].y;
-
-    //     ctx.moveTo(x,y-150);
-    //     ctx.lineTo(x,y+150);
-    //     ctx.stroke();
-
-    //     ctx.moveTo(x-150,y);
-    //     ctx.lineTo(x+150,y);
-    //     ctx.stroke();
-
-    //     if (g_data.FreeFlyCamera._force_forward)
-    //     {
-    //         ctx.moveTo(x-100,y-100);
-    //         ctx.lineTo(x+100,y+100);
-    //         ctx.stroke();
-
-    //         ctx.moveTo(x-100,y+100);
-    //         ctx.lineTo(x+100,y-100);
-    //         ctx.stroke();
-    //     }
-    // }
-
-    // ctx.stroke(); // Draw it
-
-    // CANVAS STUFF (in fact, this still the HUD...)
-    //
-    //
-    //
 
     myFpsmeter.tick();
 
