@@ -153,8 +153,8 @@ var myFpsmeter = new window.FPSMeter(
 
 
 
-// position used to detect a move in the current chunk
-var saved_index = [1,0,0]; // <- currently 1/0/0 but any other value than 0/0/0 will work
+// // position used to detect a move in the current chunk
+// var saved_index = [1,0,0]; // <- currently 1/0/0 but any other value than 0/0/0 will work
 
 
 
@@ -231,105 +231,9 @@ function tick(in_event) {
     //
     ////// generation
 
-    //  check if move to ask chunks
-    //      -> if yes
-    //          exclude chunk out of range
-    //          include chunk in range
-
-    // compute the current chunk in use
-
     var camera_pos = RendererWebGL.getCameraPosition();
 
-    var curr_index = [
-        Math.floor(camera_pos[0] / g_data.logic.k_chunk_size)|0,
-        Math.floor(camera_pos[1] / g_data.logic.k_chunk_size)|0,
-        Math.floor(camera_pos[2] / g_data.logic.k_chunk_size)|0
-    ];
-
-    // did we move to another chunk?
-    if (curr_index[0] != saved_index[0] ||
-        curr_index[1] != saved_index[1] ||
-        curr_index[2] != saved_index[2])
-    {
-        // yes -> save as the new current chunk
-        saved_index[0] = curr_index[0];
-        saved_index[1] = curr_index[1];
-        saved_index[2] = curr_index[2];
-
-        // clear the generation queue
-        g_data.logic.ChunkGenerator._chunk_queue.length = 0;
-
-        // the range of chunk generation/exclusion
-        var range = 3|0;
-
-        var min_index = new Int32Array([
-            (curr_index[0] - range)|0,
-            (curr_index[1] - range)|0,
-            (curr_index[2] - range)|0,
-        ]);
-        var max_index = new Int32Array([
-            (curr_index[0] + range)|0,
-            (curr_index[1] + range)|0,
-            (curr_index[2] + range)|0,
-        ]);
-
-        //
-        // exclude the chunks that are too far away
-
-        for (var i = 0; i < g_data.logic.ChunkGenerator._chunks.length; ++i)
-        {
-            var curr_pos = [
-                (g_data.logic.ChunkGenerator._chunks[i].pos[0]/g_data.logic.k_chunk_size)|0,
-                (g_data.logic.ChunkGenerator._chunks[i].pos[1]/g_data.logic.k_chunk_size)|0,
-                (g_data.logic.ChunkGenerator._chunks[i].pos[2]/g_data.logic.k_chunk_size)|0
-            ];
-
-            if (curr_pos[0] < min_index[0] || curr_pos[0] > max_index[0] ||
-                curr_pos[1] < min_index[1] || curr_pos[1] > max_index[1] ||
-                curr_pos[2] < min_index[2] || curr_pos[2] > max_index[2])
-            {
-                // g_data.logic.ChunkGenerator._chunks[i].geom.dispose();
-                g_data.logic.ChunkGenerator._geoms.push(g_data.logic.ChunkGenerator._chunks[i].geom);
-                g_data.logic.ChunkGenerator._chunks.splice(i, 1);
-                i--;
-            }
-        }
-
-        //
-        // include in the generation queue the close enough chunks
-
-        for (var z = min_index[2]; z <= max_index[2]; ++z)
-        for (var y = min_index[1]; y <= max_index[1]; ++y)
-        for (var x = min_index[0]; x <= max_index[0]; ++x)
-        {
-            var pos = [
-                x * g_data.logic.k_chunk_size,
-                y * g_data.logic.k_chunk_size,
-                z * g_data.logic.k_chunk_size
-            ]
-
-            /// already processed ?
-            var found = false;
-            for (var j = 0; j < g_data.logic.ChunkGenerator._chunks.length; ++j)
-                if (g_data.logic.ChunkGenerator._chunks[j].pos[0] === pos[0] &&
-                    g_data.logic.ChunkGenerator._chunks[j].pos[1] === pos[1] &&
-                    g_data.logic.ChunkGenerator._chunks[j].pos[2] === pos[2])
-                {
-                    found = true;
-                    break;
-                }
-
-            if (found) // is already processed
-                continue;
-
-            g_data.logic.ChunkGenerator._chunk_queue.push(pos);
-        }
-
-    }
-
-    {
-        g_data.logic.ChunkGenerator.update(camera_pos);
-    }
+    g_data.logic.ChunkGenerator.update(camera_pos);
 
     ////// /generation
     //
