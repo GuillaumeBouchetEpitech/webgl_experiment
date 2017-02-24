@@ -1,9 +1,7 @@
 
 "use strict"
 
-var gl = require('../context.js');
-
-var GeometryColor = function (vertices, primitive) {
+var GeometryColor = function (gl, vertices, primitive) {
 
     this._primitive = primitive;
 
@@ -13,14 +11,19 @@ var GeometryColor = function (vertices, primitive) {
 
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
 
-    this._vbuffer.numItems = vertices.length / 6;
+    this._numItems = vertices.length / 6;
 }
 
 //
 
 var proto = GeometryColor.prototype
 
-proto.render = function(shader) {
+proto.isValid = function()
+{
+    return (this._vbuffer && this._numItems > 0);
+}
+
+proto.render = function(gl, shader) {
 
     if (gl._extension_vao)
     {
@@ -28,7 +31,7 @@ proto.render = function(shader) {
         {
             gl._extension_vao.bindVertexArrayOES( this._vao );
 
-                gl.drawArrays( this._primitive, 0, this._vbuffer.numItems );
+                gl.drawArrays( this._primitive, 0, this._numItems );
 
             gl._extension_vao.bindVertexArrayOES( null );
         }
@@ -38,7 +41,7 @@ proto.render = function(shader) {
 
             gl._extension_vao.bindVertexArrayOES( this._vao );
 
-                this.render_backup(shader, true);
+                this.render_backup(gl, shader, true);
 
             gl._extension_vao.bindVertexArrayOES( null );
         }
@@ -51,7 +54,7 @@ proto.render = function(shader) {
 
 //
 
-proto.render_backup = function(shader, no_clear) {
+proto.render_backup = function(gl, shader, no_clear) {
 
     gl.enableVertexAttribArray(shader.aVertexPosition);
     gl.enableVertexAttribArray(shader.aVertexColor);
@@ -65,7 +68,7 @@ proto.render_backup = function(shader, no_clear) {
         gl.vertexAttribPointer(shader.aVertexPosition,3,gl.FLOAT,false,stride,index_pos);
         gl.vertexAttribPointer(shader.aVertexColor,3,gl.FLOAT,false,stride,index_color);
 
-        gl.drawArrays( this._primitive, 0, this._vbuffer.numItems );
+        gl.drawArrays( this._primitive, 0, this._numItems );
 
     if (!no_clear)
     {

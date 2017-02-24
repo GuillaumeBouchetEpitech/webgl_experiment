@@ -34,6 +34,26 @@ function RendererWebGL ()
 
 	this.pMatrix = glm.mat4.create();
 	this.mvMatrix = glm.mat4.create();
+
+    gl.canvas.addEventListener('webglcontextlost', function(event)
+    {
+        event.preventDefault();
+        console.log('context is lost');
+
+        if (self.on_context_lost)
+            self.on_context_lost();
+    }, false);
+
+    self = this;
+    gl.canvas.addEventListener('webglcontextrestored', function()
+    {
+        console.log('context is restored');
+
+        gl = gl.recreate();
+
+        if (self.on_context_restored)
+            self.on_context_restored();
+    }, false);
 }
 
 //
@@ -54,8 +74,16 @@ proto.point_is_visible = function (pos)
 
 proto.add_geom = function (buffer)
 {
-    return new createGeometryExperimental(buffer, this.shader_exp);
+    var geom = new createGeometryExperimental(gl, buffer, this.shader_exp);
+
+    return (geom.isValid() ? geom : null);
 }
+
+proto.update_geom = function (geom, buffer)
+{
+    geom.update(gl, buffer);
+}
+
 
 proto.getCameraPosition = function ()
 {
@@ -75,7 +103,35 @@ proto.resize = function (width, height)
 
     // TODO: dispose the previous geometry
     var vertices = createFrustumVertices(70, this.aspectRatio, 0.1, 40);
-    this.geom_frustum = new createGeometryColor(vertices, gl.LINES);
+    this.geom_frustum = new createGeometryColor(gl, vertices, gl.LINES);
+}
+
+//
+
+proto.toggle_context_loss = function ()
+{
+    if (gl._extension_lose_context)
+    {
+        if (gl.isContextLost())
+            gl._extension_lose_context.restoreContext(); // restores the context
+        else
+            gl._extension_lose_context.loseContext(); // trigger a context loss
+    }
+}
+
+proto.context_is_lost = function ()
+{
+    return gl.isContextLost();
+}
+
+proto.set_on_context_lost = function (callback)
+{
+    this.on_context_lost = callback;
+}
+
+proto.set_on_context_restored = function (callback)
+{
+    this.on_context_restored = callback;
 }
 
 //
@@ -115,7 +171,7 @@ proto.init = function (onFinish)
 	vertices.push(0,0,0,  0,1,0,  0,axis_size,0,  0,1,0)
 	vertices.push(0,0,0,  0,0,1,  0,0,axis_size,  0,0,1)
 
-	this.geom_axis = new createGeometryColor(vertices, gl.LINES);
+	this.geom_axis = new createGeometryColor(gl, vertices, gl.LINES);
 
 	//
 	//
@@ -132,26 +188,26 @@ proto.init = function (onFinish)
 	vertices.push(0,0,0-cross_size,  1,1,1);
 	vertices.push(0,0,0+cross_size,  1,1,1);
 
-	this.geom_cross = new createGeometryColor(vertices, gl.LINES);
+	this.geom_cross = new createGeometryColor(gl, vertices, gl.LINES);
 
 	//
 	//
 	// geoms
 
 	var vertices = createCubeVertices(g_data.logic.k_chunk_size, [1,0,0]);
-	this.geom_cubeR = new createGeometryColor(vertices, gl.LINES);
+	this.geom_cubeR = new createGeometryColor(gl, vertices, gl.LINES);
 
 	var vertices = createCubeVertices(g_data.logic.k_chunk_size, [1,1,1]);
-	this.geom_cubeW = new createGeometryColor(vertices, gl.LINES);
+	this.geom_cubeW = new createGeometryColor(gl, vertices, gl.LINES);
 
 	var vertices = createCubeVertices(g_data.logic.k_chunk_size, [0,1,0]);
-	this.geom_cubeG = new createGeometryColor(vertices, gl.LINES);
+	this.geom_cubeG = new createGeometryColor(gl, vertices, gl.LINES);
 
 
 	this.aspectRatio = gl.viewportWidth * 0.75 / gl.viewportHeight;
 
 	var vertices = createFrustumVertices(35, this.aspectRatio, 0.1, 40);
-	this.geom_frustum = new createGeometryColor(vertices, gl.LINES);
+	this.geom_frustum = new createGeometryColor(gl, vertices, gl.LINES);
 
 	//
 	//
@@ -245,7 +301,7 @@ proto.render = function ()
 
 	    for (var i = 0; i < arr_chunks.length; ++i)
 	        if (arr_chunks[i].visible)
-	            arr_chunks[i].geom.render();
+	            arr_chunks[i].geom.render(gl);
 
 
     gl.useProgram(this.shader_color);
@@ -270,7 +326,7 @@ proto.render = function ()
 
             ///
 
-            this.geom_cubeW.render(this.shader_color);
+            this.geom_cubeW.render(gl, this.shader_color);
         }
 
     gl.useProgram(null);
@@ -325,7 +381,7 @@ proto.renderHUD = function ()
             gl.uniformMatrix4fv(self.shader_color.uMVMatrix, false, tmp_mvMatrix);
             gl.uniformMatrix4fv(self.shader_color.uPMatrix, false, tmp_pMatrix);
 
-        self.geom_axis.render(self.shader_color)
+        self.geom_axis.render(gl, self.shader_color)
 
             var tmp_mvMatrix2 = glm.mat4.create();
 
@@ -344,7 +400,7 @@ proto.renderHUD = function ()
                     glm.mat4.translate(tmp_mvMatrix2,tmp_mvMatrix, pos);
 
                     gl.uniformMatrix4fv(self.shader_color.uMVMatrix, false, tmp_mvMatrix2);
-                    self.geom_cubeW.render(self.shader_color);
+                    self.geom_cubeW.render(gl, self.shader_color);
                 }
                 else
                 {
@@ -358,7 +414,7 @@ proto.renderHUD = function ()
                     glm.mat4.scale(tmp_mvMatrix2,tmp_mvMatrix2, [0.7,0.7,0.7]);
 
                     gl.uniformMatrix4fv(self.shader_color.uMVMatrix, false, tmp_mvMatrix2);
-                    self.geom_cubeR.render(self.shader_color);
+                    self.geom_cubeR.render(gl, self.shader_color);
                 }
             }
 
@@ -374,7 +430,7 @@ proto.renderHUD = function ()
                 glm.mat4.scale(tmp_mvMatrix2,tmp_mvMatrix2, [0.6,0.6,0.6]);
 
                 gl.uniformMatrix4fv(self.shader_color.uMVMatrix, false, tmp_mvMatrix2);
-                self.geom_cubeG.render(self.shader_color);
+                self.geom_cubeG.render(gl, self.shader_color);
             }
 
 
@@ -385,9 +441,9 @@ proto.renderHUD = function ()
 
                 gl.uniformMatrix4fv(self.shader_color.uMVMatrix, false, tmp_mvMatrix);
 
-            self.geom_cross.render(self.shader_color);
+            self.geom_cross.render(gl, self.shader_color);
             gl.lineWidth(3);
-            self.geom_frustum.render(self.shader_color);
+            self.geom_frustum.render(gl, self.shader_color);
             gl.lineWidth(1);
 
     }

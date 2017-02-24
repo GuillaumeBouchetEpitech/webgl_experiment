@@ -1,10 +1,8 @@
 
 "use strict"
 
-var gl = require('../context.js');
-
-var GeometryExperimental = function (vertices, shader, vertices_is_buffer) {
-
+var GeometryExperimental = function (gl, vertices, shader, vertices_is_buffer)
+{
     this._vbuffer = gl.createBuffer();
     this._shader = shader;
 
@@ -12,35 +10,41 @@ var GeometryExperimental = function (vertices, shader, vertices_is_buffer) {
 
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
 
-    this._vbuffer.numItems = vertices.length / 12;
+    if (this._vbuffer === null)
+        console.log('_vbuffer is null');
+
+    this._numItems = vertices.length / 12;
 }
 
 //
 
 var proto = GeometryExperimental.prototype;
 
-proto.update = function(vertices) {
+proto.isValid = function()
+{
+    return (this._vbuffer && this._numItems > 0);
+}
+
+proto.update = function(gl, vertices) {
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this._vbuffer);
 
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
 
-    this._vbuffer.numItems = vertices.length / 12;
+    this._numItems = vertices.length / 12;
 }
 
-proto.dispose = function() {
+proto.dispose = function(gl) {
 
     gl.deleteBuffer(this._vbuffer);
 
     if (this._vao)
         gl._extension_vao.deleteVertexArrayOES( this._vao );
-
-    // console.log('dispose called');
 }
 
 //
 
-proto.render = function() {
+proto.render = function(gl) {
 
     var shader = this._shader;
 
@@ -50,7 +54,7 @@ proto.render = function() {
         {
             gl._extension_vao.bindVertexArrayOES( this._vao );
 
-                gl.drawArrays( gl.TRIANGLES, 0, this._vbuffer.numItems );
+                gl.drawArrays( gl.TRIANGLES, 0, this._numItems );
 
             gl._extension_vao.bindVertexArrayOES( null );
         }
@@ -60,7 +64,7 @@ proto.render = function() {
 
             gl._extension_vao.bindVertexArrayOES( this._vao );
 
-                this.render_backup(true);
+                this.render_backup(gl, true);
 
             gl._extension_vao.bindVertexArrayOES( null );
         }
@@ -73,7 +77,7 @@ proto.render = function() {
 
 //
 
-proto.render_backup = function(no_clear) {
+proto.render_backup = function(gl, no_clear) {
 
     var shader = this._shader;
 
@@ -95,7 +99,7 @@ proto.render_backup = function(no_clear) {
         gl.vertexAttribPointer(shader.aVertexNormal,3,gl.FLOAT,false,stride,index_normal);
         gl.vertexAttribPointer(shader.aVertexBCenter,3,gl.FLOAT,false,stride,index_bcenter);
 
-        gl.drawArrays( gl.TRIANGLES, 0, this._vbuffer.numItems );
+        gl.drawArrays( gl.TRIANGLES, 0, this._numItems );
 
     if (!no_clear)
     {

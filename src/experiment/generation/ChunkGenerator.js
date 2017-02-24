@@ -46,18 +46,27 @@ var ChunkGenerator = function()
         else
         {
             geom = self._geoms.pop();
-            geom.update(self._myWorker_buffer);
+            g_data.update_geom(geom, self._myWorker_buffer);
         }
 
-        // save
+        if (geom === null)
+        {
+            console.log('worker: processing the result -> invalid geom');
+        }
+        else
+        {
+            console.log('worker: processing the result -> valid geom');
 
-        self._chunks.push({ pos: pos, geom: geom});
+            // save
 
-        self.is_processing_chunk = false;
+            self._chunks.push({ pos: pos, geom: geom});
 
-        // launch again
+            self.is_processing_chunk = false;
 
-        self._launch_worker();
+            // launch again
+
+            self._launch_worker();
+        }
     });
 }
 
@@ -82,7 +91,8 @@ proto.update = function(camera_pos)
     ];
 
     // did we move to another chunk?
-    if (curr_index[0] != this._saved_index[0] ||
+    if (this._chunks.length == 0 ||
+        curr_index[0] != this._saved_index[0] ||
         curr_index[1] != this._saved_index[1] ||
         curr_index[2] != this._saved_index[2])
     {
@@ -232,6 +242,15 @@ proto._launch_worker = function()
         pos: this.processing_pos,
         buf: this._myWorker_buffer
     }, [ this._myWorker_buffer.buffer ]); // we now transfer the ownership of the vertices buffer
+}
+
+proto.clear = function ()
+{
+    console.log('cleared');
+
+    this._chunk_queue.length = 0;
+    this._chunks.length = 0;
+    this._geoms.length = 0;
 }
 
 //

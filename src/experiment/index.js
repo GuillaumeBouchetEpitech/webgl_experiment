@@ -111,6 +111,12 @@ function WebGLExperiment ()
         return RendererWebGL.add_geom(buffer);
     }
 
+    g_data.update_geom = function(geom, buffer)
+    {
+        return RendererWebGL.update_geom(geom, buffer);
+    }
+
+
 
 
 
@@ -123,6 +129,8 @@ function WebGLExperiment ()
 
     var gui_fullscreen = document.getElementById("gui_fullscreen");
     gui_fullscreen.addEventListener('click', function () {
+
+        // RendererWebGL.toggle_context_loss()
 
         var elem = document.getElementById("canvasesdiv");
 
@@ -192,12 +200,37 @@ function WebGLExperiment ()
 
     var time_last = 0
 
+    // TODO : this need refractor
+    RendererWebGL.set_on_context_lost(function ()
+    {
+        console.log('on_context_lost');
+
+        g_data.logic.ChunkGenerator.clear();
+    });
+
+    // TODO : this need refractor
+    RendererWebGL.set_on_context_restored(function ()
+    {
+        console.log('on_context_restored');
+        RendererWebGL.init(function()
+        {
+            console.log('on_context_restored init');
+            tick();
+        });
+    })
+
     RendererWebGL.init(function()
     {
         tick();
     });
 
     function tick(in_event) {
+
+        if (RendererWebGL.context_is_lost())
+        {
+            console.log("context_is_lost => main loop stopped");
+            return;
+        }
 
         // plan the next frame
         window.requestAnimFrame( tick ); // webgl-utils.js
