@@ -1,8 +1,8 @@
 
 "use strict"
 
-function createCubeVertices(fovY, aspect, zNear, zFar) {
-
+function createCubeVertices(fovY, aspect, zNear, zFar)
+{
     var left, right, bottom, top;
 
 
