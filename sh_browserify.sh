@@ -15,12 +15,19 @@
 
 
 
+SRC=./src/main.js
+OUT=./dist/bundle.js
+
+NODE=nodejs
+BROWSERIFY=./node_modules/browserify/bin/cmd.js
+UGLIFYIFY=./node_modules/uglifyify/index.js
+
 
 # # no uglification
-# nodejs node_modules/browserify/bin/cmd.js ./app.js -o ./dist/bundle.js
+# $NODE $BROWSERIFY $SRC > $OUT
 
 # # local uglification
-# nodejs node_modules/browserify/bin/cmd.js -t ./node_modules/uglifyify/index.js ./webgl_experiment/app.js > ./webgl_experiment/dist/bundle.js
+# nodejs node_modules/browserify/bin/cmd.js -t ./node_modules/uglifyify/index.js ./src/main.js > ./dist/bundle.js
 
 # global uglification
-nodejs node_modules/browserify/bin/cmd.js -g ./node_modules/uglifyify/index.js ./src/app.js > ./dist/bundle.js
+$NODE $BROWSERIFY -g $UGLIFYIFY $SRC > $OUT
