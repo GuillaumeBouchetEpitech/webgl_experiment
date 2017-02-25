@@ -12,6 +12,10 @@ var webworkify = require('webworkify');
 
 var ChunkGenerator = function()
 {
+    var self = this;
+
+    this._running = false;
+
     this._chunks = []; // live chunks
     this._chunk_queue = []; // position to be processed
 
@@ -30,13 +34,15 @@ var ChunkGenerator = function()
 
     this._myWorker = webworkify(require('./ChunkGenerator_worker.js'));
     this._myWorker_status = 1; // worker available
-    var self = this;
     this._myWorker.addEventListener('message', function (e) {
 
+        self._myWorker_buffer = e.data.vertices; // we now own the vertices buffer
         self._myWorker_status = 1; // worker available
 
+        if (!self._running)
+            return;
+
         var pos = e.data.pos;
-        self._myWorker_buffer = e.data.vertices; // we now own the vertices buffer
 
         var geom = null;
         if (self._geoms.length == 0)
@@ -74,8 +80,28 @@ var ChunkGenerator = function()
 
 var proto = ChunkGenerator.prototype;
 
+proto.start = function()
+{
+    this._running = true;
+}
+
+proto.stop = function()
+{
+    if (!this._running)
+        return;
+
+    this._running = false;
+
+    this._chunk_queue.length = 0;
+    this._chunks.length = 0;
+    this._geoms.length = 0;
+}
+
 proto.update = function(camera_pos)
 {
+    if (!this._running)
+        return;
+
     //  check if move to ask chunks
     //      -> if yes
     //          reset chunk queue
@@ -242,15 +268,6 @@ proto._launch_worker = function()
         pos: this.processing_pos,
         buf: this._myWorker_buffer
     }, [ this._myWorker_buffer.buffer ]); // we now transfer the ownership of the vertices buffer
-}
-
-proto.clear = function ()
-{
-    console.log('cleared');
-
-    this._chunk_queue.length = 0;
-    this._chunks.length = 0;
-    this._geoms.length = 0;
 }
 
 //
