@@ -101,7 +101,8 @@ proto.resize = function (width, height)
 
     this.aspectRatio = gl.viewportWidth * 0.75 / gl.viewportHeight;
 
-    // TODO: dispose the previous geometry
+    if (this.geom_frustum && this.geom_frustum.isValid())
+        this.geom_frustum.dispose(gl);
     var vertices = createFrustumVertices(70, this.aspectRatio, 0.1, 40);
     this.geom_frustum = new createGeometryColor(gl, vertices, gl.LINES);
 }
