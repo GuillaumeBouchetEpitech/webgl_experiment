@@ -23,6 +23,25 @@ proto.isValid = function()
     return (this._vbuffer && this._numItems > 0);
 }
 
+proto.update = function(gl, vertices)
+{
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._vbuffer);
+
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
+
+    this._numItems = vertices.length / 12;
+}
+
+proto.dispose = function(gl)
+{
+    gl.deleteBuffer(this._vbuffer);
+
+    if (this._vao)
+        gl._extension_vao.deleteVertexArrayOES( this._vao );
+}
+
+//
+
 proto.render = function(gl, shader) {
 
     if (gl._extension_vao)

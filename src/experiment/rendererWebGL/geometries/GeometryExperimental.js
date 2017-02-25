@@ -25,7 +25,8 @@ proto.isValid = function()
     return (this._vbuffer && this._numItems > 0);
 }
 
-proto.update = function(gl, vertices) {
+proto.update = function(gl, vertices)
+{
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this._vbuffer);
 
@@ -34,7 +35,8 @@ proto.update = function(gl, vertices) {
     this._numItems = vertices.length / 12;
 }
 
-proto.dispose = function(gl) {
+proto.dispose = function(gl)
+{
 
     gl.deleteBuffer(this._vbuffer);
 
@@ -44,7 +46,8 @@ proto.dispose = function(gl) {
 
 //
 
-proto.render = function(gl) {
+proto.render = function(gl)
+{
 
     var shader = this._shader;
 
@@ -77,8 +80,8 @@ proto.render = function(gl) {
 
 //
 
-proto.render_backup = function(gl, no_clear) {
-
+proto.render_backup = function(gl, no_clear)
+{
     var shader = this._shader;
 
     gl.enableVertexAttribArray(shader.aVertexPosition);
@@ -108,6 +111,8 @@ proto.render_backup = function(gl, no_clear) {
         gl.disableVertexAttribArray(shader.aVertexNormal);
         gl.disableVertexAttribArray(shader.aVertexBCenter);
     }
-};
+}
+
+//
 
 module.exports = GeometryExperimental;
