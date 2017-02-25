@@ -7,6 +7,8 @@ require('./utils/fpsmeter.js'); // <- in window.FPSMeter
 
 function WebGLExperiment ()
 {
+    var self = this;
+
 
     g_data.arr_touches = [];
     g_data.logic = {};
@@ -47,7 +49,7 @@ function WebGLExperiment ()
     // FPS METER
 
     var myFpsmeter_elem = document.getElementById('fpsmeter');
-    var myFpsmeter = new window.FPSMeter(
+    this.myFpsmeter = new window.FPSMeter(
         myFpsmeter_elem,
         window.FPSMeter.theme.transparent
     );
@@ -88,32 +90,32 @@ function WebGLExperiment ()
 
     var createRendererCanvas = require('./rendererCanvas/index.js');
 
-    var RendererCanvas = new createRendererCanvas();
+    this.RendererCanvas = new createRendererCanvas();
 
     //
 
     var createRendererWebGL = require('./rendererWebGL/index.js');
 
-    var RendererWebGL = new createRendererWebGL();
+    this.RendererWebGL = new createRendererWebGL();
 
     g_data.chunk_is_visible = function(pos)
     {
-        return RendererWebGL.chunk_is_visible(pos);
+        return self.RendererWebGL.chunk_is_visible(pos);
     }
 
     g_data.point_is_visible = function(pos)
     {
-        return RendererWebGL.point_is_visible(pos);
+        return self.RendererWebGL.point_is_visible(pos);
     }
 
     g_data.add_geom = function(buffer)
     {
-        return RendererWebGL.add_geom(buffer);
+        return self.RendererWebGL.add_geom(buffer);
     }
 
     g_data.update_geom = function(geom, buffer)
     {
-        return RendererWebGL.update_geom(geom, buffer);
+        return self.RendererWebGL.update_geom(geom, buffer);
     }
 
 
@@ -130,7 +132,7 @@ function WebGLExperiment ()
     var gui_fullscreen = document.getElementById("gui_fullscreen");
     gui_fullscreen.addEventListener('click', function () {
 
-        // RendererWebGL.toggle_context_loss()
+        // self.RendererWebGL.toggle_context_loss();
 
         var elem = document.getElementById("canvasesdiv");
 
@@ -178,8 +180,8 @@ function WebGLExperiment ()
         canvas.width = s_canvas.width = tmp_width;
         canvas.height = s_canvas.height = tmp_height;
 
-        RendererWebGL.resize(tmp_width, tmp_height);
-        RendererCanvas.resize(tmp_width, tmp_height)
+        self.RendererWebGL.resize(tmp_width, tmp_height);
+        self.RendererCanvas.resize(tmp_width, tmp_height);
     }
 
     document.addEventListener('fullscreenchange',       on_fullscreen_change, false);
@@ -196,106 +198,138 @@ function WebGLExperiment ()
 
 
 
+    this._running = false;
+    self._error_gcontext = false;
 
 
-    var time_last = 0
+    this.time_last = 0;
 
-    // TODO : this need refractor
-    RendererWebGL.set_on_context_lost(function ()
+    this.RendererWebGL.set_on_context_lost(function ()
     {
         console.log('on_context_lost');
 
-        g_data.logic.ChunkGenerator.clear();
+        self._error_gcontext = true;
+        self.stop();
     });
 
-    // TODO : this need refractor
-    RendererWebGL.set_on_context_restored(function ()
+    this.RendererWebGL.set_on_context_restored(function ()
     {
         console.log('on_context_restored');
-        RendererWebGL.init(function()
-        {
-            console.log('on_context_restored init');
-            tick();
-        });
-    })
 
-    RendererWebGL.init(function()
-    {
-        tick();
+        self._error_gcontext = false;
+        self.start();
     });
 
-    function tick(in_event) {
+}
 
-        if (RendererWebGL.context_is_lost())
-        {
-            console.log("context_is_lost => main loop stopped");
+var proto = WebGLExperiment.prototype;
+
+proto.start = function()
+{
+    if (this.isRunning())
+        return;
+
+    var self = this;
+    this.RendererWebGL.init(function()
+    {
+        self._running = true;
+
+        g_data.logic.ChunkGenerator.start();
+
+        self._tick();
+    });
+}
+
+proto.stop = function()
+{
+    this._running = false;
+    g_data.logic.ChunkGenerator.stop();
+}
+
+proto.isRunning = function()
+{
+    return (this._running && !this._error_gcontext);
+}
+
+//
+//
+//
+
+proto._tick = function()
+{
+    var self = this;
+    function tick()
+    {
+        if (!self._running || self._error_gcontext)
             return;
-        }
 
         // plan the next frame
         window.requestAnimFrame( tick ); // webgl-utils.js
 
+        self._main_loop();
+    }
 
-            //
-            // obtain the elapsed time
+    tick();
+}
 
-            var time_current = performance.now() || (new Date()).getTime();
+proto._main_loop = function()
+{
+    //
+    // obtain the elapsed time
 
-            if (!time_last)
-                time_last = time_current;
+    var time_current = performance.now() || (new Date()).getTime();
 
-            var elapsed = time_current - time_last;
+    if (!this.time_last)
+        this.time_last = time_current;
 
-            time_last = time_current;
+    var elapsed = time_current - this.time_last;
 
-            // obtain the elapsed time
-            //
+    this.time_last = time_current;
 
-        ///
+    // obtain the elapsed time
+    //
 
+ 
 
-
-        myFpsmeter.tickStart();
-
-
-
-
-        //
-        //
-        ////// generation
-
-        var camera_pos = RendererWebGL.getCameraPosition();
-
-        g_data.logic.ChunkGenerator.update(camera_pos);
-
-        ////// /generation
-        //
-        //
+    this.myFpsmeter.tickStart();
 
 
 
-        RendererWebGL.update(elapsed);
+
+    //
+    //
+    ////// generation
+
+    var camera_pos = this.RendererWebGL.getCameraPosition();
+
+    g_data.logic.ChunkGenerator.update(camera_pos);
+
+    ////// /generation
+    //
+    //
 
 
 
-        //
-        //
-        ////// render 3d scene
-
-        RendererWebGL.render();
-
-        //
-        //
-        ////// HUD
-
-        RendererWebGL.renderHUD();
-
-        RendererCanvas.render();
+    this.RendererWebGL.update(elapsed);
 
 
-        myFpsmeter.tick();
 
-    } // function tick(in_event)
+    //
+    //
+    ////// render 3d scene
+
+    this.RendererWebGL.render();
+
+    //
+    //
+    ////// HUD
+
+    this.RendererWebGL.renderHUD();
+
+    this.RendererCanvas.render();
+
+
+    this.myFpsmeter.tick();
 }
 
 module.exports = WebGLExperiment;
