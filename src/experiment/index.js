@@ -4,6 +4,7 @@
 var g_data = require('./data/index.js');
 
 require('./utils/fpsmeter.js'); // <- in window.FPSMeter
+var getTime = require('./utils/getTime.js');
 
 function WebGLExperiment ()
 {
@@ -277,7 +278,7 @@ proto._main_loop = function()
     //
     // obtain the elapsed time
 
-    var time_current = performance.now() || (new Date()).getTime();
+    var time_current = getTime();
 
     if (!this.time_last)
         this.time_last = time_current;
