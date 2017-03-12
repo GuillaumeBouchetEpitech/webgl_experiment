@@ -244,10 +244,10 @@ proto.init = function (onFinish)
 	img_texture.src = "textures/texture.png";
 }
 
-proto.update = function (elapsed)
+proto.update = function ()
 {
     this.FreeFlyCamera.handleKeys();
-    this.FreeFlyCamera.update( elapsed / 1000.0 );
+    this.FreeFlyCamera.update( 1.0 / 60.0 );
 
     glm.mat4.perspective( this.pMatrix, 70, this.aspectRatio, 0.1, 70);
 

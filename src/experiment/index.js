@@ -203,8 +203,6 @@ function WebGLExperiment ()
     self._error_gcontext = false;
 
 
-    this.time_last = 0;
-
     this.RendererWebGL.set_on_context_lost(function ()
     {
         console.log('on_context_lost');
@@ -275,23 +273,6 @@ proto._tick = function()
 
 proto._main_loop = function()
 {
-    //
-    // obtain the elapsed time
-
-    var time_current = getTime();
-
-    if (!this.time_last)
-        this.time_last = time_current;
-
-    var elapsed = time_current - this.time_last;
-
-    this.time_last = time_current;
-
-    // obtain the elapsed time
-    //
-
- 
-
     this.myFpsmeter.tickStart();
 
 
@@ -311,7 +292,7 @@ proto._main_loop = function()
 
 
 
-    this.RendererWebGL.update(elapsed);
+    this.RendererWebGL.update();
 
 
 
