@@ -4,7 +4,6 @@
 var g_data = require('./data/index.js');
 
 require('./utils/fpsmeter.js'); // <- in window.FPSMeter
-var getTime = require('./utils/getTime.js');
 
 function WebGLExperiment ()
 {
