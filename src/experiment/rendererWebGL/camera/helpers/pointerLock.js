@@ -16,7 +16,8 @@ function handle_pointerLock (canvas, cb_enabled, cb_disabled, cb_error) {
                                 document.webkitExitPointerLock;
 
     canvas.onclick = function() {
-        canvas.requestPointerLock();
+        if (canvas.requestPointerLock)
+            canvas.requestPointerLock();
     }
 
     if ("onpointerlockchange" in document)
