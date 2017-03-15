@@ -13,6 +13,8 @@ function WebGLExperiment ()
     g_data.arr_touches = [];
     g_data.logic = {};
 
+    g_data._force_forward = false;
+
     g_data.logic.k_chunk_size = 15;
     var createChunkGenerator = require('./generation/ChunkGenerator.js');
     g_data.logic.ChunkGenerator = new createChunkGenerator();
@@ -292,6 +294,9 @@ proto._main_loop = function()
 
 
     this.RendererWebGL.update();
+
+    // for touch events rendering
+    g_data._force_forward = this.RendererWebGL.FreeFlyCamera._force_forward;
 
 
 
