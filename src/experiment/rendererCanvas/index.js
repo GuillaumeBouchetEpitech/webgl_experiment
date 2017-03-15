@@ -104,8 +104,8 @@ proto.render = function ()
 
     for (var i = 0; i < g_data.arr_touches.length; ++i)
     {
-        var x = arr_touches[i].x;
-        var y = arr_touches[i].y;
+        var x = g_data.arr_touches[i].x;
+        var y = g_data.arr_touches[i].y;
 
         ctx.moveTo(x,y-150);
         ctx.lineTo(x,y+150);
