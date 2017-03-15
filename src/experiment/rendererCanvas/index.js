@@ -115,16 +115,16 @@ proto.render = function ()
         ctx.lineTo(x+150,y);
         ctx.stroke();
 
-        if (g_data.FreeFlyCamera._force_forward)
-        {
-            ctx.moveTo(x-100,y-100);
-            ctx.lineTo(x+100,y+100);
-            ctx.stroke();
+        // if (g_data.FreeFlyCamera._force_forward)
+        // {
+        //     ctx.moveTo(x-100,y-100);
+        //     ctx.lineTo(x+100,y+100);
+        //     ctx.stroke();
 
-            ctx.moveTo(x-100,y+100);
-            ctx.lineTo(x+100,y-100);
-            ctx.stroke();
-        }
+        //     ctx.moveTo(x-100,y+100);
+        //     ctx.lineTo(x+100,y-100);
+        //     ctx.stroke();
+        // }
     }
 }
 
