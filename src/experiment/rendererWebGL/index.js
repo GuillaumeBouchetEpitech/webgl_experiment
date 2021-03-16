@@ -9,9 +9,10 @@ var createFreeFlyCamera = require('./camera/FreeFlyCamera.js')
 var createFrustumCulling = require('./camera/FrustumCulling.js')
 var glm = require('./utils/gl-matrix-2.3.2.min.js');
 
-var myShaders = require('./utils/myShaders.js');
+var ShaderProgram = require('./utils/ShaderProgram.js');
 var myTexture = require('./utils/myTexture.js');
-var createShaders = myShaders.createShaders
+
+var shaderSrc = require('./shaderSrc.js');
 
 var createGeometryColor = require('./geometries/GeometryColor.js');
 var createGeometryExperimental = require('./geometries/GeometryExperimental.js');
@@ -143,22 +144,19 @@ proto.init = function (onFinish)
 	//
 	// shaders
 
-	var shader_opt = {
-	    vs_id: "shader-vs-color",
-	    fs_id: "shader-fs-color",
+	this.shader_color = new ShaderProgram( gl, {
+	    vs_src: shaderSrc.color.vertex,
+	    fs_src: shaderSrc.color.fragment,
 	    arr_attrib: ['aVertexPosition','aVertexColor'],
 	    arr_uniform: ['uMVMatrix','uPMatrix']
-	}
-	this.shader_color = new createShaders( gl, shader_opt );
+	} );
 
-	var shader_opt = {
-	    vs_id: "shader-vs-experimental",
-	    fs_id: "shader-fs-experimental",
+	this.shader_exp = new ShaderProgram( gl, {
+	    vs_src: shaderSrc.experimental.vertex,
+	    fs_src: shaderSrc.experimental.fragment,
 	    arr_attrib: ['aVertexPosition','aVertexColor','aVertexNormal','aVertexBCenter'],
 	    arr_uniform: ['uMVMatrix','uPMatrix','uCameraPos','uSampler']
-	}
-
-	this.shader_exp = new createShaders( gl, shader_opt );
+	} );
 
 	//
 	//
@@ -443,9 +441,9 @@ proto.renderHUD = function ()
                 gl.uniformMatrix4fv(self.shader_color.uMVMatrix, false, tmp_mvMatrix);
 
             self.geom_cross.render(gl, self.shader_color);
-            gl.lineWidth(3);
+            // gl.lineWidth(3);
             self.geom_frustum.render(gl, self.shader_color);
-            gl.lineWidth(1);
+            // gl.lineWidth(1);
 
     }
 

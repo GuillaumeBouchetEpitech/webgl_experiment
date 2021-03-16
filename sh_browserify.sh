@@ -23,11 +23,11 @@ BROWSERIFY=./node_modules/browserify/bin/cmd.js
 UGLIFYIFY=./node_modules/uglifyify/index.js
 
 
-# # no uglification
-# $NODE $BROWSERIFY $SRC > $OUT
+# no uglification
+$NODE $BROWSERIFY $SRC > $OUT
 
 # # local uglification
 # nodejs node_modules/browserify/bin/cmd.js -t ./node_modules/uglifyify/index.js ./src/main.js > ./dist/bundle.js
 
-# global uglification
-$NODE $BROWSERIFY -g $UGLIFYIFY $SRC > $OUT
+# # global uglification
+# $NODE $BROWSERIFY -g $UGLIFYIFY $SRC > $OUT
