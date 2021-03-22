@@ -3,7 +3,7 @@
 
 import * as glm from 'gl-matrix';
 
-const glhProject = (objx: number, objy: number, objz: number, modelview: glm.mat4, projection: glm.mat4, arr_viewport: number[]): [number, number] => {
+const glhProject = (objx: number, objy: number, objz: number, modelview: glm.mat4, projection: glm.mat4, arr_viewport: number[]): [number, number] | null => {
 
     //Transformation vectors
     const fTempo = [0,0,0,0, 0,0,0,0];

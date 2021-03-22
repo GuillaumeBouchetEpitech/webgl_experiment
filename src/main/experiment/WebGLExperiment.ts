@@ -1,8 +1,6 @@
 
 "use strict"
 
-import g_data from './data/Data';
-
 import ChunkGenerator from './generation/ChunkGenerator';
 import RendererWebGL from './rendererWebGL/RendererWebGL';
 
@@ -12,9 +10,12 @@ class WebGLExperiment {
 
     private _fps_meter: FPSMeter;
     private _rendererWebGL: RendererWebGL;
+    private _chunkGenerator: ChunkGenerator;
 
     private _running: boolean;
     private _error_gcontext: boolean;
+
+    private _touches: [number, number][] = [];
 
     constructor() {
 
@@ -32,8 +33,23 @@ class WebGLExperiment {
         //
 
 
-        g_data.logic.k_chunk_size = 15;
-        g_data.logic.chunkGenerator = new ChunkGenerator();
+        this._rendererWebGL = new RendererWebGL();
+
+        this._chunkGenerator = new ChunkGenerator({
+
+            chunk_is_visible: (pos: [number, number, number]) => {
+                return this._rendererWebGL.chunk_is_visible(pos);
+            },
+            point_is_visible: (pos: [number, number, number]) => {
+                return this._rendererWebGL.point_is_visible(pos);
+            },
+            add_geom: (buffer) => {
+                return this._rendererWebGL.add_geom(buffer);
+            },
+            update_geom: (geom, buffer) => {
+                return this._rendererWebGL.update_geom(geom, buffer);
+            },
+        });
 
         //
 
@@ -55,22 +71,32 @@ class WebGLExperiment {
         //
         // HUD (touch positions recorder)
 
-        // const elem = document.getElementById("canvasesdiv");
-        // if (!elem)
-        //     throw new Error("canvasesdiv not found");
+        const elem = document.getElementById("canvasesdiv");
+        if (!elem)
+            throw new Error("canvasesdiv not found");
 
-        // const update_touches = (event: TouchEvent) => {
+        const update_touches = (event: TouchEvent) => {
 
-        //     const touches = event.targetTouches;
+            const touches = event.targetTouches;
 
-        //     g_data.arr_touches.length = 0; // clear array
-        //     for (let ii = 0; ii < touches.length; ++ii)
-        //         g_data.arr_touches.push({ x: touches[ii].pageX, y: touches[ii].pageY });
-        // };
+            const viewport_size = this._rendererWebGL.getSize();
 
-        // elem.addEventListener('touchstart', update_touches);
-        // elem.addEventListener('touchend', () => { g_data.arr_touches.length = 0; }); // clear array
-        // elem.addEventListener('touchmove', update_touches);
+            this._touches.length = 0; // clear array
+            for (let ii = 0; ii < touches.length; ++ii) {
+
+                this._touches.push([
+
+                    touches[ii].pageX,
+
+                    // here we must inverse the Y coordinate
+                    viewport_size[1] - touches[ii].pageY
+                ]);
+            }
+        };
+
+        elem.addEventListener('touchstart', update_touches);
+        elem.addEventListener('touchend', () => { this._touches.length = 0; }); // clear array
+        elem.addEventListener('touchmove', update_touches);
 
         // HUD (touch positions recorder)
         //
@@ -85,30 +111,6 @@ class WebGLExperiment {
         // this.RendererCanvas = new createRendererCanvas();
 
         //
-
-        this._rendererWebGL = new RendererWebGL();
-
-        g_data.chunk_is_visible = (pos: [number, number, number]) => {
-
-            return this._rendererWebGL.chunk_is_visible(pos);
-        };
-
-        g_data.point_is_visible = (pos: [number, number, number]) => {
-
-            return this._rendererWebGL.point_is_visible(pos);
-        };
-
-        g_data.add_geom = (buffer) => {
-
-            return this._rendererWebGL.add_geom(buffer);
-        };
-
-        g_data.update_geom = (geom, buffer) => {
-
-            return this._rendererWebGL.update_geom(geom, buffer);
-        };
-
-
 
 
 
@@ -231,7 +233,7 @@ class WebGLExperiment {
 
             this._running = true;
 
-            g_data.logic.chunkGenerator.start();
+            this._chunkGenerator.start();
 
             this._tick();
         });
@@ -239,7 +241,7 @@ class WebGLExperiment {
 
     stop() {
         this._running = false;
-        g_data.logic.chunkGenerator.stop();
+        this._chunkGenerator.stop();
     }
 
     isRunning() {
@@ -279,7 +281,7 @@ class WebGLExperiment {
 
         const camera_pos = this._rendererWebGL.getCameraPosition();
 
-        g_data.logic.chunkGenerator.update(camera_pos);
+        this._chunkGenerator.update(camera_pos);
 
         ////// /generation
         //
@@ -287,10 +289,10 @@ class WebGLExperiment {
 
 
 
-        this._rendererWebGL.update();
+        this._rendererWebGL.update(this._chunkGenerator.getChunks());
 
         // for touch events rendering
-        g_data.force_forward = this._rendererWebGL.getFreeFlyCamera().getForceForward();
+        // g_data.force_forward = this._rendererWebGL.getFreeFlyCamera().getForceForward();
 
 
 
@@ -298,13 +300,16 @@ class WebGLExperiment {
         //
         ////// render 3d scene
 
-        this._rendererWebGL.render();
+        this._rendererWebGL.renderScene(this._chunkGenerator.getChunks());
 
         //
         //
         ////// HUD
 
-        this._rendererWebGL.renderHUD();
+        this._rendererWebGL.renderHUD(
+                this._chunkGenerator.getChunks(),
+                this._chunkGenerator.processing_pos,
+                this._touches);
 
         // this.RendererCanvas.render();
 

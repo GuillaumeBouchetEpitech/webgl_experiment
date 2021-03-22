@@ -1,7 +1,7 @@
 
 "use strict"
 
-import g_data from '../data/Data';
+import chunk_size from '../../constants';
 
 import WebGLContext from './WebGLContext';
 
@@ -21,7 +21,12 @@ import glhProject from './camera/glhProject';
 
 import * as glm from 'gl-matrix';
 
+import { Chunks } from '../generation/ChunkGenerator';
+
 //
+
+type Vec3 = [number, number, number];
+type Vec4 = [number, number, number, number];
 
 class RendererWebGL {
 
@@ -48,6 +53,8 @@ class RendererWebGL {
     private _geom_cubeW: GeometryWrapper.Geometry;
     private _geom_cubeG: GeometryWrapper.Geometry;
 
+    private _geom_stack_rendering: GeometryWrapper.Geometry;
+
     constructor() {
 
         const canvas = document.getElementById("main-canvas") as HTMLCanvasElement;
@@ -64,7 +71,7 @@ class RendererWebGL {
 
         this._free_fly_camera = new FreeFlyCamera();
         this._free_fly_camera.activate();
-        this._free_fly_camera.setPosition( g_data.logic.k_chunk_size/4*3, g_data.logic.k_chunk_size/4*3, 0 );
+        this._free_fly_camera.setPosition( chunk_size/4*3, chunk_size/4*3, 0 );
 
         this._frustum_culling = new FrustumCulling();
 
@@ -101,15 +108,15 @@ class RendererWebGL {
         this._shader_color = new ShaderProgram({
             vs_src: ShaderSrc.color_vert,
             fs_src: ShaderSrc.color_frag,
-            arr_attrib: ['aVertexPosition','aVertexColor'],
-            arr_uniform: ['uMVMatrix','uPMatrix']
+            arr_attrib: ['a_vertexPosition','a_vertexColor'],
+            arr_uniform: ['u_modelviewMatrix','u_projMatrix']
         });
 
         this._shader_exp = new ShaderProgram({
             vs_src: ShaderSrc.experimental_vert,
             fs_src: ShaderSrc.experimental_frag,
-            arr_attrib: ['aVertexPosition','aVertexColor','aVertexNormal','aVertexBCenter'],
-            arr_uniform: ['uMVMatrix','uPMatrix','uCameraPos','uSampler']
+            arr_attrib: ['a_vertexPosition','a_vertexColor','a_vertexNormal','a_vertexBCenter'],
+            arr_uniform: ['u_modelviewMatrix','u_projMatrix','u_cameraPos','u_sampler']
         });
 
 
@@ -117,10 +124,10 @@ class RendererWebGL {
             vbos: [
                 {
                     attrs: [
-                        { name: "aVertexPosition", type: GeometryWrapper.AttributeType.vec3f, index: 0 },
-                        { name: "aVertexColor",    type: GeometryWrapper.AttributeType.vec3f, index: 3 },
-                        { name: "aVertexNormal",   type: GeometryWrapper.AttributeType.vec3f, index: 6 },
-                        { name: "aVertexBCenter",  type: GeometryWrapper.AttributeType.vec3f, index: 9 },
+                        { name: "a_vertexPosition", type: GeometryWrapper.AttributeType.vec3f, index: 0 },
+                        { name: "a_vertexColor",    type: GeometryWrapper.AttributeType.vec3f, index: 3 },
+                        { name: "a_vertexNormal",   type: GeometryWrapper.AttributeType.vec3f, index: 6 },
+                        { name: "a_vertexBCenter",  type: GeometryWrapper.AttributeType.vec3f, index: 9 },
                     ],
                     stride: 12 * 4,
                     instanced: false,
@@ -133,8 +140,8 @@ class RendererWebGL {
             vbos: [
                 {
                     attrs: [
-                        { name: "aVertexPosition", type: GeometryWrapper.AttributeType.vec3f, index: 0 },
-                        { name: "aVertexColor", type: GeometryWrapper.AttributeType.vec3f, index: 3 },
+                        { name: "a_vertexPosition", type: GeometryWrapper.AttributeType.vec3f, index: 0 },
+                        { name: "a_vertexColor", type: GeometryWrapper.AttributeType.vec3f, index: 3 },
                     ],
                     stride: 6 * 4,
                     instanced: false,
@@ -183,21 +190,22 @@ class RendererWebGL {
         //
         // geoms
 
-        vertices = generateCubeVertices(g_data.logic.k_chunk_size, [1,0,0]);
+        vertices = generateCubeVertices(chunk_size, [1,0,0]);
         this._geom_cubeR = new GeometryWrapper.Geometry(this._shader_color, this._color_geom_def);
         this._geom_cubeR.updateBuffer(0, vertices);
         this._geom_cubeR.setPrimitiveCount(vertices.length / 6);
 
-        vertices = generateCubeVertices(g_data.logic.k_chunk_size, [1,1,1]);
+        vertices = generateCubeVertices(chunk_size, [1,1,1]);
         this._geom_cubeW = new GeometryWrapper.Geometry(this._shader_color, this._color_geom_def);
         this._geom_cubeW.updateBuffer(0, vertices);
         this._geom_cubeW.setPrimitiveCount(vertices.length / 6);
 
-        vertices = generateCubeVertices(g_data.logic.k_chunk_size, [0,1,0]);
+        vertices = generateCubeVertices(chunk_size, [0,1,0]);
         this._geom_cubeG = new GeometryWrapper.Geometry(this._shader_color, this._color_geom_def);
         this._geom_cubeG.updateBuffer(0, vertices);
         this._geom_cubeG.setPrimitiveCount(vertices.length / 6);
 
+        this._geom_stack_rendering = new GeometryWrapper.Geometry(this._shader_color, this._color_geom_def);
 
         this._aspectRatio = viewportSize[0] * 0.75 / viewportSize[1];
 
@@ -208,14 +216,14 @@ class RendererWebGL {
 
     }
 
-    chunk_is_visible(pos: [number, number, number]) {
+    chunk_is_visible(pos: Vec3) {
 
-        var hsize = g_data.logic.k_chunk_size / 2;
+        var hsize = chunk_size / 2;
 
         return this._frustum_culling.cubeInFrustum( pos[0]+hsize, pos[1]+hsize, pos[2]+hsize, hsize );
     }
 
-    point_is_visible(pos: [number, number, number]) {
+    point_is_visible(pos: Vec3) {
         return this._frustum_culling.pointInFrustum( pos[0], pos[1], pos[2] );
     }
 
@@ -328,7 +336,17 @@ class RendererWebGL {
         img_texture.src = "assets/texture.png";
     }
 
-    update() {
+    getSize(): [number, number] {
+
+        const viewportSize = WebGLContext.getViewportSize();
+        return [
+            viewportSize[0],
+            viewportSize[1],
+        ];
+    }
+
+
+    update(chunks: Chunks) {
 
         const viewportSize = WebGLContext.getViewportSize();
 
@@ -342,13 +360,12 @@ class RendererWebGL {
 
         const viewport = [0, 0, viewportSize[0]*0.75, viewportSize[1]];
 
-        const chunks = g_data.logic.chunkGenerator.getChunks();
-
         for (let ii = 0; ii < chunks.length; ++ii) {
 
             const pos = chunks[ii].pos;
 
             chunks[ii].visible = this.chunk_is_visible(pos);
+            chunks[ii].coord2d = null;
 
             if (!this.point_is_visible(pos))
                 continue;
@@ -360,19 +377,20 @@ class RendererWebGL {
                 viewport
             );
 
-            // flip the 'y' value
-            tmp_2d_position[1] = viewport[3] - tmp_2d_position[1];
+            if (!tmp_2d_position)
+                continue;
+
+            // // flip the 'y' value
+            // tmp_2d_position[1] = viewport[3] - tmp_2d_position[1];
 
             chunks[ii].coord2d = tmp_2d_position;
         }
     }
 
-    render() {
+    renderScene(chunks: Chunks) {
 
         const gl = WebGLContext.getContext();
         const viewportSize = WebGLContext.getViewportSize();
-
-        const chunks = g_data.logic.chunkGenerator.getChunks();
 
         gl.viewport(0, 0, viewportSize[0]*0.75, viewportSize[1]);
 
@@ -385,13 +403,13 @@ class RendererWebGL {
         this._shader_exp.bind();
 
         // send the texture to the shader
-        gl.uniform1i(this._shader_exp.getUniform("uSampler"), 0);
+        gl.uniform1i(this._shader_exp.getUniform("u_sampler"), 0);
 
-        gl.uniformMatrix4fv(this._shader_exp.getUniform("uMVMatrix"), false, this._modelview_matrix);
-        gl.uniformMatrix4fv(this._shader_exp.getUniform("uPMatrix"), false, this._projection_matrix);
+        gl.uniformMatrix4fv(this._shader_exp.getUniform("u_modelviewMatrix"), false, this._modelview_matrix);
+        gl.uniformMatrix4fv(this._shader_exp.getUniform("u_projMatrix"), false, this._projection_matrix);
 
         const p = this._free_fly_camera.getPosition();
-        gl.uniform3f(this._shader_exp.getUniform("uCameraPos"), p[0],p[1],p[2]);
+        gl.uniform3f(this._shader_exp.getUniform("u_cameraPos"), p[0],p[1],p[2]);
 
         for (var ii = 0; ii < chunks.length; ++ii)
             if (chunks[ii].visible)
@@ -403,8 +421,8 @@ class RendererWebGL {
 
         this._shader_color.bind();
 
-        gl.uniformMatrix4fv(this._shader_color.getUniform("uPMatrix"), false, this._projection_matrix);
-        gl.uniformMatrix4fv(this._shader_color.getUniform("uMVMatrix"), false, this._modelview_matrix);
+        gl.uniformMatrix4fv(this._shader_color.getUniform("u_projMatrix"), false, this._projection_matrix);
+        gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, this._modelview_matrix);
 
         const tmp_modelview_matrix2 = glm.mat4.create();
 
@@ -417,7 +435,7 @@ class RendererWebGL {
 
             glm.mat4.translate(tmp_modelview_matrix2, this._modelview_matrix, pos);
 
-            gl.uniformMatrix4fv(this._shader_color.getUniform("uMVMatrix"), false, tmp_modelview_matrix2);
+            gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
 
             ///
 
@@ -427,7 +445,7 @@ class RendererWebGL {
         ShaderProgram.unbind();
     }
 
-    renderHUD() {
+    renderHUD(chunks: Chunks, processing_pos: Vec3 | null, touches: [number, number][]) {
 
         const gl = WebGLContext.getContext();
         const viewportSize = WebGLContext.getViewportSize();
@@ -442,18 +460,123 @@ class RendererWebGL {
 
         gl.clear(gl.DEPTH_BUFFER_BIT);
 
-        this._render_hud( [w2,h*0,w,h], [1.0, 1.2, 1.0], [0,0,1] );
-        this._render_hud( [w2,h*1,w,h], [0.0, 1.0, 0.0], [0,0,1] );
-        this._render_hud( [w2,h*2,w,h], [0.0, 0.0, 1.0], [0,1,0] );
+
+
+
+
+
+
+
+        { // PROTOTYPE HUD
+
+            const width = viewportSize[0] * 0.75;
+            const height = viewportSize[1];
+
+            gl.viewport(0, 0, width, height);
+
+
+            const tmp_projection_matrix = glm.mat4.create();
+            glm.mat4.ortho(
+                tmp_projection_matrix,
+                -width * 0.5, +width * 0.5,
+                -height * 0.5, +height * 0.5,
+                -200, 200
+            );
+
+            const tmp_modelview_matrix = glm.mat4.create();
+            glm.mat4.lookAt(
+                tmp_modelview_matrix,
+                [ +width * 0.5, +height * 0.5, 1 ],
+                [ +width * 0.5, +height * 0.5, 0 ],
+                [ 0, 1, 0 ]
+            );
+
+
+            gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
+            gl.uniformMatrix4fv(this._shader_color.getUniform("u_projMatrix"), false, tmp_projection_matrix);
+
+
+
+            const vertices: number[] = [
+                // 10,10,0, 1,0,0,
+                // 1000,1000,0, 1,0,0,
+            ];
+
+
+            //
+            //
+            // not mature as it is
+
+
+            // for (let ii = 0; ii < chunks.length; ++ii) {
+
+            //     if (!chunks[ii].visible)
+            //         continue;
+
+            //     const coord2d = chunks[ii].coord2d;
+
+            //     if (!coord2d)
+            //         continue;
+
+            //     const cross_hsize = 20;
+
+            //     vertices.push(coord2d[0]-cross_hsize,coord2d[1]-cross_hsize,0, 1,1,1);
+            //     vertices.push(coord2d[0]+cross_hsize,coord2d[1]+cross_hsize,0, 1,1,1);
+
+            //     vertices.push(coord2d[0]+cross_hsize,coord2d[1]-cross_hsize,0, 1,1,1);
+            //     vertices.push(coord2d[0]-cross_hsize,coord2d[1]+cross_hsize,0, 1,1,1);
+            // }
+
+
+            // not mature as it is
+            //
+            //
+
+
+            for (const touch of touches) {
+
+                const cross_hsize = 200;
+
+                vertices.push(touch[0]-cross_hsize,touch[1]-cross_hsize,0, 1,0,0);
+                vertices.push(touch[0]+cross_hsize,touch[1]+cross_hsize,0, 1,0,0);
+
+                vertices.push(touch[0]+cross_hsize,touch[1]-cross_hsize,0, 1,0,0);
+                vertices.push(touch[0]-cross_hsize,touch[1]+cross_hsize,0, 1,0,0);
+
+                if (this._free_fly_camera.getForceForward()) {
+
+                    vertices.push(touch[0]-cross_hsize,touch[1],0, 1,0,0);
+                    vertices.push(touch[0]+cross_hsize,touch[1],0, 1,0,0);
+
+                    vertices.push(touch[0],touch[1]-cross_hsize,0, 1,0,0);
+                    vertices.push(touch[0],touch[1]+cross_hsize,0, 1,0,0);
+                }
+            }
+
+
+            this._geom_stack_rendering.updateBuffer(0, vertices);
+            this._geom_stack_rendering.setPrimitiveCount(vertices.length / 6);
+
+            this._geom_stack_rendering.render();
+
+        } // PROTOTYPE HUD
+
+
+
+
+
+
+
+        this._render_hud( chunks, processing_pos, [w2,h*0,w,h], [1.0, 1.2, 1.0], [0,0,1] );
+        this._render_hud( chunks, processing_pos, [w2,h*1,w,h], [0.0, 1.0, 0.0], [0,0,1] );
+        this._render_hud( chunks, processing_pos, [w2,h*2,w,h], [0.0, 0.0, 1.0], [0,1,0] );
 
         ShaderProgram.unbind();
     }
 
-    private _render_hud(arr_viewport: [number, number, number, number], arr_target: [number, number, number], arr_up: [number, number, number]) {
+    private _render_hud(chunks: Chunks, processing_pos: Vec3 | null, arr_viewport: Vec4, arr_target: Vec3, arr_up: Vec3) {
 
         const gl = WebGLContext.getContext();
-
-        const chunks = g_data.logic.chunkGenerator.getChunks();
 
         gl.viewport(arr_viewport[0], arr_viewport[1], arr_viewport[2], arr_viewport[3]);
 
@@ -478,8 +601,8 @@ class RendererWebGL {
         );
 
 
-        gl.uniformMatrix4fv(this._shader_color.getUniform("uMVMatrix"), false, tmp_modelview_matrix);
-        gl.uniformMatrix4fv(this._shader_color.getUniform("uPMatrix"), false, tmp_projection_matrix);
+        gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
+        gl.uniformMatrix4fv(this._shader_color.getUniform("u_projMatrix"), false, tmp_projection_matrix);
 
         this._geom_axis.render();
 
@@ -499,7 +622,7 @@ class RendererWebGL {
 
                 glm.mat4.translate(tmp_modelview_matrix2, tmp_modelview_matrix, pos);
 
-                gl.uniformMatrix4fv(this._shader_color.getUniform("uMVMatrix"), false, tmp_modelview_matrix2);
+                gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
                 this._geom_cubeW.render();
             }
             else {
@@ -507,40 +630,35 @@ class RendererWebGL {
                 // render red cube (smaller -> scalled)
 
                 glm.mat4.translate(tmp_modelview_matrix2, tmp_modelview_matrix, [
-                    pos[0] + g_data.logic.k_chunk_size * 0.15,
-                    pos[1] + g_data.logic.k_chunk_size * 0.15,
-                    pos[2] + g_data.logic.k_chunk_size * 0.15
+                    pos[0] + chunk_size * 0.15,
+                    pos[1] + chunk_size * 0.15,
+                    pos[2] + chunk_size * 0.15
                 ]);
                 glm.mat4.scale(tmp_modelview_matrix2, tmp_modelview_matrix2, [0.7,0.7,0.7]);
 
-                gl.uniformMatrix4fv(this._shader_color.getUniform("uMVMatrix"), false, tmp_modelview_matrix2);
+                gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
                 this._geom_cubeR.render();
             }
         }
 
-        if (g_data.logic.chunkGenerator.is_processing_chunk) {
+        if (processing_pos) {
 
-            const pos = g_data.logic.chunkGenerator.processing_pos;
+            glm.mat4.translate(tmp_modelview_matrix2,tmp_modelview_matrix, [
+                processing_pos[0] + chunk_size*0.2,
+                processing_pos[1] + chunk_size*0.2,
+                processing_pos[2] + chunk_size*0.2
+            ]);
+            glm.mat4.scale(tmp_modelview_matrix2,tmp_modelview_matrix2, [0.6,0.6,0.6]);
 
-            if (pos) {
-
-                glm.mat4.translate(tmp_modelview_matrix2,tmp_modelview_matrix, [
-                    pos[0] + g_data.logic.k_chunk_size*0.2,
-                    pos[1] + g_data.logic.k_chunk_size*0.2,
-                    pos[2] + g_data.logic.k_chunk_size*0.2
-                ]);
-                glm.mat4.scale(tmp_modelview_matrix2,tmp_modelview_matrix2, [0.6,0.6,0.6]);
-
-                gl.uniformMatrix4fv(this._shader_color.getUniform("uMVMatrix"), false, tmp_modelview_matrix2);
-                this._geom_cubeG.render();
-            }
+            gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
+            this._geom_cubeG.render();
         }
 
         glm.mat4.translate(tmp_modelview_matrix,tmp_modelview_matrix, this._free_fly_camera.getPosition());
         glm.mat4.rotate(tmp_modelview_matrix,tmp_modelview_matrix, this._free_fly_camera.getTheta() * Math.PI / 180, [0,0,1]);
         glm.mat4.rotate(tmp_modelview_matrix,tmp_modelview_matrix, this._free_fly_camera.getPhi() * Math.PI / 180, [0,-1,0]);
 
-        gl.uniformMatrix4fv(this._shader_color.getUniform("uMVMatrix"), false, tmp_modelview_matrix);
+        gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
 
         this._geom_cross.render();
         this._geom_frustum.render();

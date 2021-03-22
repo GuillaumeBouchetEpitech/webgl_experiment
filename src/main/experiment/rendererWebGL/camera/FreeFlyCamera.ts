@@ -20,13 +20,13 @@ class FreeFlyCamera {
 
     constructor() {
 
+        const canvasesdiv = document.getElementById("canvasesdiv") as HTMLElement;
+        if (!canvasesdiv)
+            throw new Error("canvasesdiv not found");
+
         ///
         /// MOUSE
         ///
-
-        const canvas = document.getElementById("canvasesdiv") as HTMLElement;
-        if (!canvas)
-            throw new Error("canvasesdiv not found");
 
         const callback_mousemove = (event: MouseEvent) => {
 
@@ -40,16 +40,16 @@ class FreeFlyCamera {
         };
 
         const callback_mouse_locked = () => {
-            canvas.addEventListener('mousemove', callback_mousemove, false);
+            canvasesdiv.addEventListener('mousemove', callback_mousemove, false);
         };
 
         const callback_mouse_unlocked = () => {
-            canvas.removeEventListener('mousemove', callback_mousemove, false);
+            canvasesdiv.removeEventListener('mousemove', callback_mousemove, false);
         };
 
         //
 
-        handle_pointerLock(canvas, callback_mouse_locked, callback_mouse_unlocked);
+        handle_pointerLock(canvasesdiv, callback_mouse_locked, callback_mouse_unlocked);
 
         ///
         /// /MOUSE
@@ -61,15 +61,11 @@ class FreeFlyCamera {
         /// TOUCH
         ///
 
-        const elem = document.getElementById("canvasesdiv");
-        if (!elem)
-            throw new Error("canvasesdiv not found");
-
         let previous_touch: Touch|null = null;
         let previous_distance: number|null = null;
         let saved_time: number|null = null;
 
-        elem.addEventListener('touchstart', (event) => {
+        canvasesdiv.addEventListener('touchstart', (event) => {
 
             event.preventDefault();
 
@@ -88,7 +84,7 @@ class FreeFlyCamera {
             saved_time = tmp_time;
         });
 
-        elem.addEventListener('touchend', (event) => {
+        canvasesdiv.addEventListener('touchend', (event) => {
 
             event.preventDefault();
 
@@ -99,7 +95,7 @@ class FreeFlyCamera {
             this._force_forward = false;
         });
 
-        elem.addEventListener('touchmove', (event: TouchEvent) => {
+        canvasesdiv.addEventListener('touchmove', (event: TouchEvent) => {
 
             event.preventDefault();
 

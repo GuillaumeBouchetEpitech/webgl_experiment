@@ -1,19 +1,19 @@
 
 const color_vert = `
 
-attribute vec3 aVertexPosition;
-attribute vec3 aVertexColor;
+attribute vec3 a_vertexPosition;
+attribute vec3 a_vertexColor;
 
-varying vec4 vColor;
+varying vec4 v_color;
 
-uniform mat4 uMVMatrix;
-uniform mat4 uPMatrix;
+uniform mat4 u_modelviewMatrix;
+uniform mat4 u_projMatrix;
 
 void main(void)
 {
-    vColor = vec4(aVertexColor,1.0);
+    v_color = vec4(a_vertexColor,1.0);
 
-    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+    gl_Position = u_projMatrix * u_modelviewMatrix * vec4(a_vertexPosition, 1.0);
 }
 `;
 
@@ -21,11 +21,11 @@ const color_frag = `
 
 precision mediump float;
 
-varying vec4 vColor;
+varying vec4 v_color;
 
 void main(void)
 {
-    gl_FragColor = vColor;
+    gl_FragColor = v_color;
 }
 `;
 
@@ -35,58 +35,55 @@ void main(void)
 
 const experimental_vert = `
 
-attribute vec3 aVertexPosition, aVertexColor, aVertexNormal, aVertexBCenter;
+attribute vec3 a_vertexPosition;
+attribute vec3 a_vertexColor;
+attribute vec3 a_vertexNormal;
+attribute vec3 a_vertexBCenter;
 
-uniform mat4 uMVMatrix;
-uniform mat4 uPMatrix;
-uniform vec3 uCameraPos;
+uniform mat4 u_modelviewMatrix;
+uniform mat4 u_projMatrix;
+uniform vec3 u_cameraPos;
 
-varying vec3 vColor;
-varying vec3 vBCenter;
+varying vec3 v_color;
+varying vec3 v_bCenter;
 
-varying vec3 vNormalInterp;
-varying vec3 vVertPos;
-varying float vDistance;
+varying vec3 v_normalInterp;
+varying vec3 v_vertPos;
+varying float v_distance;
 
-varying vec3 vPureVertexPos;
-varying vec3 vPureNormalInterp;
+varying vec3 v_pureVertexPos;
+varying vec3 v_pureNormalInterp;
 
 const float k_range_min = 20.0;
 const float k_range_max = 23.0;
 
-
 void main(void)
 {
-    vec4 vertPos4 = uMVMatrix * vec4(aVertexPosition, 1.0);
-    vVertPos = vec3(vertPos4) / vertPos4.w;
-    vNormalInterp = vec3( uMVMatrix * vec4(aVertexNormal, 0.0) );
+    vec4 vertPos4 = u_modelviewMatrix * vec4(a_vertexPosition, 1.0);
+    v_vertPos = vec3(vertPos4) / vertPos4.w;
+    v_normalInterp = vec3(u_modelviewMatrix * vec4(a_vertexNormal, 0.0));
 
-    vPureVertexPos = aVertexPosition;
-    vPureNormalInterp = aVertexNormal;
+    v_pureVertexPos = a_vertexPosition;
+    v_pureNormalInterp = a_vertexNormal;
 
-    //
+    float tmp_dist = length(a_vertexPosition - u_cameraPos);
 
-    float tmp_dist = length( aVertexPosition - uCameraPos );
+    v_distance = tmp_dist;
 
-    vDistance = tmp_dist;
-
-    vColor = aVertexColor;
-    vBCenter = aVertexBCenter;
+    v_color = a_vertexColor;
+    v_bCenter = a_vertexBCenter;
 
     if (tmp_dist < k_range_min ||
         tmp_dist > k_range_max)
     {
-        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        gl_Position = u_projMatrix * u_modelviewMatrix * vec4(a_vertexPosition, 1.0);
     }
     else
     {
         // bump effect -> bump in the direction of the normal
 
-        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition + aVertexNormal, 1.0);
+        gl_Position = u_projMatrix * u_modelviewMatrix * vec4(a_vertexPosition + a_vertexNormal, 1.0);
     }
-
-    //
-
 }
 `;
 
@@ -94,17 +91,17 @@ const experimental_frag = `
 
 precision mediump float;
 
-uniform sampler2D uSampler;
+uniform sampler2D u_sampler;
 
-varying vec3 vColor;
-varying vec3 vBCenter;
+varying vec3 v_color;
+varying vec3 v_bCenter;
 
-varying vec3 vNormalInterp;
-varying vec3 vVertPos;
-varying float vDistance;
+varying vec3 v_normalInterp;
+varying vec3 v_vertPos;
+varying float v_distance;
 
-varying vec3 vPureVertexPos;
-varying vec3 vPureNormalInterp;
+varying vec3 v_pureVertexPos;
+varying vec3 v_pureNormalInterp;
 
 const vec3 k_lightPos = vec3(0.0,0.0,0.0);
 const vec3 k_specColor = vec3(1.0, 1.0, 1.0);
@@ -121,14 +118,14 @@ void main(void)
         {
             // "bumped wireframe" effect on the front facing
 
-            if (vDistance > k_range_min &&
-                vDistance < k_range_max)
+            if (v_distance > k_range_min &&
+                v_distance < k_range_max)
             {
 
-                if (all(greaterThan(vBCenter, vec3(0.03))) &&
-                    any(lessThan(vBCenter, vec3(0.08))))
+                if (all(greaterThan(v_bCenter, vec3(0.03))) &&
+                    any(lessThan(v_bCenter, vec3(0.08))))
                 {
-                    gl_FragColor = vec4(vColor, 1.0);
+                    gl_FragColor = vec4(v_color, 1.0);
                     return;
                 }
 
@@ -139,7 +136,7 @@ void main(void)
         {
             // normal wireframe effect on the back facing
 
-            if (any(lessThan(vBCenter, vec3(0.06))))
+            if (any(lessThan(v_bCenter, vec3(0.06))))
             {
                 gl_FragColor = vec4(1);
                 return;
@@ -152,35 +149,40 @@ void main(void)
 
     } // /wireframe
 
-    vec3 tmp_color = vColor;
+    vec3 tmp_color = v_color;
 
     { // texture
 
         // current 3d texture coordinate
         vec3 flooredPos = vec3(
-            vPureVertexPos.x - floor(vPureVertexPos.x),
-            vPureVertexPos.y - floor(vPureVertexPos.y),
-            vPureVertexPos.z - floor(vPureVertexPos.z)
+            v_pureVertexPos.x - floor(v_pureVertexPos.x),
+            v_pureVertexPos.y - floor(v_pureVertexPos.y),
+            v_pureVertexPos.z - floor(v_pureVertexPos.z)
         );
 
-        vec3 blend_weights = abs( normalize( vPureNormalInterp.xyz ) );
+        vec3 blend_weights = abs( normalize( v_pureNormalInterp.xyz ) );
         blend_weights = max( ( blend_weights - 0.2 ) * 7., 0. );
         blend_weights /= ( blend_weights.x + blend_weights.y + blend_weights.z );
 
-        // horizontal texture coordinates -> shoudl be a wall
+        // horizontal texture coordinates -> should be a wall
         vec2 texcoord1 = flooredPos.yz * 0.5 + 0.5;
         vec2 texcoord2 = flooredPos.xz * 0.5 + 0.5;
+
         // vertical texture coord -> should be green grass
         vec2 texcoord3 = flooredPos.xy * 0.5;
 
-        if (vPureNormalInterp.z < 0.0)
-            texcoord3.y += 0.5; // switch the texture Y -> dirt on the ceilling instead of grass
+        if (v_pureNormalInterp.z < 0.0)
+        {
+            // switch the texture Y -> dirt on the ceilling instead of grass
+            texcoord3.y += 0.5;
+        }
 
         // horizontal color
-        vec3 texColor1 = texture2D( uSampler, texcoord1 ).rgb;
-        vec3 texColor2 = texture2D( uSampler, texcoord2 ).rgb;
+        vec3 texColor1 = texture2D( u_sampler, texcoord1 ).rgb;
+        vec3 texColor2 = texture2D( u_sampler, texcoord2 ).rgb;
+
         // vertical color
-        vec3 texColor3 = texture2D( uSampler, texcoord3 ).rgb;
+        vec3 texColor3 = texture2D( u_sampler, texcoord3 ).rgb;
 
         tmp_color = texColor1 * blend_weights.xxx +
                     texColor2 * blend_weights.yyy +
@@ -190,24 +192,30 @@ void main(void)
 
     { // lighting
 
-        vec3 normal = normalize(vNormalInterp);
-        vec3 lightDir = normalize(k_lightPos - vVertPos);
+        vec3 normal = normalize(v_normalInterp);
+        vec3 lightDir = normalize(k_lightPos - v_vertPos);
 
-        float lambertian = max(dot(lightDir,vNormalInterp.xyz), 0.0);
+        float lambertian = max(dot(lightDir,v_normalInterp.xyz), 0.0);
         float specular = 0.0;
 
-        // lighting specular
         if (lambertian > 0.0)
         {
+            // lighting specular
+
             vec3 reflectDir = reflect(-lightDir, normal);
-            vec3 viewDir = normalize(-vVertPos);
+            vec3 viewDir = normalize(-v_vertPos);
 
             float specAngle = max(dot(reflectDir, viewDir), 0.0);
             specular = pow(specAngle, 16.0);
         }
 
         // lighting output
-        tmp_color = tmp_color.xyz*0.05 + tmp_color.xyz*lambertian + specular*k_specColor;
+
+        vec3 ambiant_color = tmp_color.xyz * 0.05;
+        vec3 diffuse_color = tmp_color.xyz * lambertian;
+        vec3 specular_color = specular * k_specColor;
+
+        tmp_color = ambiant_color + diffuse_color + specular_color;
 
     } // lighting
 

@@ -10,7 +10,7 @@ class ClassicalNoise {
     private _octaves: number = 1;
     private _frequency: number = 1.0;
     private _amplitude: number = 0.5;
-    private _grad3: number[][];
+    private _grad3: [number, number, number][];
     private _p: Uint8Array;
     private _perm: Uint8Array;
 
@@ -24,9 +24,9 @@ class ClassicalNoise {
             randomiser = Math;
 
         this._grad3 = [
-            [1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],
-            [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
-            [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]
+            [1,1,0], [-1,1,0], [1,-1,0], [-1,-1,0],
+            [1,0,1], [-1,0,1], [1,0,-1], [-1,0,-1],
+            [0,1,1], [0,-1,1], [0,1,-1], [0,-1,-1]
         ];
 
         this._p = new Uint8Array(256);
@@ -49,8 +49,8 @@ class ClassicalNoise {
         let y = y2 * this._frequency;
         let z = z2 * this._frequency;
 
-        for (let ii = 0; ii < this._octaves; ++ii)
-        {
+        for (let ii = 0; ii < this._octaves; ++ii) {
+
             result += this.noise(x, y, z) * amp;
 
             x *= 2.0;
@@ -78,9 +78,9 @@ class ClassicalNoise {
     noise(x: number, y: number, z: number) {
 
         // Find unit grid cell containing point
-        var X = Math.floor(x)|0;
-        var Y = Math.floor(y)|0;
-        var Z = Math.floor(z)|0;
+        let X = Math.floor(x)|0;
+        let Y = Math.floor(y)|0;
+        let Z = Math.floor(z)|0;
 
         // Get relative xyz coordinates of point within that cell
         x = x - X;
@@ -93,24 +93,24 @@ class ClassicalNoise {
         Z = (Z & 255)|0;
 
         // Calculate a set of eight hashed gradient indices
-        var gi000 = (this._perm[X  +this._perm[Y  +this._perm[Z  ]]] % 12)|0;
-        var gi001 = (this._perm[X  +this._perm[Y  +this._perm[Z+1]]] % 12)|0;
-        var gi010 = (this._perm[X  +this._perm[Y+1+this._perm[Z  ]]] % 12)|0;
-        var gi011 = (this._perm[X  +this._perm[Y+1+this._perm[Z+1]]] % 12)|0;
-        var gi100 = (this._perm[X+1+this._perm[Y  +this._perm[Z  ]]] % 12)|0;
-        var gi101 = (this._perm[X+1+this._perm[Y  +this._perm[Z+1]]] % 12)|0;
-        var gi110 = (this._perm[X+1+this._perm[Y+1+this._perm[Z  ]]] % 12)|0;
-        var gi111 = (this._perm[X+1+this._perm[Y+1+this._perm[Z+1]]] % 12)|0;
+        const gi000 = (this._perm[X  +this._perm[Y  +this._perm[Z  ]]] % 12)|0;
+        const gi001 = (this._perm[X  +this._perm[Y  +this._perm[Z+1]]] % 12)|0;
+        const gi010 = (this._perm[X  +this._perm[Y+1+this._perm[Z  ]]] % 12)|0;
+        const gi011 = (this._perm[X  +this._perm[Y+1+this._perm[Z+1]]] % 12)|0;
+        const gi100 = (this._perm[X+1+this._perm[Y  +this._perm[Z  ]]] % 12)|0;
+        const gi101 = (this._perm[X+1+this._perm[Y  +this._perm[Z+1]]] % 12)|0;
+        const gi110 = (this._perm[X+1+this._perm[Y+1+this._perm[Z  ]]] % 12)|0;
+        const gi111 = (this._perm[X+1+this._perm[Y+1+this._perm[Z+1]]] % 12)|0;
 
         // Calculate noise contributions from each of the eight corners
-        var n000 = this._dot(this._grad3[gi000], x  , y  , z  );
-        var n100 = this._dot(this._grad3[gi100], x-1, y  , z  );
-        var n010 = this._dot(this._grad3[gi010], x  , y-1, z  );
-        var n110 = this._dot(this._grad3[gi110], x-1, y-1, z  );
-        var n001 = this._dot(this._grad3[gi001], x  , y  , z-1);
-        var n101 = this._dot(this._grad3[gi101], x-1, y  , z-1);
-        var n011 = this._dot(this._grad3[gi011], x  , y-1, z-1);
-        var n111 = this._dot(this._grad3[gi111], x-1, y-1, z-1);
+        const n000 = this._dot(this._grad3[gi000], x  , y  , z  );
+        const n100 = this._dot(this._grad3[gi100], x-1, y  , z  );
+        const n010 = this._dot(this._grad3[gi010], x  , y-1, z  );
+        const n110 = this._dot(this._grad3[gi110], x-1, y-1, z  );
+        const n001 = this._dot(this._grad3[gi001], x  , y  , z-1);
+        const n101 = this._dot(this._grad3[gi101], x-1, y  , z-1);
+        const n011 = this._dot(this._grad3[gi011], x  , y-1, z-1);
+        const n111 = this._dot(this._grad3[gi111], x-1, y-1, z-1);
 
         // Compute the fade curve value for each of x, y, z
         const u = this._fade(x);

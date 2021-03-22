@@ -1,7 +1,14 @@
 
-import g_data from '../data/Data';
+import chunk_size from '../../constants';
 
 import { GeometryWrapper } from '../rendererWebGL/utils/Geometry';
+
+interface IChunkGeneratorDef {
+    chunk_is_visible: ((pos: [number, number, number]) => void);
+    point_is_visible: ((pos: [number, number, number]) => void);
+    add_geom: ((buffer: Float32Array) => GeometryWrapper.Geometry);
+    update_geom: ((geom: GeometryWrapper.Geometry, buffer: Float32Array) => void);
+};
 
 interface IChunk {
     pos: [number, number, number];
@@ -10,7 +17,12 @@ interface IChunk {
     visible: boolean;
 };
 
-type Chunks = IChunk[];
+export type Chunks = IChunk[];
+
+enum WorkerStatus {
+    available = 1,
+    working = 2,
+}
 
 class ChunkGenerator {
 
@@ -18,42 +30,46 @@ class ChunkGenerator {
     private _chunks: Chunks = []; // live chunks
     private _chunk_queue: [number, number, number][] = []; // position to be processed
     private _geoms: GeometryWrapper.Geometry[] = [];
-    private _saved_index: number[] = [1,0,0]; // <- currently 1/0/0 but any other value than 0/0/0 will work
-    private _myWorker_buffer: Float32Array = new Float32Array(100000);
+    private _saved_index: [number, number, number] = [1,0,0]; // <- currently 1/0/0 but any other value than 0/0/0 will work
+
+    private _myWorker_buffer: Float32Array = new Float32Array(1000000);
     private _myWorker: Worker;
-    private _myWorker_status: number = 1; // worker available
+    private _myWorker_status: WorkerStatus = WorkerStatus.available; // worker available
+
     private _camera_pos: [number, number, number] = [0, 0, 0]
+
+    private _def: IChunkGeneratorDef;
 
     public processing_pos: [number, number, number] | null = null; // TODO: this is ugly
     public is_processing_chunk: boolean = false; // TODO: this is ugly
 
-    constructor() {
+    constructor(def: IChunkGeneratorDef) {
+
+        this._def = def;
 
         this._myWorker = new Worker("./dist/worker.js");
         this._myWorker.addEventListener("message", (event: MessageEvent) => {
 
+            this.processing_pos = null;
+
             this._myWorker_buffer = event.data.vertices; // we now own the vertices buffer
-            this._myWorker_status = 1; // worker available
+            this._myWorker_status = WorkerStatus.available; // worker available
 
             if (!this._running)
                 return;
 
             const pos = event.data.pos;
 
-            let geom = null;
+            let geom: GeometryWrapper.Geometry | undefined = undefined;
             if (this._geoms.length == 0) {
 
-                if (g_data.add_geom)
-                    geom = g_data.add_geom(this._myWorker_buffer);
+                geom = this._def.add_geom(this._myWorker_buffer);
             }
             else {
 
-                if (g_data.update_geom) {
-
-                    geom = this._geoms.pop();
-                    if (geom)
-                        g_data.update_geom(geom, this._myWorker_buffer);
-                }
+                geom = this._geoms.pop();
+                if (geom)
+                    this._def.update_geom(geom, this._myWorker_buffer);
             }
 
             if (!geom) {
@@ -77,7 +93,8 @@ class ChunkGenerator {
 
                 this._launch_worker();
             }
-        });
+
+        }, false);
     }
 
     start() {
@@ -109,9 +126,9 @@ class ChunkGenerator {
         this._camera_pos = camera_pos;
 
         const curr_index = [
-            Math.floor(camera_pos[0] / g_data.logic.k_chunk_size)|0,
-            Math.floor(camera_pos[1] / g_data.logic.k_chunk_size)|0,
-            Math.floor(camera_pos[2] / g_data.logic.k_chunk_size)|0
+            Math.floor(camera_pos[0] / chunk_size)|0,
+            Math.floor(camera_pos[1] / chunk_size)|0,
+            Math.floor(camera_pos[2] / chunk_size)|0
         ];
 
         // did we move to another chunk?
@@ -150,9 +167,9 @@ class ChunkGenerator {
             for (let ii = 0; ii < this._chunks.length; ++ii) {
 
                 const curr_pos = [
-                    (this._chunks[ii].pos[0] / g_data.logic.k_chunk_size)|0,
-                    (this._chunks[ii].pos[1] / g_data.logic.k_chunk_size)|0,
-                    (this._chunks[ii].pos[2] / g_data.logic.k_chunk_size)|0
+                    (this._chunks[ii].pos[0] / chunk_size)|0,
+                    (this._chunks[ii].pos[1] / chunk_size)|0,
+                    (this._chunks[ii].pos[2] / chunk_size)|0
                 ];
 
                 if (curr_pos[0] < min_index[0] || curr_pos[0] > max_index[0] ||
@@ -174,9 +191,9 @@ class ChunkGenerator {
             for (let xx = min_index[0]; xx <= max_index[0]; ++xx) {
 
                 const pos: [number, number, number] = [
-                    xx * g_data.logic.k_chunk_size,
-                    yy * g_data.logic.k_chunk_size,
-                    zz * g_data.logic.k_chunk_size
+                    xx * chunk_size,
+                    yy * chunk_size,
+                    zz * chunk_size
                 ]
 
                 /// already processed ?
@@ -208,7 +225,7 @@ class ChunkGenerator {
 
         // webworker available?
 
-        if (this._myWorker_status != 1) // worker working
+        if (this._myWorker_status != WorkerStatus.available) // worker working
             return;
 
         // available -> determine the next chunk to process
@@ -241,11 +258,11 @@ class ChunkGenerator {
 
                 const try_pos = this._chunk_queue[ii];
 
-                if (best_index == -1 || g_data.chunk_is_visible && g_data.chunk_is_visible(try_pos)) {
+                if (best_index == -1 || this._def.chunk_is_visible(try_pos)) {
 
-                    const dist = calc_length(this._camera_pos[0] - try_pos[0] - g_data.logic.k_chunk_size / 2,
-                                             this._camera_pos[1] - try_pos[1] - g_data.logic.k_chunk_size / 2,
-                                             this._camera_pos[2] - try_pos[2] - g_data.logic.k_chunk_size / 2 );
+                    const dist = calc_length(this._camera_pos[0] - try_pos[0] - chunk_size / 2,
+                                             this._camera_pos[1] - try_pos[1] - chunk_size / 2,
+                                             this._camera_pos[2] - try_pos[2] - chunk_size / 2 );
 
                     if (best_dist < dist)
                         continue;
@@ -266,7 +283,7 @@ class ChunkGenerator {
 
         this.is_processing_chunk = true;
 
-        this._myWorker_status = 2; // working
+        this._myWorker_status = WorkerStatus.working; // working
         this._myWorker.postMessage({
             pos: this.processing_pos,
             buf: this._myWorker_buffer

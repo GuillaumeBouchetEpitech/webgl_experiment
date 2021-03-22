@@ -333,9 +333,12 @@ const a2iTriangleConnectionTable = [
     [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 ];
 
+type Vec3 = [number, number, number];
+type GeomCallback = (vertex: Vec3, color: Vec3, normal: Vec3) => void;
+
 const fgetOffset = (fValue1: number, fValue2: number, fValueDesired: number) => {
 
-    var fDelta = fValue2 - fValue1;
+    const fDelta = fValue2 - fValue1;
 
     if (fDelta == 0)
         return 0.5;
@@ -344,27 +347,27 @@ const fgetOffset = (fValue1: number, fValue2: number, fValueDesired: number) => 
 };
 
 //vgetColor generates a color from a given position and normal of a point
-const vgetColor = (rfNormal: [number, number, number]): [number, number, number] => {
+const vgetColor = (rfNormal: Vec3): Vec3 => {
 
-    var fX = rfNormal[0];
-    var fY = rfNormal[1];
-    var fZ = rfNormal[2];
+    const fX = rfNormal[0];
+    const fY = rfNormal[1];
+    const fZ = rfNormal[2];
 
     return [
-          ( (fX > 0 ? fX : 0) + (fY < 0 ? -0.5 * fY : 0.0) + (fZ < 0 ? -0.5 * fZ : 0) )
-        , ( (fY > 0 ? fY : 0) + (fZ < 0 ? -0.5 * fZ : 0.0) + (fX < 0 ? -0.5 * fX : 0) )
-        , ( (fZ > 0 ? fZ : 0) + (fX < 0 ? -0.5 * fX : 0.0) + (fY < 0 ? -0.5 * fY : 0) )
+        ( (fX > 0 ? fX : 0) + (fY < 0 ? -0.5 * fY : 0.0) + (fZ < 0 ? -0.5 * fZ : 0) ),
+        ( (fY > 0 ? fY : 0) + (fZ < 0 ? -0.5 * fZ : 0.0) + (fX < 0 ? -0.5 * fX : 0) ),
+        ( (fZ > 0 ? fZ : 0) + (fX < 0 ? -0.5 * fX : 0.0) + (fY < 0 ? -0.5 * fY : 0) )
     ];
 };
 
-const vNormalizeVector = (vec: [number, number, number]): [number, number, number] => {
+const vNormalizeVector = (vec: Vec3): Vec3 => {
 
-    var fOldLength = Math.sqrt( (vec[0] * vec[0]) + (vec[1] * vec[1]) + (vec[2] * vec[2]) );
+    const fOldLength = Math.sqrt( (vec[0] * vec[0]) + (vec[1] * vec[1]) + (vec[2] * vec[2]) );
 
     if (fOldLength == 0.0)
         return vec;
 
-    var tmp_scale = 1.0 / fOldLength;
+    const tmp_scale = 1.0 / fOldLength;
 
     return [
         vec[0] * tmp_scale,
@@ -373,17 +376,14 @@ const vNormalizeVector = (vec: [number, number, number]): [number, number, numbe
     ];
 };
 
-type GeomCallback = (vertex: [number, number, number], color: [number, number, number], normal: [number, number, number]) => void;
-
 class MarchingCube {
 
     private _chunk_size: number;
     private _fTv: number;
     private _sample_cb: (x: number, y: number, z: number) => number;
-    private _tetra: boolean = false;
+    // private _tetra: boolean = false;
     private _step_size: number;
     private _current_geom_callback: GeomCallback;
-
 
     constructor(chunk_size: number, fTv: number, sample_cb: (x: number, y: number, z: number) => number) {
 
@@ -394,11 +394,11 @@ class MarchingCube {
         this._step_size = 1.0 / this._chunk_size;
     }
 
-    getNormal(fX: number, fY: number, fZ: number): [number, number, number] {
+    getNormal(fX: number, fY: number, fZ: number): Vec3 {
 
-        var step_dec = this._step_size * 0.1;
+        const step_dec = this._step_size * 0.1;
 
-        const vec: [number, number, number] = [
+        const vec: Vec3 = [
             this._sample_cb( fX - step_dec, fY, fZ ) - this._sample_cb( fX + step_dec, fY, fZ ),
             this._sample_cb( fX, fY - step_dec, fZ ) - this._sample_cb( fX, fY + step_dec, fZ ),
             this._sample_cb( fX, fY, fZ - step_dec ) - this._sample_cb( fX, fY, fZ + step_dec )
@@ -407,7 +407,7 @@ class MarchingCube {
         return vNormalizeVector( vec );
     }
 
-    getNormal2(t1: [number, number, number], t2: [number, number, number], t3: [number, number, number]) {
+    getNormal2(t1: Vec3, t2: Vec3, t3: Vec3): Vec3 {
 
         const Ux = t2[0] - t1[0];
         const Uy = t2[1] - t1[1];
@@ -416,72 +416,63 @@ class MarchingCube {
         const Vy = t3[1] - t1[1];
         const Vz = t3[2] - t1[2];
 
-        var normal2 = [
-            Uy*Vz - Uz*Vy,
-            Uz*Vx - Ux*Vz,
-            Ux*Vy - Uy*Vx
+        return [
+            Uy * Vz - Uz * Vy,
+            Uz * Vx - Ux * Vz,
+            Ux * Vy - Uy * Vx
         ];
-
-        var len = Math.sqrt(
-            normal2[0]*normal2[0]+
-            normal2[1]*normal2[1]+
-            normal2[2]*normal2[2]
-        );
-
-        return normal2
     }
 
-    marchCube(pos: number[], geom_callback: GeomCallback) {
+    generate(pos: number[], geom_callback: GeomCallback, marchTetrahedron: boolean = false) {
 
         if (!geom_callback)
             throw new Error("no geometry callback supplied");
 
         this._current_geom_callback = geom_callback;
 
-        for (var iX = 0; iX <= this._chunk_size; ++iX)
-        for (var iY = 0; iY <= this._chunk_size; ++iY)
-        for (var iZ = 0; iZ <= this._chunk_size; ++iZ)
-            this._marchCube_single( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
-            // this.vMarchCube2( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
+        const generate_callback = marchTetrahedron
+                                    ? this._marchTetrahedron.bind(this)
+                                    : this._marchCube_single.bind(this);
+
+        for (let iX = 0; iX <= this._chunk_size; ++iX)
+        for (let iY = 0; iY <= this._chunk_size; ++iY)
+        for (let iZ = 0; iZ <= this._chunk_size; ++iZ)
+            generate_callback( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
     }
 
     private _marchCube_single(iX: number, iY: number, iZ: number) {
 
-        var iFlagIndex,
-            iEdgeFlags;
-
-        var fOffset = 0.0;
-        var afCubeValue = [ 0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0 ];
-        var asEdgeVertex =  [
+        const afCubeValue = [ 0,0,0,0, 0,0,0,0 ];
+        const asEdgeVertex: Vec3[] =  [
             [0,0,0], [0,0,0], [0,0,0], [0,0,0],
             [0,0,0], [0,0,0], [0,0,0], [0,0,0],
             [0,0,0], [0,0,0], [0,0,0], [0,0,0]
         ];
-        var asEdgeNorm: [number, number, number][] =  [
+        const asEdgeNorm: Vec3[] =  [
             [0,0,0], [0,0,0], [0,0,0], [0,0,0],
             [0,0,0], [0,0,0], [0,0,0], [0,0,0],
             [0,0,0], [0,0,0], [0,0,0], [0,0,0]
         ];
 
         /// add chunk pos here
-        var fX = iX * this._step_size,
-            fY = iY * this._step_size,
-            fZ = iZ * this._step_size;
+        const fX = iX * this._step_size;
+        const fY = iY * this._step_size;
+        const fZ = iZ * this._step_size;
 
         /// Make a local copy of the values at the cube's corners
         for (let iVertex = 0; iVertex < 8; ++iVertex)
             afCubeValue[iVertex] = this._sample_cb( fX + a2fVertexOffset[iVertex][0] * this._step_size,
-                                                fY + a2fVertexOffset[iVertex][1] * this._step_size,
-                                                fZ + a2fVertexOffset[iVertex][2] * this._step_size );
+                                                    fY + a2fVertexOffset[iVertex][1] * this._step_size,
+                                                    fZ + a2fVertexOffset[iVertex][2] * this._step_size );
 
         //Find which vertices are inside of the surface and which are outside
-        iFlagIndex = 0|0;
+        let iFlagIndex = 0|0;
         for (let iVertexTest = 0|0; iVertexTest < 8; ++iVertexTest)
             if (afCubeValue[iVertexTest] <= this._fTv)
                 iFlagIndex |= (1 << iVertexTest);
 
         //Find which edges are intersected by the surface
-        iEdgeFlags = aiCubeEdgeFlags[iFlagIndex];
+        const iEdgeFlags = aiCubeEdgeFlags[iFlagIndex];
 
         //If the cube is entirely inside or outside of the surface, then there will be no intersections
         if (iEdgeFlags == 0)
@@ -494,7 +485,7 @@ class MarchingCube {
             //if there is an intersection on this edge
             if (iEdgeFlags & (1 << iEdge)) {
 
-                fOffset = fgetOffset(
+                const fOffset = fgetOffset(
                     afCubeValue[ a2iEdgeConnection[iEdge][0] ],
                     afCubeValue[ a2iEdgeConnection[iEdge][1] ],
                     this._fTv
@@ -515,8 +506,6 @@ class MarchingCube {
             if (a2iTriangleConnectionTable[ iFlagIndex ][ 3 * iTriangle ] < 0)
                 break;
 
-
-
             for (let iCorner = 0; iCorner < 3; ++iCorner) {
 
                 const iVertex = a2iTriangleConnectionTable[ iFlagIndex ][ 3 * iTriangle + iCorner ];
@@ -525,7 +514,7 @@ class MarchingCube {
 
                 //
 
-                const vertex: [number, number, number] = [
+                const vertex: Vec3 = [
                     asEdgeVertex[iVertex][0] * this._chunk_size,
                     asEdgeVertex[iVertex][1] * this._chunk_size,
                     asEdgeVertex[iVertex][2] * this._chunk_size
@@ -539,48 +528,6 @@ class MarchingCube {
                     this._current_geom_callback( vertex, color, normal );
 
             } // for (iCorner = [...]
-
-
-
-            // var t_positions = [];
-            // var t_colors = [];
-
-
-            // for (var iCorner = 0; iCorner < 3; ++iCorner) {
-
-            //  iVertex = a2iTriangleConnectionTable[ iFlagIndex ][ 3 * iTriangle + iCorner ];
-
-            //  // var color = vgetColor( asEdgeNorm[iVertex] );
-
-            //  //
-
-            //  var vertex = [
-            //      asEdgeVertex[iVertex][0] * this._chunk_size,
-            //      asEdgeVertex[iVertex][1] * this._chunk_size,
-            //      asEdgeVertex[iVertex][2] * this._chunk_size
-            //  ];
-
-            //  //
-
-            //  t_positions.push(vertex)
-            //  // t_colors.push(color)
-
-            // } // for (iCorner = [...]
-
-            // var t_normal = this.getNormal2( t_positions[0], t_positions[1], t_positions[2] );
-            // var t_color = vgetColor( t_normal );
-            // // console.log(t_normal);
-
-            // for (var i = 0; i < 3; ++i) {
-
-
-            //  if (this._current_geom_callback)
-            //      // this._current_geom_callback( t_positions[i], t_colors[i], t_normal );
-            //      this._current_geom_callback( t_positions[i], t_color, t_normal );
-
-            // } // for (iCorner = [...]
-
-
 
         } // for (iTriangle = [...]
 
@@ -613,16 +560,16 @@ class MarchingCube {
 
 
 
-    vMarchCube2(iX: number, iY: number, iZ: number) {
+    private _marchTetrahedron(iX: number, iY: number, iZ: number) {
 
         /// add chunk pos here
-        var fX = iX * this._step_size,
-            fY = iY * this._step_size,
-            fZ = iZ * this._step_size;
+        const fX = iX * this._step_size;
+        const fY = iY * this._step_size;
+        const fZ = iZ * this._step_size;
 
-        const asCubePosition = [
-            [0,0,0],[0,0,0],[0,0,0],[0,0,0],
-            [0,0,0],[0,0,0],[0,0,0],[0,0,0]
+        const asCubePosition: Vec3[] = [
+            [0,0,0], [0,0,0], [0,0,0], [0,0,0],
+            [0,0,0], [0,0,0], [0,0,0], [0,0,0]
         ];
 
         // Make a local copy of the cube's corner positions
@@ -641,7 +588,7 @@ class MarchingCube {
                                                 asCubePosition[iVertex][1],
                                                 asCubePosition[iVertex][2]);
 
-        const asTetrahedronPosition: [number, number, number][] =  [ [0,0,0],[0,0,0],[0,0,0],[0,0,0] ];
+        const asTetrahedronPosition: Vec3[] =  [ [0,0,0],[0,0,0],[0,0,0],[0,0,0] ];
         const afTetrahedronValue = [0,0,0,0];
 
         for (let iTetrahedron = 0; iTetrahedron < 6; iTetrahedron++) {
@@ -661,15 +608,13 @@ class MarchingCube {
         }
     }
 
-    private _vMarchTetrahedron(pasTetrahedronPosition: [number, number, number][], pafTetrahedronValue: number[]) {
+    private _vMarchTetrahedron(pasTetrahedronPosition: Vec3[], pafTetrahedronValue: number[]) {
 
-        var iEdge, iVert0, iVert1, iTriangle, iCorner, iVertex, iFlagIndex = 0;
-        var fOffset, fInvOffset, fValue = 0.0;
-        var asEdgeVertex = [ [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0] ];
-        var asEdgeNorm: [number, number, number][] = [ [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0] ];
-        var sColor = [0,0,0];
+        const asEdgeVertex: Vec3[] = [ [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0] ];
+        const asEdgeNorm: Vec3[] = [ [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0] ];
 
         //Find which vertices are inside of the surface and which are outside
+        let iFlagIndex = 0;
         for (let iVertex = 0; iVertex < 4; iVertex++)
             if (pafTetrahedronValue[iVertex] <= this._fTv)
                 iFlagIndex |= 1<<iVertex;
@@ -684,14 +629,15 @@ class MarchingCube {
         for (let iEdge = 0; iEdge < 6; iEdge++) {
 
             if (iEdgeFlags & (1<<iEdge)) {
-                iVert0 = a2iTetrahedronEdgeConnection[iEdge][0];
-                iVert1 = a2iTetrahedronEdgeConnection[iEdge][1];
-                fOffset = fgetOffset(
+
+                const iVert0 = a2iTetrahedronEdgeConnection[iEdge][0];
+                const iVert1 = a2iTetrahedronEdgeConnection[iEdge][1];
+                const fOffset = fgetOffset(
                     pafTetrahedronValue[iVert0],
                     pafTetrahedronValue[iVert1],
                     this._fTv
                 );
-                fInvOffset = 1.0 - fOffset;
+                const fInvOffset = 1.0 - fOffset;
 
                 asEdgeVertex[iEdge][0] = fInvOffset*pasTetrahedronPosition[iVert0][0]  +  fOffset*pasTetrahedronPosition[iVert1][0];
                 asEdgeVertex[iEdge][1] = fInvOffset*pasTetrahedronPosition[iVert0][1]  +  fOffset*pasTetrahedronPosition[iVert1][1];
@@ -703,16 +649,16 @@ class MarchingCube {
 
         for (let iTriangle = 0; iTriangle < 2; iTriangle++) {
 
-            if (a2iTetrahedronTriangles[iFlagIndex][3*iTriangle] < 0)
+            if (a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle] < 0)
                 break;
 
             for (let iCorner = 0; iCorner < 3; iCorner++) {
 
-                const iVertex = a2iTetrahedronTriangles[iFlagIndex][3*iTriangle+iCorner];
+                const iVertex = a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle + iCorner];
 
                 const color = vgetColor( asEdgeNorm[iVertex] );
 
-                const vertex: [number, number, number] = [
+                const vertex: Vec3 = [
                     asEdgeVertex[iVertex][0] * this._chunk_size,
                     asEdgeVertex[iVertex][1] * this._chunk_size,
                     asEdgeVertex[iVertex][2] * this._chunk_size
@@ -721,7 +667,7 @@ class MarchingCube {
                     // asEdgeVertex[iVertex][2]
                 ];
 
-                var normal = asEdgeNorm[iVertex];
+                const normal = asEdgeNorm[iVertex];
 
                 if (this._current_geom_callback)
                     this._current_geom_callback( vertex, color, normal );

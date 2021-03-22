@@ -1,9 +1,11 @@
 
+import chunk_size from "../main/constants"
+
 import MarchinCube from "./helpers/MarchingCube";
 import ClassicalNoise from "./helpers/ClassicalNoise";
 import Randomiser from "./helpers/Randomiser";
 
-const chunk_size = 15;
+type Vec3 = [number, number, number];
 
 const myRand = new Randomiser();
 const myNoise = new ClassicalNoise(myRand);
@@ -14,7 +16,7 @@ const on_sample_callback = (x: number, y: number, z: number) => {
 
 const myMarchingCube = new MarchinCube(chunk_size, 0.0, on_sample_callback);
 
-const myself = self as any; // TODO: this is ugly
+const myself = (self as unknown) as Worker;
 
 myself.addEventListener('message', (event: MessageEvent) => {
 
@@ -27,9 +29,9 @@ myself.addEventListener('message', (event: MessageEvent) => {
     // generate
 
     let curr_index = 0;
-    const arr_indexes: [number, number, number][] = [ [1,0,0], [0,1,0], [0,0,1] ];
+    const arr_indexes: Vec3[] = [ [1,0,0], [0,1,0], [0,0,1] ];
 
-    const on_vertex_callback = (vertex: [number, number, number], color: [number, number, number], normal: [number, number, number]) => {
+    const on_vertex_callback = (vertex: Vec3, color: Vec3, normal: Vec3) => {
 
         buf[buf_inc++] = vertex[0];
         buf[buf_inc++] = vertex[1];
@@ -49,7 +51,7 @@ myself.addEventListener('message', (event: MessageEvent) => {
         buf[buf_inc++] = index[2];
     }
 
-    myMarchingCube.marchCube( pos, on_vertex_callback );
+    myMarchingCube.generate( pos, on_vertex_callback, true );
 
     //
 
@@ -60,4 +62,4 @@ myself.addEventListener('message', (event: MessageEvent) => {
         // we now transfer the ownership of the vertices buffer
         buf.buffer
     ]);
-});
+}, false);
