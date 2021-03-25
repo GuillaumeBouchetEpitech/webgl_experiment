@@ -18,11 +18,12 @@ class FreeFlyCamera {
     private _keyboard_handler = new KeyboardHandler();
     private _force_forward = false;
 
-    constructor() {
+    private _time_immobile: number = 0;
+    private _last_time: number = 0;
 
-        const canvasesdiv = document.getElementById("canvasesdiv") as HTMLElement;
-        if (!canvasesdiv)
-            throw new Error("canvasesdiv not found");
+    constructor(main_element: HTMLElement) {
+
+        this._last_time = Date.now();
 
         ///
         /// MOUSE
@@ -37,19 +38,21 @@ class FreeFlyCamera {
 
             this._theta -= movementX / 5.0;
             this._phi   -= movementY / 5.0;
+
+            this._time_immobile = 0;
         };
 
         const callback_mouse_locked = () => {
-            canvasesdiv.addEventListener('mousemove', callback_mousemove, false);
+            main_element.addEventListener('mousemove', callback_mousemove, false);
         };
 
         const callback_mouse_unlocked = () => {
-            canvasesdiv.removeEventListener('mousemove', callback_mousemove, false);
+            main_element.removeEventListener('mousemove', callback_mousemove, false);
         };
 
         //
 
-        handle_pointerLock(canvasesdiv, callback_mouse_locked, callback_mouse_unlocked);
+        handle_pointerLock(main_element, callback_mouse_locked, callback_mouse_unlocked);
 
         ///
         /// /MOUSE
@@ -65,7 +68,7 @@ class FreeFlyCamera {
         let previous_distance: number|null = null;
         let saved_time: number|null = null;
 
-        canvasesdiv.addEventListener('touchstart', (event) => {
+        main_element.addEventListener('touchstart', (event: TouchEvent) => {
 
             event.preventDefault();
 
@@ -84,7 +87,7 @@ class FreeFlyCamera {
             saved_time = tmp_time;
         });
 
-        canvasesdiv.addEventListener('touchend', (event) => {
+        main_element.addEventListener('touchend', (event: TouchEvent) => {
 
             event.preventDefault();
 
@@ -95,7 +98,7 @@ class FreeFlyCamera {
             this._force_forward = false;
         });
 
-        canvasesdiv.addEventListener('touchmove', (event: TouchEvent) => {
+        main_element.addEventListener('touchmove', (event: TouchEvent) => {
 
             event.preventDefault();
 
@@ -135,6 +138,8 @@ class FreeFlyCamera {
 
                 previous_touch = touches[0];
             }
+
+            this._time_immobile = 0;
         });
 
         ///
@@ -146,6 +151,18 @@ class FreeFlyCamera {
     update(elapsed_sec: number) {
 
         this.handleKeys();
+
+
+        const current_time = Date.now();
+
+        this._time_immobile += elapsed_sec;
+
+        // if not update for more than 3 seconds -> jump to 10sec of immobile time
+        if ((current_time - this._last_time) > 3000)
+            this._time_immobile = 10;
+
+        this._last_time = current_time;
+
 
         const speed = 16;
 
@@ -167,7 +184,6 @@ class FreeFlyCamera {
             for (let ii = 0; ii < 3; ++ii)
                 this._position[ii] += this._left[ii] * elapsed_sec * speed;
         }
-
 
         this._movement_flag = 0;
 
@@ -234,7 +250,9 @@ class FreeFlyCamera {
         return this._force_forward;
     }
 
-
+    getTimeImmobile() {
+        return this._time_immobile;
+    }
 
     ///
     ///
@@ -245,39 +263,59 @@ class FreeFlyCamera {
 
         // forward
         if (this._keyboard_handler.isPressed( keyCodes.KEY_Z ) ||
-            this._keyboard_handler.isPressed( keyCodes.KEY_W ))
-            this._movement_flag |= 1<<0
+            this._keyboard_handler.isPressed( keyCodes.KEY_W )) {
+
+            this._movement_flag |= 1<<0;
+            this._time_immobile = 0;
+        }
 
         // backward
-        if (this._keyboard_handler.isPressed( keyCodes.KEY_S ))
-            this._movement_flag |= 1<<1
+        if (this._keyboard_handler.isPressed( keyCodes.KEY_S )) {
+
+            this._movement_flag |= 1<<1;
+            this._time_immobile = 0;
+        }
 
         // strafe left
         if (this._keyboard_handler.isPressed( keyCodes.KEY_A ) ||
-            this._keyboard_handler.isPressed( keyCodes.KEY_Q ))
-            this._movement_flag |= 1<<2
+            this._keyboard_handler.isPressed( keyCodes.KEY_Q )) {
+
+            this._movement_flag |= 1<<2;
+            this._time_immobile = 0;
+        }
 
         // strafe right
-        if (this._keyboard_handler.isPressed( keyCodes.KEY_D ))
-            this._movement_flag |= 1<<3
+        if (this._keyboard_handler.isPressed( keyCodes.KEY_D )) {
+
+            this._movement_flag |= 1<<3;
+            this._time_immobile = 0;
+        }
 
         /// /// ///
 
         // look up
-        if (this._keyboard_handler.isPressed( keyCodes.ARROW_UP ))
+        if (this._keyboard_handler.isPressed( keyCodes.ARROW_UP )) {
             this._phi++;
+            this._time_immobile = 0;
+        }
 
         // look down
-        if (this._keyboard_handler.isPressed( keyCodes.ARROW_DOWN ))
+        if (this._keyboard_handler.isPressed( keyCodes.ARROW_DOWN )) {
             this._phi--;
+            this._time_immobile = 0;
+        }
 
         // look left
-        if (this._keyboard_handler.isPressed( keyCodes.ARROW_LEFT ))
+        if (this._keyboard_handler.isPressed( keyCodes.ARROW_LEFT )) {
             this._theta++;
+            this._time_immobile = 0;
+        }
 
         // look right
-        if (this._keyboard_handler.isPressed( keyCodes.ARROW_RIGHT ))
+        if (this._keyboard_handler.isPressed( keyCodes.ARROW_RIGHT )) {
             this._theta--;
+            this._time_immobile = 0;
+        }
 
     }
 

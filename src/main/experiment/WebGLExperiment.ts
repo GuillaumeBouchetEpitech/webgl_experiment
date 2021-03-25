@@ -1,6 +1,8 @@
 
 "use strict"
 
+import chunk_size from '../constants';
+
 import ChunkGenerator from './generation/ChunkGenerator';
 import RendererWebGL from './rendererWebGL/RendererWebGL';
 
@@ -33,7 +35,17 @@ class WebGLExperiment {
         //
 
 
-        this._rendererWebGL = new RendererWebGL();
+        const main_element = document.getElementById("canvasesdiv");
+        if (!main_element)
+            throw new Error("canvasesdiv not found");
+
+        const canvas_element = document.getElementById("main-canvas") as HTMLCanvasElement;
+        if (!canvas_element)
+            throw new Error("main-canvas not found");
+
+
+
+        this._rendererWebGL = new RendererWebGL(main_element, canvas_element);
 
         this._chunkGenerator = new ChunkGenerator({
 
@@ -71,10 +83,6 @@ class WebGLExperiment {
         //
         // HUD (touch positions recorder)
 
-        const elem = document.getElementById("canvasesdiv");
-        if (!elem)
-            throw new Error("canvasesdiv not found");
-
         const update_touches = (event: TouchEvent) => {
 
             const touches = event.targetTouches;
@@ -94,9 +102,9 @@ class WebGLExperiment {
             }
         };
 
-        elem.addEventListener('touchstart', update_touches);
-        elem.addEventListener('touchend', () => { this._touches.length = 0; }); // clear array
-        elem.addEventListener('touchmove', update_touches);
+        main_element.addEventListener('touchstart', update_touches);
+        main_element.addEventListener('touchend', update_touches);
+        main_element.addEventListener('touchmove', update_touches);
 
         // HUD (touch positions recorder)
         //
@@ -224,19 +232,18 @@ class WebGLExperiment {
     }
 
 
-    start() {
+    async start() {
 
         if (this.isRunning())
             return;
 
-        this._rendererWebGL.init(() => {
+        await this._rendererWebGL.init();
 
-            this._running = true;
+        this._running = true;
 
-            this._chunkGenerator.start();
+        this._chunkGenerator.start();
 
-            this._tick();
-        });
+        this._tick();
     }
 
     stop() {
@@ -305,6 +312,77 @@ class WebGLExperiment {
         //
         //
         ////// HUD
+
+
+        {
+            const coordinates = [
+                Math.floor(camera_pos[0] / chunk_size)|0,
+                Math.floor(camera_pos[1] / chunk_size)|0,
+                Math.floor(camera_pos[2] / chunk_size)|0
+            ];
+
+            const text = `coordinates: ${coordinates[0]}/${coordinates[1]}/${coordinates[2]}`;
+
+            this._rendererWebGL.pushText(text, [0, 0], 1.0);
+        }
+
+        {
+            const time_immobile = this._rendererWebGL.getFreeFlyCamera().getTimeImmobile();
+
+            const minimum_time_immbile = 3;
+            const text_fade_in_time = 2;
+
+            if (time_immobile > minimum_time_immbile) {
+
+                const scale = (time_immobile > (minimum_time_immbile + text_fade_in_time))
+                                ? 1
+                                : (time_immobile - minimum_time_immbile) / text_fade_in_time;
+
+                const viewport_size = this._rendererWebGL.getSize();
+                viewport_size[0] = viewport_size[0] * 0.75;
+
+                const lines = [
+                    "         *---*         ",
+                    "         |W/Z|         ",
+                    "         *---*         ",
+                    "                       ",
+                    "   *---* *---* *---*   ",
+                    "   |A/Q| | S | | D |   ",
+                    "   *---* *---* *---*   ",
+                    "",
+                    "        *----*         ",
+                    "        | UP |         ",
+                    "        *----*         ",
+                    "                       ",
+                    " *----* *----* *-----* ",
+                    " |LEFT| |DOWN| |RIGHT| ",
+                    " *----* *----* *-----* ",
+                    "",
+                    "   *---------------*   ",
+                    "   |MOUSE SUPPORTED|   ",
+                    "   *---------------*   ",
+                    "",
+                    "*---------------------*",
+                    "|TOUCHSCREEN SUPPORTED|",
+                    "*---------------------*",
+                ];
+
+                let width = 0;
+                lines.forEach((item) => width = Math.max(width, item.length));
+                width *= 16 * scale;
+
+                const height = lines.length * 16 * scale;
+
+                const text = lines.join("\n");
+
+                const position = [
+                    viewport_size[0] * 0.5 - width * 0.5,
+                    viewport_size[1] * 0.5 + height * 0.5,
+                ];
+
+                this._rendererWebGL.pushText(text, position, scale);
+            }
+        }
 
         this._rendererWebGL.renderHUD(
                 this._chunkGenerator.getChunks(),

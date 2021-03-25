@@ -165,16 +165,16 @@ void main(void)
         blend_weights /= ( blend_weights.x + blend_weights.y + blend_weights.z );
 
         // horizontal texture coordinates -> should be a wall
-        vec2 texcoord1 = flooredPos.yz * 0.5 + 0.5;
-        vec2 texcoord2 = flooredPos.xz * 0.5 + 0.5;
+        vec2 texcoord1 = vec2(flooredPos.y * 0.5 + 0.5, flooredPos.z * 0.5);
+        vec2 texcoord2 = vec2(flooredPos.x * 0.5 + 0.5, flooredPos.z * 0.5);
 
         // vertical texture coord -> should be green grass
-        vec2 texcoord3 = flooredPos.xy * 0.5;
+        vec2 texcoord3 = vec2(flooredPos.x * 0.5, flooredPos.y * 0.5 + 0.5);
 
         if (v_pureNormalInterp.z < 0.0)
         {
             // switch the texture Y -> dirt on the ceilling instead of grass
-            texcoord3.y += 0.5;
+            texcoord3.y -= 0.5;
         }
 
         // horizontal color
@@ -227,9 +227,56 @@ void main(void)
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
 
+const letters_vert = `
+
+precision mediump float;
+
+uniform mat4 u_modelviewMatrix;
+uniform mat4 u_projectionMatrix;
+
+
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+attribute vec2 a_offsetPosition;
+attribute vec2 a_offsetTexCoord;
+attribute float a_offsetScale;
+
+varying vec2 v_texCoord;
+
+void main(void)
+{
+    vec2 position = a_position * a_offsetScale + a_offsetPosition;
+
+    gl_Position = u_projectionMatrix * u_modelviewMatrix * vec4(position, 0.0, 1.0);
+
+    v_texCoord = a_texCoord + a_offsetTexCoord;
+}
+`;
+
+const letters_frag = `
+
+precision mediump float;
+
+uniform sampler2D u_texture;
+
+varying vec2 v_texCoord;
+
+void main(void)
+{
+    gl_FragColor = texture2D(u_texture, v_texCoord);
+}
+
+`;
+
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+
 export {
     color_vert,
     color_frag,
     experimental_vert,
     experimental_frag,
+    letters_vert,
+    letters_frag,
 };

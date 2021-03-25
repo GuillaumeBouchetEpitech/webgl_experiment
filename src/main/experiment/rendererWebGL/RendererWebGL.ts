@@ -9,7 +9,7 @@ import FreeFlyCamera from './camera/FreeFlyCamera';
 import FrustumCulling from './camera/FrustumCulling';
 
 import ShaderProgram from './utils/ShaderProgram';
-import * as TextureUtils from './utils/TextureUtils';
+import Texture from './utils/Texture';
 
 import * as ShaderSrc from './ShaderSrc';
 
@@ -28,6 +28,32 @@ import { Chunks } from '../generation/ChunkGenerator';
 type Vec3 = [number, number, number];
 type Vec4 = [number, number, number, number];
 
+interface IChunkRendering {
+    texture: Texture;
+    shader: ShaderProgram;
+    geometryDefinition: GeometryWrapper.GeometryDefinition;
+};
+
+interface IWireframeRendering {
+    shader: ShaderProgram;
+
+    geometry_frustum: GeometryWrapper.Geometry;
+    geometry_axis: GeometryWrapper.Geometry;
+    geometry_cross: GeometryWrapper.Geometry;
+    geometry_cubeR: GeometryWrapper.Geometry;
+    geometry_cubeW: GeometryWrapper.Geometry;
+    geometry_cubeG: GeometryWrapper.Geometry;
+    geometry_stack_rendering: GeometryWrapper.Geometry;
+};
+
+interface ITextRendering {
+    texture: Texture;
+    shader: ShaderProgram;
+    geometry: GeometryWrapper.Geometry;
+    TexCoordMap: Map<string, number[]>;
+    stack_vertices: number[];
+};
+
 class RendererWebGL {
 
     private _free_fly_camera: FreeFlyCamera;
@@ -36,49 +62,20 @@ class RendererWebGL {
     private _projection_matrix: glm.mat4;
     private _modelview_matrix: glm.mat4;
 
+    private _aspectRatio: number;
+
     private on_context_lost: (() => void) | null = null;
     private on_context_restored: (() => void) | null = null;
 
-    private _shader_color: ShaderProgram;
-    private _shader_exp: ShaderProgram;
+    private _chunkRendering: IChunkRendering;
+    private _wireframeRendering: IWireframeRendering;
+    private _textRendering: ITextRendering;
 
-    private _aspectRatio: number;
+    constructor(main_element: HTMLElement, canvas_element: HTMLCanvasElement) {
 
-    private _exp_geom_def: GeometryWrapper.GeometryDefinition;
-    private _color_geom_def: GeometryWrapper.GeometryDefinition;
-    private _geom_frustum: GeometryWrapper.Geometry;
-    private _geom_axis: GeometryWrapper.Geometry;
-    private _geom_cross: GeometryWrapper.Geometry;
-    private _geom_cubeR: GeometryWrapper.Geometry;
-    private _geom_cubeW: GeometryWrapper.Geometry;
-    private _geom_cubeG: GeometryWrapper.Geometry;
+        WebGLContext.initialise(canvas_element);
 
-    private _geom_stack_rendering: GeometryWrapper.Geometry;
-
-    constructor() {
-
-        const canvas = document.getElementById("main-canvas") as HTMLCanvasElement;
-        if (!canvas)
-            throw new Error("canvas not found");
-
-        // initialise_webgl_context(canvas);
-        WebGLContext.initialise(canvas);
-
-        const gl = WebGLContext.getContext();
-
-        const viewportSize = WebGLContext.getViewportSize();
-
-
-        this._free_fly_camera = new FreeFlyCamera();
-        this._free_fly_camera.activate();
-        this._free_fly_camera.setPosition( chunk_size/4*3, chunk_size/4*3, 0 );
-
-        this._frustum_culling = new FrustumCulling();
-
-        this._projection_matrix = glm.mat4.create();
-        this._modelview_matrix = glm.mat4.create();
-
-        canvas.addEventListener('webglcontextlost', (event) => {
+        canvas_element.addEventListener('webglcontextlost', (event) => {
 
             event.preventDefault();
             console.log('context is lost');
@@ -88,131 +85,342 @@ class RendererWebGL {
 
         }, false);
 
-        canvas.addEventListener('webglcontextrestored', () => {
+        canvas_element.addEventListener('webglcontextrestored', () => {
 
             console.log('context is restored');
 
-            // recreate();
-            // initialise_webgl_context(canvas);
-            WebGLContext.initialise(canvas);
+            WebGLContext.initialise(canvas_element);
 
             if (this.on_context_restored)
                 this.on_context_restored();
 
         }, false);
 
-        //
-        //
-        // shaders
+        const viewportSize = WebGLContext.getViewportSize();
 
-        this._shader_color = new ShaderProgram({
-            vs_src: ShaderSrc.color_vert,
-            fs_src: ShaderSrc.color_frag,
-            arr_attrib: ['a_vertexPosition','a_vertexColor'],
-            arr_uniform: ['u_modelviewMatrix','u_projMatrix']
-        });
+        this._free_fly_camera = new FreeFlyCamera(main_element);
+        this._free_fly_camera.activate();
+        this._free_fly_camera.setPosition( chunk_size/4*3, chunk_size/4*3, 0 );
 
-        this._shader_exp = new ShaderProgram({
-            vs_src: ShaderSrc.experimental_vert,
-            fs_src: ShaderSrc.experimental_frag,
-            arr_attrib: ['a_vertexPosition','a_vertexColor','a_vertexNormal','a_vertexBCenter'],
-            arr_uniform: ['u_modelviewMatrix','u_projMatrix','u_cameraPos','u_sampler']
-        });
+        this._frustum_culling = new FrustumCulling();
 
-
-        this._exp_geom_def = {
-            vbos: [
-                {
-                    attrs: [
-                        { name: "a_vertexPosition", type: GeometryWrapper.AttributeType.vec3f, index: 0 },
-                        { name: "a_vertexColor",    type: GeometryWrapper.AttributeType.vec3f, index: 3 },
-                        { name: "a_vertexNormal",   type: GeometryWrapper.AttributeType.vec3f, index: 6 },
-                        { name: "a_vertexBCenter",  type: GeometryWrapper.AttributeType.vec3f, index: 9 },
-                    ],
-                    stride: 12 * 4,
-                    instanced: false,
-                }
-            ],
-            primitiveType: GeometryWrapper.PrimitiveType.triangles,
-        };
-
-        this._color_geom_def = {
-            vbos: [
-                {
-                    attrs: [
-                        { name: "a_vertexPosition", type: GeometryWrapper.AttributeType.vec3f, index: 0 },
-                        { name: "a_vertexColor", type: GeometryWrapper.AttributeType.vec3f, index: 3 },
-                    ],
-                    stride: 6 * 4,
-                    instanced: false,
-                }
-            ],
-            primitiveType: GeometryWrapper.PrimitiveType.lines,
-        };
-
-
-        //
-        //
-        // create axis geometry
-
-        let vertices = [];
-
-        var axis_size = 20;
-
-        vertices.push(0,0,0,  1,0,0,  axis_size,0,0,  1,0,0)
-        vertices.push(0,0,0,  0,1,0,  0,axis_size,0,  0,1,0)
-        vertices.push(0,0,0,  0,0,1,  0,0,axis_size,  0,0,1)
-
-        this._geom_axis = new GeometryWrapper.Geometry(this._shader_color, this._color_geom_def);
-        this._geom_axis.updateBuffer(0, vertices);
-        this._geom_axis.setPrimitiveCount(vertices.length / 6);
-
-        //
-        //
-        // create coss geometry
-
-        vertices.length = 0;
-
-        var cross_size = 5;
-
-        vertices.push(0-cross_size,0,0,  1,1,1);
-        vertices.push(0+cross_size*5,0,0,  1,1,1);
-        vertices.push(0,0-cross_size,0,  1,1,1);
-        vertices.push(0,0+cross_size,0,  1,1,1);
-        vertices.push(0,0,0-cross_size,  1,1,1);
-        vertices.push(0,0,0+cross_size,  1,1,1);
-
-        this._geom_cross = new GeometryWrapper.Geometry(this._shader_color, this._color_geom_def);
-        this._geom_cross.updateBuffer(0, vertices);
-        this._geom_cross.setPrimitiveCount(vertices.length / 6);
-
-        //
-        //
-        // geoms
-
-        vertices = generateCubeVertices(chunk_size, [1,0,0]);
-        this._geom_cubeR = new GeometryWrapper.Geometry(this._shader_color, this._color_geom_def);
-        this._geom_cubeR.updateBuffer(0, vertices);
-        this._geom_cubeR.setPrimitiveCount(vertices.length / 6);
-
-        vertices = generateCubeVertices(chunk_size, [1,1,1]);
-        this._geom_cubeW = new GeometryWrapper.Geometry(this._shader_color, this._color_geom_def);
-        this._geom_cubeW.updateBuffer(0, vertices);
-        this._geom_cubeW.setPrimitiveCount(vertices.length / 6);
-
-        vertices = generateCubeVertices(chunk_size, [0,1,0]);
-        this._geom_cubeG = new GeometryWrapper.Geometry(this._shader_color, this._color_geom_def);
-        this._geom_cubeG.updateBuffer(0, vertices);
-        this._geom_cubeG.setPrimitiveCount(vertices.length / 6);
-
-        this._geom_stack_rendering = new GeometryWrapper.Geometry(this._shader_color, this._color_geom_def);
+        this._projection_matrix = glm.mat4.create();
+        this._modelview_matrix = glm.mat4.create();
 
         this._aspectRatio = viewportSize[0] * 0.75 / viewportSize[1];
 
-        vertices = generateFrustumVertices(70, this._aspectRatio, 0.1, 40);
-        this._geom_frustum = new GeometryWrapper.Geometry(this._shader_color, this._color_geom_def);
-        this._geom_frustum.updateBuffer(0, vertices);
-        this._geom_frustum.setPrimitiveCount(vertices.length / 6);
+        { // chunk rendering
+
+            const shader = new ShaderProgram({
+                vs_src: ShaderSrc.experimental_vert,
+                fs_src: ShaderSrc.experimental_frag,
+                arr_attrib: ['a_vertexPosition','a_vertexColor','a_vertexNormal','a_vertexBCenter'],
+                arr_uniform: ['u_modelviewMatrix','u_projMatrix','u_cameraPos','u_sampler']
+            });
+
+            const geometryDefinition = {
+                vbos: [
+                    {
+                        attrs: [
+                            { name: "a_vertexPosition", type: GeometryWrapper.AttributeType.vec3f, index: 0 },
+                            { name: "a_vertexColor",    type: GeometryWrapper.AttributeType.vec3f, index: 3 },
+                            { name: "a_vertexNormal",   type: GeometryWrapper.AttributeType.vec3f, index: 6 },
+                            { name: "a_vertexBCenter",  type: GeometryWrapper.AttributeType.vec3f, index: 9 },
+                        ],
+                        stride: 12 * 4,
+                        instanced: false,
+                    }
+                ],
+                primitiveType: GeometryWrapper.PrimitiveType.triangles,
+            };
+
+            this._chunkRendering = {
+                texture: new Texture(),
+                shader: shader,
+                geometryDefinition: geometryDefinition,
+            };
+
+        } // chunk rendering
+
+        { // wireframe rendering
+
+            const shader = new ShaderProgram({
+                vs_src: ShaderSrc.color_vert,
+                fs_src: ShaderSrc.color_frag,
+                arr_attrib: ['a_vertexPosition','a_vertexColor'],
+                arr_uniform: ['u_modelviewMatrix','u_projMatrix']
+            });
+
+            const geometryDefinition = {
+                vbos: [
+                    {
+                        attrs: [
+                            { name: "a_vertexPosition", type: GeometryWrapper.AttributeType.vec3f, index: 0 },
+                            { name: "a_vertexColor", type: GeometryWrapper.AttributeType.vec3f, index: 3 },
+                        ],
+                        stride: 6 * 4,
+                        instanced: false,
+                    }
+                ],
+                primitiveType: GeometryWrapper.PrimitiveType.lines,
+            };
+
+            //
+            //
+            // create axis geometry
+
+            let vertices = [];
+
+            var axis_size = 20;
+
+            vertices.push(0,0,0,  1,0,0,  axis_size,0,0,  1,0,0)
+            vertices.push(0,0,0,  0,1,0,  0,axis_size,0,  0,1,0)
+            vertices.push(0,0,0,  0,0,1,  0,0,axis_size,  0,0,1)
+
+            const geom_axis = new GeometryWrapper.Geometry(shader, geometryDefinition);
+            geom_axis.updateBuffer(0, vertices);
+            geom_axis.setPrimitiveCount(vertices.length / 6);
+
+            //
+            //
+            // create coss geometry
+
+            vertices.length = 0;
+
+            var cross_size = 5;
+
+            vertices.push(0-cross_size,0,0,  1,1,1);
+            vertices.push(0+cross_size*5,0,0,  1,1,1);
+            vertices.push(0,0-cross_size,0,  1,1,1);
+            vertices.push(0,0+cross_size,0,  1,1,1);
+            vertices.push(0,0,0-cross_size,  1,1,1);
+            vertices.push(0,0,0+cross_size,  1,1,1);
+
+            const geom_cross = new GeometryWrapper.Geometry(shader, geometryDefinition);
+            geom_cross.updateBuffer(0, vertices);
+            geom_cross.setPrimitiveCount(vertices.length / 6);
+
+            //
+            //
+            // geoms
+
+            vertices = generateCubeVertices(chunk_size, [1,0,0]);
+            const geom_cubeR = new GeometryWrapper.Geometry(shader, geometryDefinition);
+            geom_cubeR.updateBuffer(0, vertices);
+            geom_cubeR.setPrimitiveCount(vertices.length / 6);
+
+            vertices = generateCubeVertices(chunk_size, [1,1,1]);
+            const geom_cubeW = new GeometryWrapper.Geometry(shader, geometryDefinition);
+            geom_cubeW.updateBuffer(0, vertices);
+            geom_cubeW.setPrimitiveCount(vertices.length / 6);
+
+            vertices = generateCubeVertices(chunk_size, [0,1,0]);
+            const geom_cubeG = new GeometryWrapper.Geometry(shader, geometryDefinition);
+            geom_cubeG.updateBuffer(0, vertices);
+            geom_cubeG.setPrimitiveCount(vertices.length / 6);
+
+            const geom_stack_rendering = new GeometryWrapper.Geometry(shader, geometryDefinition);
+
+            vertices = generateFrustumVertices(70, this._aspectRatio, 0.1, 40);
+            const geom_frustum = new GeometryWrapper.Geometry(shader, geometryDefinition);
+            geom_frustum.updateBuffer(0, vertices);
+            geom_frustum.setPrimitiveCount(vertices.length / 6);
+
+
+            this._wireframeRendering = {
+                shader,
+                geometry_frustum: geom_frustum,
+                geometry_axis: geom_axis,
+                geometry_cross: geom_cross,
+                geometry_cubeR: geom_cubeR,
+                geometry_cubeW: geom_cubeW,
+                geometry_cubeG: geom_cubeG,
+                geometry_stack_rendering: geom_stack_rendering,
+            };
+
+        } // wireframe rendering
+
+
+
+
+
+
+
+
+        { // text rendering
+
+            const textureLetterShader = new ShaderProgram({
+                vs_src: ShaderSrc.letters_vert,
+                fs_src: ShaderSrc.letters_frag,
+                arr_uniform: ["u_modelviewMatrix", "u_projectionMatrix", "u_texture"],
+                arr_attrib: ["a_position", "a_texCoord", "a_offsetPosition", "a_offsetTexCoord", "a_offsetScale"],
+            });
+
+            const textureLetterGeometryDef = {
+                vbos: [
+                    {
+                        attrs: [
+                            { name: "a_position", type: GeometryWrapper.AttributeType.vec2f, index: 0 },
+                            { name: "a_texCoord", type: GeometryWrapper.AttributeType.vec2f, index: 2 },
+                        ],
+                        stride: 4 * 4,
+                        instanced: false,
+                    },
+                    {
+                        attrs: [
+                            { name: "a_offsetPosition", type: GeometryWrapper.AttributeType.vec2f, index: 0 },
+                            { name: "a_offsetTexCoord", type: GeometryWrapper.AttributeType.vec2f, index: 2 },
+                            { name: "a_offsetScale", type: GeometryWrapper.AttributeType.float, index: 4 },
+                        ],
+                        stride: 5 * 4,
+                        instanced: true,
+                    },
+                ],
+                primitiveType: GeometryWrapper.PrimitiveType.triangles,
+            } as GeometryWrapper.GeometryDefinition;
+
+            const textureLetterGeometry = new GeometryWrapper.Geometry(textureLetterShader, textureLetterGeometryDef);
+
+
+            const textureSize = [ 256, 256 ];
+            const gridSize = [ 16, 16 ];
+
+            const letterSize = [ textureSize[0] / gridSize[0], textureSize[1] / gridSize[1] ];
+            const texCoord = [ letterSize[0] / textureSize[0], letterSize[1] / textureSize[1] ];
+
+            const vertices = [
+                [ [ +letterSize[0],              0 ], [ texCoord[0], texCoord[1] ] ],
+                [ [              0,              0 ], [           0, texCoord[1] ] ],
+                [ [ +letterSize[0], +letterSize[1] ], [ texCoord[0],           0 ] ],
+                [ [              0, +letterSize[1] ], [           0,           0 ] ],
+            ];
+
+            const indices = [ 1,0,2,  1,3,2 ];
+
+            const letterVertices: number[] = [];
+            for (const index of indices) {
+                const vertex = vertices[index];
+                letterVertices.push(vertex[0][0], vertex[0][1], vertex[1][0], vertex[1][1]);
+            }
+
+            textureLetterGeometry.updateBuffer(0, letterVertices);
+            textureLetterGeometry.setPrimitiveCount(letterVertices.length / 4);
+
+
+            const lettersTexCoordMap = new Map<string, number[]>([
+
+                [ ' ',  [  0 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '!',  [  1 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '\"', [  2 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '#',  [  3 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '$',  [  4 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '%',  [  5 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '&',  [  6 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '\'', [  7 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '(',  [  8 * texCoord[0], 0 * texCoord[1] ] ],
+                [ ')',  [  9 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '*',  [ 10 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '+',  [ 11 * texCoord[0], 0 * texCoord[1] ] ],
+                [ ',',  [ 12 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '-',  [ 13 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '.',  [ 14 * texCoord[0], 0 * texCoord[1] ] ],
+                [ '/',  [ 15 * texCoord[0], 0 * texCoord[1] ] ],
+
+                [ '0',  [  0 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '1',  [  1 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '2',  [  2 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '3',  [  3 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '4',  [  4 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '5',  [  5 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '6',  [  6 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '7',  [  7 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '8',  [  8 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '9',  [  9 * texCoord[0], 1 * texCoord[1] ] ],
+                [ ':',  [ 10 * texCoord[0], 1 * texCoord[1] ] ],
+                [ ';',  [ 11 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '<',  [ 12 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '=',  [ 13 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '>',  [ 14 * texCoord[0], 1 * texCoord[1] ] ],
+                [ '?',  [ 15 * texCoord[0], 1 * texCoord[1] ] ],
+
+                [ '@',  [  0 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'A',  [  1 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'B',  [  2 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'C',  [  3 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'D',  [  4 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'E',  [  5 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'F',  [  6 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'G',  [  7 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'H',  [  8 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'I',  [  9 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'J',  [ 10 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'K',  [ 11 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'L',  [ 12 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'M',  [ 13 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'N',  [ 14 * texCoord[0], 2 * texCoord[1] ] ],
+                [ 'O',  [ 15 * texCoord[0], 2 * texCoord[1] ] ],
+
+                [ 'P',  [  0 * texCoord[0], 3 * texCoord[1] ] ],
+                [ 'Q',  [  1 * texCoord[0], 3 * texCoord[1] ] ],
+                [ 'R',  [  2 * texCoord[0], 3 * texCoord[1] ] ],
+                [ 'S',  [  3 * texCoord[0], 3 * texCoord[1] ] ],
+                [ 'T',  [  4 * texCoord[0], 3 * texCoord[1] ] ],
+                [ 'U',  [  5 * texCoord[0], 3 * texCoord[1] ] ],
+                [ 'V',  [  6 * texCoord[0], 3 * texCoord[1] ] ],
+                [ 'W',  [  7 * texCoord[0], 3 * texCoord[1] ] ],
+                [ 'X',  [  8 * texCoord[0], 3 * texCoord[1] ] ],
+                [ 'Y',  [  9 * texCoord[0], 3 * texCoord[1] ] ],
+                [ 'Z',  [ 10 * texCoord[0], 3 * texCoord[1] ] ],
+                [ '[',  [ 11 * texCoord[0], 3 * texCoord[1] ] ],
+                [ '\\', [ 12 * texCoord[0], 3 * texCoord[1] ] ],
+                [ ']',  [ 13 * texCoord[0], 3 * texCoord[1] ] ],
+                [ '^',  [ 14 * texCoord[0], 3 * texCoord[1] ] ],
+                [ '_',  [ 15 * texCoord[0], 3 * texCoord[1] ] ],
+
+                [ '`',  [  0 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'a',  [  1 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'b',  [  2 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'c',  [  3 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'd',  [  4 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'e',  [  5 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'f',  [  6 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'g',  [  7 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'h',  [  8 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'i',  [  9 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'j',  [ 10 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'k',  [ 11 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'l',  [ 12 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'm',  [ 13 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'n',  [ 14 * texCoord[0], 4 * texCoord[1] ] ],
+                [ 'o',  [ 15 * texCoord[0], 4 * texCoord[1] ] ],
+
+                [ 'p',  [  0 * texCoord[0], 5 * texCoord[1] ] ],
+                [ 'q',  [  1 * texCoord[0], 5 * texCoord[1] ] ],
+                [ 'r',  [  2 * texCoord[0], 5 * texCoord[1] ] ],
+                [ 's',  [  3 * texCoord[0], 5 * texCoord[1] ] ],
+                [ 't',  [  4 * texCoord[0], 5 * texCoord[1] ] ],
+                [ 'u',  [  5 * texCoord[0], 5 * texCoord[1] ] ],
+                [ 'v',  [  6 * texCoord[0], 5 * texCoord[1] ] ],
+                [ 'w',  [  7 * texCoord[0], 5 * texCoord[1] ] ],
+                [ 'x',  [  8 * texCoord[0], 5 * texCoord[1] ] ],
+                [ 'y',  [  9 * texCoord[0], 5 * texCoord[1] ] ],
+                [ 'z',  [ 10 * texCoord[0], 5 * texCoord[1] ] ],
+                [ '{',  [ 11 * texCoord[0], 5 * texCoord[1] ] ],
+                [ '|',  [ 12 * texCoord[0], 5 * texCoord[1] ] ],
+                [ '}',  [ 13 * texCoord[0], 5 * texCoord[1] ] ],
+                [ '~',  [ 14 * texCoord[0], 5 * texCoord[1] ] ],
+
+            ]);
+
+            this._textRendering = {
+                texture: new Texture(),
+                shader: textureLetterShader,
+                geometry: textureLetterGeometry,
+                TexCoordMap: lettersTexCoordMap,
+                stack_vertices: [],
+            };
+
+        } // text rendering
 
     }
 
@@ -229,7 +437,7 @@ class RendererWebGL {
 
     add_geom(buffer: Float32Array) {
 
-        const geom = new GeometryWrapper.Geometry(this._shader_exp, this._exp_geom_def);
+        const geom = new GeometryWrapper.Geometry(this._chunkRendering.shader, this._chunkRendering.geometryDefinition);
         geom.updateBuffer(0, buffer);
         geom.setPrimitiveCount(buffer.length / 12);
 
@@ -260,8 +468,8 @@ class RendererWebGL {
         this._aspectRatio = viewportSize[0] * 0.75 / viewportSize[1];
 
         const vertices = generateFrustumVertices(70, this._aspectRatio, 0.1, 40);
-        this._geom_frustum.updateBuffer(0, vertices);
-        this._geom_frustum.setPrimitiveCount(vertices.length / 6);
+        this._wireframeRendering.geometry_frustum.updateBuffer(0, vertices);
+        this._wireframeRendering.geometry_frustum.setPrimitiveCount(vertices.length / 6);
     }
 
     //
@@ -298,7 +506,7 @@ class RendererWebGL {
 
     //
 
-    init(onFinish: () => void) {
+    async init() {
 
         const gl = WebGLContext.getContext();
 
@@ -310,30 +518,11 @@ class RendererWebGL {
         gl.enable(gl.DEPTH_TEST);
 
 
-        const img_texture = new Image();
-        const textureObj = gl.createTexture();
-        img_texture.onload = () => {
 
-            let buf_texture = TextureUtils.imageToUint8Array(img_texture);
-            buf_texture = TextureUtils.flipYImageArray(buf_texture, img_texture.width, img_texture.height);
+        gl.activeTexture(gl.TEXTURE0);
 
-            this._shader_exp.bind();
-
-                gl.activeTexture(gl.TEXTURE0);
-                gl.bindTexture(gl.TEXTURE_2D, textureObj);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, img_texture.width, img_texture.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, buf_texture);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
-            ShaderProgram.unbind();
-
-            // starting point
-            onFinish();
-        }
-
-        // TODO : handle the an onerror on the texture loading here
-
-        img_texture.src = "assets/texture.png";
+        await this._chunkRendering.texture.load("assets/texture.png");
+        await this._textRendering.texture.load("assets/ascii_font.png");
     }
 
     getSize(): [number, number] {
@@ -387,6 +576,35 @@ class RendererWebGL {
         }
     }
 
+    pushText(message: string, position: number[], scale: number) {
+
+        const textureSize = [ 256, 256 ];
+        const gridSize = [ 16, 16 ];
+
+        const letterSize = [ textureSize[0] / gridSize[0], textureSize[1] / gridSize[1] ];
+
+        const currPos = [ position[0], position[1] ];
+
+        for (const letter of message) {
+
+            if (letter == '\n') {
+
+                currPos[0] = position[0];
+                currPos[1] -= letterSize[1] * scale;
+                continue;
+            }
+
+            const texCoord = this._textRendering.TexCoordMap.get(letter);
+
+            if (!texCoord)
+                throw new Error(`fail to find a letter, letter=${letter}`);
+
+            this._textRendering.stack_vertices.push(currPos[0], currPos[1], texCoord[0], texCoord[1], scale);
+
+            currPos[0] += letterSize[0] * scale;
+        }
+    }
+
     renderScene(chunks: Chunks) {
 
         const gl = WebGLContext.getContext();
@@ -400,16 +618,18 @@ class RendererWebGL {
         //
         //
 
-        this._shader_exp.bind();
+        this._chunkRendering.shader.bind();
+
+        this._chunkRendering.texture.bind();
 
         // send the texture to the shader
-        gl.uniform1i(this._shader_exp.getUniform("u_sampler"), 0);
+        gl.uniform1i(this._chunkRendering.shader.getUniform("u_sampler"), 0);
 
-        gl.uniformMatrix4fv(this._shader_exp.getUniform("u_modelviewMatrix"), false, this._modelview_matrix);
-        gl.uniformMatrix4fv(this._shader_exp.getUniform("u_projMatrix"), false, this._projection_matrix);
+        gl.uniformMatrix4fv(this._chunkRendering.shader.getUniform("u_modelviewMatrix"), false, this._modelview_matrix);
+        gl.uniformMatrix4fv(this._chunkRendering.shader.getUniform("u_projMatrix"), false, this._projection_matrix);
 
         const p = this._free_fly_camera.getPosition();
-        gl.uniform3f(this._shader_exp.getUniform("u_cameraPos"), p[0],p[1],p[2]);
+        gl.uniform3f(this._chunkRendering.shader.getUniform("u_cameraPos"), p[0],p[1],p[2]);
 
         for (var ii = 0; ii < chunks.length; ++ii)
             if (chunks[ii].visible)
@@ -419,10 +639,10 @@ class RendererWebGL {
         //
         //
 
-        this._shader_color.bind();
+        this._wireframeRendering.shader.bind();
 
-        gl.uniformMatrix4fv(this._shader_color.getUniform("u_projMatrix"), false, this._projection_matrix);
-        gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, this._modelview_matrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_projMatrix"), false, this._projection_matrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, this._modelview_matrix);
 
         const tmp_modelview_matrix2 = glm.mat4.create();
 
@@ -435,11 +655,11 @@ class RendererWebGL {
 
             glm.mat4.translate(tmp_modelview_matrix2, this._modelview_matrix, pos);
 
-            gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
+            gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
 
             ///
 
-            this._geom_cubeW.render();
+            this._wireframeRendering.geometry_cubeW.render();
         }
 
         ShaderProgram.unbind();
@@ -450,7 +670,7 @@ class RendererWebGL {
         const gl = WebGLContext.getContext();
         const viewportSize = WebGLContext.getViewportSize();
 
-        this._shader_color.bind();
+        this._wireframeRendering.shader.bind();
 
         // rendered 3 times with a different viewport and point of view
 
@@ -492,8 +712,8 @@ class RendererWebGL {
             );
 
 
-            gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
-            gl.uniformMatrix4fv(this._shader_color.getUniform("u_projMatrix"), false, tmp_projection_matrix);
+            gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
+            gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_projMatrix"), false, tmp_projection_matrix);
 
 
 
@@ -554,10 +774,37 @@ class RendererWebGL {
             }
 
 
-            this._geom_stack_rendering.updateBuffer(0, vertices);
-            this._geom_stack_rendering.setPrimitiveCount(vertices.length / 6);
+            this._wireframeRendering.geometry_stack_rendering.updateBuffer(0, vertices);
+            this._wireframeRendering.geometry_stack_rendering.setPrimitiveCount(vertices.length / 6);
 
-            this._geom_stack_rendering.render();
+            this._wireframeRendering.geometry_stack_rendering.render();
+
+
+
+            // this._renderTexturedHudText();
+
+            {
+                // const gl = WebGLContext.getContext();
+
+                this._textRendering.shader.bind();
+
+                this._textRendering.texture.bind();
+
+                gl.uniformMatrix4fv(this._textRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
+                gl.uniformMatrix4fv(this._textRendering.shader.getUniform("u_projectionMatrix"), false, tmp_projection_matrix);
+
+                this._textRendering.geometry.updateBuffer(1, this._textRendering.stack_vertices, true);
+                this._textRendering.geometry.setInstancedCount(this._textRendering.stack_vertices.length / 5);
+
+                this._textRendering.geometry.render();
+
+                Texture.unbind();
+
+                // reset vertices
+                this._textRendering.stack_vertices.length = 0;
+            }
+
+
 
         } // PROTOTYPE HUD
 
@@ -565,7 +812,7 @@ class RendererWebGL {
 
 
 
-
+        this._wireframeRendering.shader.bind();
 
         this._render_hud( chunks, processing_pos, [w2,h*0,w,h], [1.0, 1.2, 1.0], [0,0,1] );
         this._render_hud( chunks, processing_pos, [w2,h*1,w,h], [0.0, 1.0, 0.0], [0,0,1] );
@@ -601,10 +848,10 @@ class RendererWebGL {
         );
 
 
-        gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
-        gl.uniformMatrix4fv(this._shader_color.getUniform("u_projMatrix"), false, tmp_projection_matrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_projMatrix"), false, tmp_projection_matrix);
 
-        this._geom_axis.render();
+        this._wireframeRendering.geometry_axis.render();
 
         const tmp_modelview_matrix2 = glm.mat4.create();
 
@@ -622,8 +869,8 @@ class RendererWebGL {
 
                 glm.mat4.translate(tmp_modelview_matrix2, tmp_modelview_matrix, pos);
 
-                gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
-                this._geom_cubeW.render();
+                gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
+                this._wireframeRendering.geometry_cubeW.render();
             }
             else {
 
@@ -636,8 +883,8 @@ class RendererWebGL {
                 ]);
                 glm.mat4.scale(tmp_modelview_matrix2, tmp_modelview_matrix2, [0.7,0.7,0.7]);
 
-                gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
-                this._geom_cubeR.render();
+                gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
+                this._wireframeRendering.geometry_cubeR.render();
             }
         }
 
@@ -650,19 +897,19 @@ class RendererWebGL {
             ]);
             glm.mat4.scale(tmp_modelview_matrix2,tmp_modelview_matrix2, [0.6,0.6,0.6]);
 
-            gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
-            this._geom_cubeG.render();
+            gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
+            this._wireframeRendering.geometry_cubeG.render();
         }
 
         glm.mat4.translate(tmp_modelview_matrix,tmp_modelview_matrix, this._free_fly_camera.getPosition());
         glm.mat4.rotate(tmp_modelview_matrix,tmp_modelview_matrix, this._free_fly_camera.getTheta() * Math.PI / 180, [0,0,1]);
         glm.mat4.rotate(tmp_modelview_matrix,tmp_modelview_matrix, this._free_fly_camera.getPhi() * Math.PI / 180, [0,-1,0]);
 
-        gl.uniformMatrix4fv(this._shader_color.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
 
-        this._geom_cross.render();
-        this._geom_frustum.render();
-    };
+        this._wireframeRendering.geometry_cross.render();
+        this._wireframeRendering.geometry_frustum.render();
+    }
 
 };
 
