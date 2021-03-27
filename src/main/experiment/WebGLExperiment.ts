@@ -4,14 +4,14 @@
 import chunk_size from '../constants';
 
 import ChunkGenerator from './generation/ChunkGenerator';
-import RendererWebGL from './rendererWebGL/RendererWebGL';
+import WebGLRenderer from './webGLRenderer/WebGLRenderer';
 
 import 'fpsmeter'; // <- in window.FPSMeter
 
 class WebGLExperiment {
 
     private _fps_meter: FPSMeter;
-    private _rendererWebGL: RendererWebGL;
+    private _renderer: WebGLRenderer;
     private _chunkGenerator: ChunkGenerator;
 
     private _running: boolean;
@@ -45,21 +45,21 @@ class WebGLExperiment {
 
 
 
-        this._rendererWebGL = new RendererWebGL(main_element, canvas_element);
+        this._renderer = new WebGLRenderer(main_element, canvas_element);
 
         this._chunkGenerator = new ChunkGenerator({
 
             chunk_is_visible: (pos: [number, number, number]) => {
-                return this._rendererWebGL.chunk_is_visible(pos);
+                return this._renderer.chunk_is_visible(pos);
             },
             point_is_visible: (pos: [number, number, number]) => {
-                return this._rendererWebGL.point_is_visible(pos);
+                return this._renderer.point_is_visible(pos);
             },
             add_geom: (buffer) => {
-                return this._rendererWebGL.add_geom(buffer);
+                return this._renderer.add_geom(buffer);
             },
             update_geom: (geom, buffer) => {
-                return this._rendererWebGL.update_geom(geom, buffer);
+                return this._renderer.update_geom(geom, buffer);
             },
         });
 
@@ -87,7 +87,7 @@ class WebGLExperiment {
 
             const touches = event.targetTouches;
 
-            const viewport_size = this._rendererWebGL.getSize();
+            const viewport_size = this._renderer.getSize();
 
             this._touches.length = 0; // clear array
             for (let ii = 0; ii < touches.length; ++ii) {
@@ -109,17 +109,6 @@ class WebGLExperiment {
         // HUD (touch positions recorder)
         //
         //
-
-
-
-
-        //
-
-        // const createRendererCanvas = require('./rendererCanvas/index.js');
-        // this.RendererCanvas = new createRendererCanvas();
-
-        //
-
 
 
 
@@ -162,8 +151,8 @@ class WebGLExperiment {
 
             // const s_canvas = document.getElementById("second-canvas");
 
-            var tmp_width = null;
-            var tmp_height = null;
+            let tmp_width = null;
+            let tmp_height = null;
 
             if (document.fullscreen ||
                 (document as any).mozFullScreen ||
@@ -191,7 +180,7 @@ class WebGLExperiment {
             canvas.width = tmp_width;
             canvas.height = tmp_height;
 
-            this._rendererWebGL.resize(tmp_width, tmp_height);
+            this._renderer.resize(tmp_width, tmp_height);
             // this.RendererCanvas.resize(tmp_width, tmp_height);
         };
 
@@ -213,7 +202,7 @@ class WebGLExperiment {
         this._error_gcontext = false;
 
 
-        this._rendererWebGL.set_on_context_lost(() => {
+        this._renderer.set_on_context_lost(() => {
 
             console.log('on_context_lost');
 
@@ -221,7 +210,7 @@ class WebGLExperiment {
             this.stop();
         });
 
-        this._rendererWebGL.set_on_context_restored(() => {
+        this._renderer.set_on_context_restored(() => {
 
             console.log('on_context_restored');
 
@@ -231,13 +220,14 @@ class WebGLExperiment {
 
     }
 
+    async init() {
+        await this._renderer.init();
+    }
 
-    async start() {
+    start() {
 
         if (this.isRunning())
             return;
-
-        await this._rendererWebGL.init();
 
         this._running = true;
 
@@ -286,7 +276,7 @@ class WebGLExperiment {
         //
         ////// generation
 
-        const camera_pos = this._rendererWebGL.getCameraPosition();
+        const camera_pos = this._renderer.getCameraPosition();
 
         this._chunkGenerator.update(camera_pos);
 
@@ -296,10 +286,10 @@ class WebGLExperiment {
 
 
 
-        this._rendererWebGL.update(this._chunkGenerator.getChunks());
+        this._renderer.update(this._chunkGenerator.getChunks());
 
         // for touch events rendering
-        // g_data.force_forward = this._rendererWebGL.getFreeFlyCamera().getForceForward();
+        // g_data.force_forward = this._renderer.getFreeFlyCamera().getForceForward();
 
 
 
@@ -307,7 +297,7 @@ class WebGLExperiment {
         //
         ////// render 3d scene
 
-        this._rendererWebGL.renderScene(this._chunkGenerator.getChunks());
+        this._renderer.renderScene(this._chunkGenerator.getChunks());
 
         //
         //
@@ -315,19 +305,19 @@ class WebGLExperiment {
 
 
         {
-            const coordinates = [
+            const coord = [
                 Math.floor(camera_pos[0] / chunk_size)|0,
                 Math.floor(camera_pos[1] / chunk_size)|0,
                 Math.floor(camera_pos[2] / chunk_size)|0
             ];
 
-            const text = `coordinates: ${coordinates[0]}/${coordinates[1]}/${coordinates[2]}`;
+            const text = `Coordinates: ${coord[0]}/${coord[1]}/${coord[2]}`;
 
-            this._rendererWebGL.pushText(text, [0, 0], 1.0);
+            this._renderer.pushText(text, [0, 0], 1.0);
         }
 
         {
-            const time_immobile = this._rendererWebGL.getFreeFlyCamera().getTimeImmobile();
+            const time_immobile = this._renderer.getFreeFlyCamera().getTimeImmobile();
 
             const minimum_time_immbile = 3;
             const text_fade_in_time = 2;
@@ -338,7 +328,7 @@ class WebGLExperiment {
                                 ? 1
                                 : (time_immobile - minimum_time_immbile) / text_fade_in_time;
 
-                const viewport_size = this._rendererWebGL.getSize();
+                const viewport_size = this._renderer.getSize();
                 viewport_size[0] = viewport_size[0] * 0.75;
 
                 const lines = [
@@ -380,17 +370,14 @@ class WebGLExperiment {
                     viewport_size[1] * 0.5 + height * 0.5,
                 ];
 
-                this._rendererWebGL.pushText(text, position, scale);
+                this._renderer.pushText(text, position, scale);
             }
         }
 
-        this._rendererWebGL.renderHUD(
-                this._chunkGenerator.getChunks(),
-                this._chunkGenerator.processing_pos,
-                this._touches);
-
-        // this.RendererCanvas.render();
-
+        this._renderer.renderHUD(
+            this._chunkGenerator.getChunks(),
+            this._chunkGenerator.getProcessingPositions(),
+            this._touches);
 
         this._fps_meter.tick();
     }

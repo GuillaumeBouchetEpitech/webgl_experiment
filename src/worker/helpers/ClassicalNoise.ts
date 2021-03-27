@@ -40,7 +40,7 @@ class ClassicalNoise {
             this._perm[ii] = this._p[ii & 255]|0;
     }
 
-    noise_ex(x2: number, y2: number, z2: number) {
+    noise(x2: number, y2: number, z2: number) {
 
         let result = 0.0;
         let amp = this._amplitude;
@@ -51,7 +51,7 @@ class ClassicalNoise {
 
         for (let ii = 0; ii < this._octaves; ++ii) {
 
-            result += this.noise(x, y, z) * amp;
+            result += this._noise(x, y, z) * amp;
 
             x *= 2.0;
             y *= 2.0;
@@ -75,7 +75,7 @@ class ClassicalNoise {
         return t * t * t * (t * (t * 6 - 15) + 10);
     }
 
-    noise(x: number, y: number, z: number) {
+    private _noise(x: number, y: number, z: number) {
 
         // Find unit grid cell containing point
         let X = Math.floor(x)|0;

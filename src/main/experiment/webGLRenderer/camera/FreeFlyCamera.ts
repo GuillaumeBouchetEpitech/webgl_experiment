@@ -4,7 +4,7 @@
 import * as glm from 'gl-matrix';
 
 import { KeyboardHandler, keyCodes } from './helpers/KeyboardHandler';
-import handle_pointerLock from './helpers/pointerLock';
+import PointerLockSetup from './helpers/PointerLockSetup';
 
 class FreeFlyCamera {
 
@@ -52,7 +52,11 @@ class FreeFlyCamera {
 
         //
 
-        handle_pointerLock(main_element, callback_mouse_locked, callback_mouse_unlocked);
+        PointerLockSetup({
+            target_element: main_element,
+            cb_enabled: callback_mouse_locked,
+            cb_disabled: callback_mouse_unlocked
+        });
 
         ///
         /// /MOUSE
@@ -66,7 +70,7 @@ class FreeFlyCamera {
 
         let previous_touch: Touch|null = null;
         let previous_distance: number|null = null;
-        let saved_time: number|null = null;
+        let saved_time: number = Date.now();
 
         main_element.addEventListener('touchstart', (event: TouchEvent) => {
 
@@ -75,16 +79,21 @@ class FreeFlyCamera {
             previous_touch = null;
             previous_distance = null;
 
-            const tmp_time = Date.now();
+            //
+            //
+            // double tap detection (0.25sec) -> force forward movement
 
-            if (event.targetTouches.length == 1 &&
-                saved_time &&
-                (tmp_time - saved_time) < 250) {
+            const current_time = Date.now();
+
+            if (// only one touch live
+                event.targetTouches.length == 1 &&
+                // second tap must happen before 0.25sec
+                (current_time - saved_time) < 250) {
 
                 this._force_forward = true;
             }
 
-            saved_time = tmp_time;
+            saved_time = current_time;
         });
 
         main_element.addEventListener('touchend', (event: TouchEvent) => {
@@ -94,7 +103,6 @@ class FreeFlyCamera {
             previous_touch = null;
             previous_distance = null;
 
-            // saved_time = null;
             this._force_forward = false;
         });
 
@@ -162,6 +170,10 @@ class FreeFlyCamera {
             this._time_immobile = 10;
 
         this._last_time = current_time;
+
+
+        if (this._force_forward)
+            this._time_immobile = 0;
 
 
         const speed = 16;

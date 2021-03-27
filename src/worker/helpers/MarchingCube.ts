@@ -336,44 +336,47 @@ const a2iTriangleConnectionTable = [
 type Vec3 = [number, number, number];
 type GeomCallback = (vertex: Vec3, color: Vec3, normal: Vec3) => void;
 
-const fgetOffset = (fValue1: number, fValue2: number, fValueDesired: number) => {
+namespace utilities {
 
-    const fDelta = fValue2 - fValue1;
+    export const getOffset = (fValue1: number, fValue2: number, fValueDesired: number) => {
 
-    if (fDelta == 0)
-        return 0.5;
+        const fDelta = fValue2 - fValue1;
 
-    return (fValueDesired - fValue1) / fDelta;
-};
+        if (fDelta == 0)
+            return 0.5;
 
-//vgetColor generates a color from a given position and normal of a point
-const vgetColor = (rfNormal: Vec3): Vec3 => {
+        return (fValueDesired - fValue1) / fDelta;
+    };
 
-    const fX = rfNormal[0];
-    const fY = rfNormal[1];
-    const fZ = rfNormal[2];
+    //getColor generates a color from a given position and normal of a point
+    export const getColor = (rfNormal: Vec3): Vec3 => {
 
-    return [
-        ( (fX > 0 ? fX : 0) + (fY < 0 ? -0.5 * fY : 0.0) + (fZ < 0 ? -0.5 * fZ : 0) ),
-        ( (fY > 0 ? fY : 0) + (fZ < 0 ? -0.5 * fZ : 0.0) + (fX < 0 ? -0.5 * fX : 0) ),
-        ( (fZ > 0 ? fZ : 0) + (fX < 0 ? -0.5 * fX : 0.0) + (fY < 0 ? -0.5 * fY : 0) )
-    ];
-};
+        const fX = rfNormal[0];
+        const fY = rfNormal[1];
+        const fZ = rfNormal[2];
 
-const vNormalizeVector = (vec: Vec3): Vec3 => {
+        return [
+            ( (fX > 0 ? fX : 0) + (fY < 0 ? -0.5 * fY : 0.0) + (fZ < 0 ? -0.5 * fZ : 0) ),
+            ( (fY > 0 ? fY : 0) + (fZ < 0 ? -0.5 * fZ : 0.0) + (fX < 0 ? -0.5 * fX : 0) ),
+            ( (fZ > 0 ? fZ : 0) + (fX < 0 ? -0.5 * fX : 0.0) + (fY < 0 ? -0.5 * fY : 0) )
+        ];
+    };
 
-    const fOldLength = Math.sqrt( (vec[0] * vec[0]) + (vec[1] * vec[1]) + (vec[2] * vec[2]) );
+    export const normalizeVector = (vec: Vec3): Vec3 => {
 
-    if (fOldLength == 0.0)
-        return vec;
+        const length = Math.sqrt( (vec[0] * vec[0]) + (vec[1] * vec[1]) + (vec[2] * vec[2]) );
 
-    const tmp_scale = 1.0 / fOldLength;
+        if (length == 0)
+            return vec;
 
-    return [
-        vec[0] * tmp_scale,
-        vec[1] * tmp_scale,
-        vec[2] * tmp_scale
-    ];
+        const tmp_scale = 1 / length;
+
+        return [
+            vec[0] * tmp_scale,
+            vec[1] * tmp_scale,
+            vec[2] * tmp_scale
+        ];
+    };
 };
 
 class MarchingCube {
@@ -381,13 +384,12 @@ class MarchingCube {
     private _chunk_size: number;
     private _fTv: number;
     private _sample_cb: (x: number, y: number, z: number) => number;
-    // private _tetra: boolean = false;
     private _step_size: number;
     private _current_geom_callback: GeomCallback;
 
     constructor(chunk_size: number, fTv: number, sample_cb: (x: number, y: number, z: number) => number) {
 
-        this._chunk_size = chunk_size
+        this._chunk_size = chunk_size;
         this._fTv = fTv;
         this._sample_cb = sample_cb;
 
@@ -398,13 +400,13 @@ class MarchingCube {
 
         const step_dec = this._step_size * 0.1;
 
-        const vec: Vec3 = [
+        const normal: Vec3 = [
             this._sample_cb( fX - step_dec, fY, fZ ) - this._sample_cb( fX + step_dec, fY, fZ ),
             this._sample_cb( fX, fY - step_dec, fZ ) - this._sample_cb( fX, fY + step_dec, fZ ),
             this._sample_cb( fX, fY, fZ - step_dec ) - this._sample_cb( fX, fY, fZ + step_dec )
         ];
 
-        return vNormalizeVector( vec );
+        return utilities.normalizeVector( normal );
     }
 
     getNormal2(t1: Vec3, t2: Vec3, t3: Vec3): Vec3 {
@@ -485,7 +487,7 @@ class MarchingCube {
             //if there is an intersection on this edge
             if (iEdgeFlags & (1 << iEdge)) {
 
-                const fOffset = fgetOffset(
+                const fOffset = utilities.getOffset(
                     afCubeValue[ a2iEdgeConnection[iEdge][0] ],
                     afCubeValue[ a2iEdgeConnection[iEdge][1] ],
                     this._fTv
@@ -510,7 +512,7 @@ class MarchingCube {
 
                 const iVertex = a2iTriangleConnectionTable[ iFlagIndex ][ 3 * iTriangle + iCorner ];
 
-                const color = vgetColor( asEdgeNorm[iVertex] );
+                const color = utilities.getColor( asEdgeNorm[iVertex] );
 
                 //
 
@@ -588,7 +590,7 @@ class MarchingCube {
                                                 asCubePosition[iVertex][1],
                                                 asCubePosition[iVertex][2]);
 
-        const asTetrahedronPosition: Vec3[] =  [ [0,0,0],[0,0,0],[0,0,0],[0,0,0] ];
+        const asTetrahedronPosition: Vec3[] = [ [0,0,0],[0,0,0],[0,0,0],[0,0,0] ];
         const afTetrahedronValue = [0,0,0,0];
 
         for (let iTetrahedron = 0; iTetrahedron < 6; iTetrahedron++) {
@@ -632,7 +634,7 @@ class MarchingCube {
 
                 const iVert0 = a2iTetrahedronEdgeConnection[iEdge][0];
                 const iVert1 = a2iTetrahedronEdgeConnection[iEdge][1];
-                const fOffset = fgetOffset(
+                const fOffset = utilities.getOffset(
                     pafTetrahedronValue[iVert0],
                     pafTetrahedronValue[iVert1],
                     this._fTv
@@ -656,7 +658,7 @@ class MarchingCube {
 
                 const iVertex = a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle + iCorner];
 
-                const color = vgetColor( asEdgeNorm[iVertex] );
+                const color = utilities.getColor( asEdgeNorm[iVertex] );
 
                 const vertex: Vec3 = [
                     asEdgeVertex[iVertex][0] * this._chunk_size,

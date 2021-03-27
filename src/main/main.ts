@@ -5,41 +5,47 @@ window.onerror = (...args: any[]) => {
 
 import WebGLExperiment from "./experiment/WebGLExperiment";
 
-const demo = new WebGLExperiment();
+const run = async () => {
 
-demo.start();
+	const demo = new WebGLExperiment();
 
-{ // GUI (touch supported indicator)
+	await demo.init();
 
-	const touch_id_elem = document.getElementById("touch_id");
-	if (touch_id_elem) {
+	demo.start();
 
-		if ('ontouchstart' in window) {
-			touch_id_elem.innerHTML += 'Supported';
+	{ // GUI (touch supported indicator)
+
+		const touch_id_elem = document.getElementById("touch_id");
+		if (touch_id_elem) {
+
+			if ('ontouchstart' in window) {
+				touch_id_elem.innerHTML += 'Supported';
+			}
+			else {
+				touch_id_elem.innerHTML += 'Not Supported';
+			}
 		}
-		else {
-			touch_id_elem.innerHTML += 'Not Supported';
-		}
-	}
 
-} // GUI (touch supported indicator)
+	} // GUI (touch supported indicator)
 
-{ // UI
+	{ // UI
 
-	const gui_toggle_start = document.getElementById("gui_toggle_start");
-	if (!gui_toggle_start)
-		throw new Error("gui_toggle_start not found");
+		const gui_toggle_start = document.getElementById("gui_toggle_start");
+		if (!gui_toggle_start)
+			throw new Error("gui_toggle_start not found");
 
-	gui_toggle_start.addEventListener('click', () => {
+		gui_toggle_start.addEventListener('click', () => {
 
-		console.log('toggle_start');
+			console.log('toggle_start');
 
-		if (demo.isRunning()) {
-			demo.stop();
-		}
-		else {
-			demo.start();
-		}
-	});
+			if (demo.isRunning()) {
+				demo.stop();
+			}
+			else {
+				demo.start();
+			}
+		});
 
-} // UI
+	} // UI
+};
+run();

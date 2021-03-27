@@ -25,9 +25,15 @@ class KeyboardHandler {
 
 
         const handleKeyDown = (event: KeyboardEvent) => {
+
+            event.preventDefault();
+
             this._pressedKeys.set(event.keyCode, true);
         };
         const handleKeyUp = (event: KeyboardEvent) => {
+
+            event.preventDefault();
+
             this._pressedKeys.set(event.keyCode, false);
         };
 
