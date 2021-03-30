@@ -1,40 +1,49 @@
 
 "use strict"
 
-const keyCodes = {
+enum keyCodes {
+    KEY_Z = 'z',
+    KEY_W = 'w',
+    KEY_S = 's',
+    KEY_A = 'a',
+    KEY_Q = 'q',
+    KEY_D = 'd',
 
-      KEY_Z : 90, KEY_W : 87
-    , KEY_S : 83
-    , KEY_A : 65, KEY_Q : 81
-    , KEY_D : 68
-
-    , ARROW_LEFT  : 37
-    , ARROW_RIGHT : 39
-    , ARROW_UP    : 38
-    , ARROW_DOWN  : 40
+    ARROW_LEFT  = 'ArrowLeft',
+    ARROW_RIGHT = 'ArrowRight',
+    ARROW_UP    = 'ArrowUp',
+    ARROW_DOWN  = 'ArrowDown',
 };
 
 class KeyboardHandler {
 
-    private _pressedKeys = new Map<number, boolean>();
+    private _pressedKeys = new Map<string, boolean>();
     private _activated: boolean = false;
     private _handleKeyDown: (event: KeyboardEvent) => void;
     private _handleKeyUp: (event: KeyboardEvent) => void;
 
     constructor() {
 
+        const keysToPrevent: string[] = [
+            keyCodes.ARROW_LEFT,
+            keyCodes.ARROW_RIGHT,
+            keyCodes.ARROW_UP,
+            keyCodes.ARROW_DOWN,
+        ];
 
         const handleKeyDown = (event: KeyboardEvent) => {
 
-            event.preventDefault();
+            if (keysToPrevent.indexOf(event.key) != -1)
+                event.preventDefault();
 
-            this._pressedKeys.set(event.keyCode, true);
+            this._pressedKeys.set(event.key, true);
         };
         const handleKeyUp = (event: KeyboardEvent) => {
 
-            event.preventDefault();
+            if (keysToPrevent.indexOf(event.key) != -1)
+                event.preventDefault();
 
-            this._pressedKeys.set(event.keyCode, false);
+            this._pressedKeys.set(event.key, false);
         };
 
         this._activated = false;
@@ -42,7 +51,7 @@ class KeyboardHandler {
         this._handleKeyUp   = handleKeyUp.bind(this);
     }
 
-    isPressed(code: number) {
+    isPressed(code: string) {
         return this._pressedKeys.get(code) || false;
     }
 

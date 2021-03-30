@@ -1,5 +1,5 @@
 
-import WebGLContext from "../WebGLContext";
+import WebGLContext from "./WebGLContext";
 
 export default class Texture {
 

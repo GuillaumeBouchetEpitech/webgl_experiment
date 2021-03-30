@@ -1,11 +1,11 @@
 
-import WebGLContext from "../WebGLContext";
+import WebGLContext from "./WebGLContext";
 
 export interface IShaderProgramOpts {
-    vs_src: string;
-    fs_src: string;
-    arr_attrib: string[];
-    arr_uniform: string[];
+    vertexSrc: string;
+    fragmentSrc: string;
+    attributes: string[];
+    uniforms: string[];
 };
 
 class ShaderProgram {
@@ -19,8 +19,8 @@ class ShaderProgram {
 
         const gl = WebGLContext.getContext();
 
-        const vertexShader = this._getShader(opt.vs_src, gl.VERTEX_SHADER);
-        const fragmentShader = this._getShader(opt.fs_src, gl.FRAGMENT_SHADER);
+        const vertexShader = this._getShader(opt.vertexSrc, gl.VERTEX_SHADER);
+        const fragmentShader = this._getShader(opt.fragmentSrc, gl.FRAGMENT_SHADER);
 
         //
 
@@ -31,6 +31,8 @@ class ShaderProgram {
         gl.attachShader(this._program, vertexShader);
         gl.attachShader(this._program, fragmentShader);
         gl.linkProgram(this._program);
+        gl.deleteShader(vertexShader); // free up now unused memory
+        gl.deleteShader(fragmentShader); // free up now unused memory
 
         if (!gl.getProgramParameter(this._program, gl.LINK_STATUS)) {
 
@@ -40,7 +42,7 @@ class ShaderProgram {
             throw new Error("Failed to initialised shaders, Error linking:" + lastError);
         }
 
-        this._getAttribAndLocation(opt.arr_attrib, opt.arr_uniform);
+        this._getAttribAndLocation(opt.attributes, opt.uniforms);
     }
 
     bind() {
@@ -75,7 +77,7 @@ class ShaderProgram {
         return uniform;
     }
 
-    private _getAttribAndLocation(arr_attrib: string[], arr_uniform: string[]) {
+    private _getAttribAndLocation(attributes: string[], uniforms: string[]) {
 
         const gl = WebGLContext.getContext();
 
@@ -84,24 +86,24 @@ class ShaderProgram {
 
         gl.useProgram(this._program);
 
-        for (let ii = 0; ii < arr_attrib.length; ++ii) {
+        for (let ii = 0; ii < attributes.length; ++ii) {
 
-            const value = gl.getAttribLocation(this._program, arr_attrib[ii]);
+            const value = gl.getAttribLocation(this._program, attributes[ii]);
 
             if (value < 0)
-                throw new Error(`attribute not found => ${arr_attrib[ii]}`);
+                throw new Error(`attribute not found => ${attributes[ii]}`);
 
-            this._attributes.set(arr_attrib[ii], value);
+            this._attributes.set(attributes[ii], value);
         }
 
-        for (let ii = 0; ii < arr_uniform.length; ++ii) {
+        for (let ii = 0; ii < uniforms.length; ++ii) {
 
-            const value = gl.getUniformLocation(this._program, arr_uniform[ii]);
+            const value = gl.getUniformLocation(this._program, uniforms[ii]);
 
             if (value === null)
-                throw new Error(`uniform not found => ${arr_uniform[ii]}`);
+                throw new Error(`uniform not found => ${uniforms[ii]}`);
 
-            this._uniforms.set(arr_uniform[ii], value);
+            this._uniforms.set(uniforms[ii], value);
         }
 
         gl.useProgram(null);

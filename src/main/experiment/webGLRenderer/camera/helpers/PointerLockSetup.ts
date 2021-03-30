@@ -28,7 +28,7 @@ const PointerLockSetup = (def: IPointerLockDef) => {
     //
     //
 
-    const lockChangeAlert = () => {
+    const onLockChange = () => {
 
         if (document.pointerLockElement === def.target_element ||
             (document as any).mozPointerLockElement === def.target_element ||
@@ -46,7 +46,7 @@ const PointerLockSetup = (def: IPointerLockDef) => {
         }
     };
 
-    const lockError = (event: Event) => {
+    const onLockError = (event: Event) => {
 
         console.error("Pointer lock failed");
         console.error(event);
@@ -60,18 +60,18 @@ const PointerLockSetup = (def: IPointerLockDef) => {
     //
 
     if ("onpointerlockchange" in document)
-        document.addEventListener('pointerlockchange', lockChangeAlert, false);
+        document.addEventListener('pointerlockchange', onLockChange, false);
     else if ("onmozpointerlockchange" in document)
-        (document as any).addEventListener('mozpointerlockchange', lockChangeAlert, false);
+        (document as any).addEventListener('mozpointerlockchange', onLockChange, false);
     else if ("onwebkitpointerlockchange" in document)
-        (document as any).addEventListener('webkitpointerlockchange', lockChangeAlert, false);
+        (document as any).addEventListener('webkitpointerlockchange', onLockChange, false);
 
     if ("onpointerlockerror" in document)
-        document.addEventListener('pointerlockerror', lockError, false);
+        document.addEventListener('pointerlockerror', onLockError, false);
     else if ("onmozpointerlockerror" in document)
-        (document as any).addEventListener('mozpointerlockerror', lockError, false);
+        (document as any).addEventListener('mozpointerlockerror', onLockError, false);
     else if ("onwebkitpointerlockerror" in document)
-        (document as any).addEventListener('webkitpointerlockerror', lockError, false);
+        (document as any).addEventListener('webkitpointerlockerror', onLockError, false);
 
 };
 

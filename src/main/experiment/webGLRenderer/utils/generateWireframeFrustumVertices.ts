@@ -1,7 +1,7 @@
 
 "use strict"
 
-const generateFrustumVertices = (fovY: number, aspect: number, zNear: number, zFar: number) => {
+const generateWireframeFrustumVertices = (fovY: number, aspect: number, zNear: number, zFar: number) => {
 
     const fH = Math.tan( fovY / 360.0 * Math.PI ) * zNear;
     const fW = fH * aspect;
@@ -59,4 +59,4 @@ const generateFrustumVertices = (fovY: number, aspect: number, zNear: number, zF
     return fvertices;
 }
 
-export default generateFrustumVertices;
+export default generateWireframeFrustumVertices;

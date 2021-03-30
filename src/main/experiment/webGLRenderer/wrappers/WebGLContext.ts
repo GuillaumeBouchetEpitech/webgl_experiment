@@ -2,9 +2,9 @@
 class WebGLContext {
 
     private static _gl: WebGLRenderingContext | null = null;
-    private static _extension_vao: OES_vertex_array_object | null = null;
-    private static _extension_lose_context: WEBGL_lose_context | null = null;
-    private static _instancing_extension: ANGLE_instanced_arrays | null = null;
+    private static _extensionVAO: OES_vertex_array_object | null = null;
+    private static _extensionLoseContext: WEBGL_lose_context | null = null;
+    private static _extensionInstancing: ANGLE_instanced_arrays | null = null;
     private static _viewportSize = [ 0, 0 ];
 
     static initialise(canvas: HTMLCanvasElement) {
@@ -53,13 +53,13 @@ class WebGLContext {
         if (!WebGLContext._gl)
             throw new Error("could not create webgl context");
 
-        WebGLContext._extension_vao = (
+        WebGLContext._extensionVAO = (
             WebGLContext._gl.getExtension('OES_vertex_array_object') ||
             WebGLContext._gl.getExtension('MOZ_OES_vertex_array_object') ||
             WebGLContext._gl.getExtension('WEBKIT_OES_vertex_array_object')
         );
-        WebGLContext._extension_lose_context = WebGLContext._gl.getExtension('WEBGL_lose_context');
-        WebGLContext._instancing_extension = WebGLContext._gl.getExtension("ANGLE_instanced_arrays");
+        WebGLContext._extensionLoseContext = WebGLContext._gl.getExtension('WEBGL_lose_context');
+        WebGLContext._extensionInstancing = WebGLContext._gl.getExtension("ANGLE_instanced_arrays");
 
         WebGLContext._viewportSize[0] = canvas.clientWidth;
         WebGLContext._viewportSize[1] = canvas.clientHeight;
@@ -80,15 +80,15 @@ class WebGLContext {
     //
 
     static getExtensionVao() {
-        return WebGLContext._extension_vao;
+        return WebGLContext._extensionVAO;
     }
 
     static getExtensionLoseContext() {
-        return WebGLContext._extension_lose_context;
+        return WebGLContext._extensionLoseContext;
     }
 
     static getExtensionInstancing() {
-        return WebGLContext._instancing_extension;
+        return WebGLContext._extensionInstancing;
     }
 
     //
@@ -97,26 +97,26 @@ class WebGLContext {
 
     static getExtensionVaoStrict() {
 
-        if (!WebGLContext._extension_vao)
+        if (!WebGLContext._extensionVAO)
             throw new Error("vao extension not available");
 
-        return WebGLContext._extension_vao;
+        return WebGLContext._extensionVAO;
     }
 
     static getExtensionLoseContextStrict() {
 
-        if (!WebGLContext._extension_lose_context)
+        if (!WebGLContext._extensionLoseContext)
             throw new Error("lose context extension not available");
 
-        return WebGLContext._extension_lose_context;
+        return WebGLContext._extensionLoseContext;
     }
 
     static getExtensionInstancingStrict() {
 
-        if (!WebGLContext._instancing_extension)
+        if (!WebGLContext._extensionInstancing)
             throw new Error("instancing extension not available");
 
-        return WebGLContext._instancing_extension;
+        return WebGLContext._extensionInstancing;
     }
 
     //

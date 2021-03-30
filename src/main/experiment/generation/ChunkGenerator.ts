@@ -1,25 +1,25 @@
 
 import chunk_size from '../../constants';
 
-import { GeometryWrapper } from '../webGLRenderer/utils/Geometry';
-
 type Vec3 = [number, number, number];
 
-interface IChunkGeneratorDef {
-    chunk_is_visible: ((pos: Vec3) => void);
-    point_is_visible: ((pos: Vec3) => void);
-    add_geom: ((buffer: Float32Array) => GeometryWrapper.Geometry);
-    update_geom: ((geom: GeometryWrapper.Geometry, buffer: Float32Array) => void);
+interface IChunkGeneratorDef<GeometryType> {
+    chunkIsVisible: ((pos: Vec3) => void);
+    pointIsVisible: ((pos: Vec3) => void);
+    addGeometry: ((buffer: Float32Array) => GeometryType);
+    updateGeometry: ((geom: GeometryType, buffer: Float32Array) => void);
+    onChunkCreated?: () => void;
+    onChunkDiscarded?: () => void;
 };
 
-interface IChunk {
+interface IChunk<GeometryType> {
     position: Vec3;
-    geometry: GeometryWrapper.Geometry;
+    geometry: GeometryType;
     coord2d: [number, number] | null;
     visible: boolean;
 };
 
-export type Chunks = IChunk[];
+export type Chunks<GeometryType> = IChunk<GeometryType>[];
 
 enum WorkerStatus {
     available = 1,
@@ -32,89 +32,96 @@ interface IWorkerInstance {
     status: WorkerStatus;
 };
 
-class ChunkGenerator {
+class ChunkGenerator<GeometryType> {
 
     private _running: boolean = false;
-    private _chunks: Chunks = []; // live chunks
-    private _chunk_queue: Vec3[] = []; // position to be processed
-    private _geoms: GeometryWrapper.Geometry[] = [];
-    private _saved_index: Vec3 = [1,0,0]; // <- currently 1/0/0 but any other value than 0/0/0 will work
+    private _chunks: Chunks<GeometryType> = []; // live chunks
+    private _chunkPositionQueue: Vec3[] = []; // position to be processed
+    private _geometriesPool: GeometryType[] = [];
+    private _savedIndex: Vec3 = [999, 999, 999]; // any other value than 0/0/0 will work
 
     private _workers: IWorkerInstance[] = [];
 
-    private _camera_pos: Vec3 = [0, 0, 0];
+    private _cameraPosition: Vec3 = [0, 0, 0];
 
-    private _def: IChunkGeneratorDef;
+    private _def: IChunkGeneratorDef<GeometryType>;
 
-    private _processing_pos: Vec3[] = []; // TODO: this is ugly
+    private _processingPositions: Vec3[] = [];
 
-    constructor(def: IChunkGeneratorDef) {
+    constructor(def: IChunkGeneratorDef<GeometryType>) {
 
         this._def = def;
 
-        for (let ii = 0; ii < 2; ++ii) {
+        for (let ii = 0; ii < 2; ++ii)
+            this._addWorker();
+    }
 
-            const new_worker: IWorkerInstance = {
-                instance: new Worker("./dist/worker.js"),
-                float32buffer: new Float32Array(1000000),
-                status: WorkerStatus.available,
-            };
+    private _addWorker() {
 
-            const on_worker_message = (event: MessageEvent) => {
+        const new_worker: IWorkerInstance = {
+            instance: new Worker("./dist/worker.js"),
+            float32buffer: new Float32Array(1000000),
+            status: WorkerStatus.available,
+        };
 
-                const position = event.data.position;
-                new_worker.float32buffer = event.data.float32buffer; // we now own the vertices buffer
-                new_worker.status = WorkerStatus.available;
+        const on_worker_message = (event: MessageEvent) => {
 
-                // find and remove the position
-                for (let ii = 0; ii < this._processing_pos.length; ++ii) {
-                    if (this._processing_pos[ii][0] === position[0] &&
-                        this._processing_pos[ii][1] === position[1] &&
-                        this._processing_pos[ii][2] === position[2]) {
+            const position = event.data.position;
+            new_worker.float32buffer = event.data.float32buffer; // we now own the vertices buffer
+            new_worker.status = WorkerStatus.available;
 
-                        this._processing_pos.splice(ii, 1);
-                        break;
-                    }
+            // find and remove the position
+            for (let ii = 0; ii < this._processingPositions.length; ++ii) {
+                if (this._processingPositions[ii][0] === position[0] &&
+                    this._processingPositions[ii][1] === position[1] &&
+                    this._processingPositions[ii][2] === position[2]) {
+
+                    this._processingPositions.splice(ii, 1);
+                    break;
                 }
+            }
 
-                if (!this._running)
-                    return;
+            if (!this._running)
+                return;
 
-                let geometry: GeometryWrapper.Geometry | undefined = undefined;
-                if (this._geoms.length == 0) {
+            let geometry: GeometryType | undefined = undefined;
+            if (this._geometriesPool.length == 0) {
 
-                    geometry = this._def.add_geom(new_worker.float32buffer);
-                }
-                else {
+                geometry = this._def.addGeometry(new_worker.float32buffer);
+            }
+            else {
 
-                    geometry = this._geoms.pop();
-                    if (geometry)
-                        this._def.update_geom(geometry, new_worker.float32buffer);
-                }
+                geometry = this._geometriesPool.pop();
+                if (geometry)
+                    this._def.updateGeometry(geometry, new_worker.float32buffer);
+            }
 
-                if (!geometry) {
+            if (!geometry) {
 
-                    console.log('worker: processing the result -> invalid geometry');
-                }
-                else {
+                console.log('worker: processing the result -> invalid geometry');
+            }
+            else {
 
-                    // save
-                    this._chunks.push({
-                        position,
-                        geometry,
-                        coord2d: null,
-                        visible: false
-                    });
+                // save
+                this._chunks.push({
+                    position,
+                    geometry,
+                    coord2d: null,
+                    visible: false
+                });
 
-                    // launch again
-                    this._launchWorker();
-                }
-            };
+                if (this._def.onChunkCreated)
+                    this._def.onChunkCreated();
 
-            new_worker.instance.addEventListener("message", on_worker_message, false);
 
-            this._workers.push(new_worker);
-        }
+                // launch again
+                this._launchWorker();
+            }
+        };
+
+        new_worker.instance.addEventListener("message", on_worker_message, false);
+
+        this._workers.push(new_worker);
     }
 
     start() {
@@ -127,9 +134,9 @@ class ChunkGenerator {
 
         this._running = false;
 
-        this._chunk_queue.length = 0;
+        this._chunkPositionQueue.length = 0;
         this._chunks.length = 0;
-        this._geoms.length = 0;
+        this._geometriesPool.length = 0;
     }
 
     update(camera_pos: Vec3) {
@@ -143,7 +150,7 @@ class ChunkGenerator {
         //          exclude chunk out of range
         //          include chunk in range
 
-        this._camera_pos = camera_pos;
+        this._cameraPosition = camera_pos;
 
         const curr_index = [
             Math.floor(camera_pos[0] / chunk_size)|0,
@@ -152,93 +159,99 @@ class ChunkGenerator {
         ];
 
         // did we move to another chunk?
-        if (this._chunks.length == 0 ||
-            curr_index[0] != this._saved_index[0] ||
-            curr_index[1] != this._saved_index[1] ||
-            curr_index[2] != this._saved_index[2]) {
+        if (!(this._chunks.length == 0 ||
+            curr_index[0] != this._savedIndex[0] ||
+            curr_index[1] != this._savedIndex[1] ||
+            curr_index[2] != this._savedIndex[2])) {
 
-            // yes -> save as the new current chunk
-            this._saved_index[0] = curr_index[0];
-            this._saved_index[1] = curr_index[1];
-            this._saved_index[2] = curr_index[2];
-
-            //
-
-            // clear the generation queue
-            this._chunk_queue.length = 0;
-
-            // the range of chunk generation/exclusion
-            const range = 3|0;
-
-            const min_index: Vec3 = [
-                Math.floor(curr_index[0] - range),
-                Math.floor(curr_index[1] - range),
-                Math.floor(curr_index[2] - range),
-            ];
-            const max_index: Vec3 = [
-                Math.floor(curr_index[0] + range),
-                Math.floor(curr_index[1] + range),
-                Math.floor(curr_index[2] + range),
-            ];
-
-            //
-            // exclude the chunks that are too far away
-
-            for (let ii = 0; ii < this._chunks.length; ++ii) {
-
-                const curr_pos = [
-                    (this._chunks[ii].position[0] / chunk_size)|0,
-                    (this._chunks[ii].position[1] / chunk_size)|0,
-                    (this._chunks[ii].position[2] / chunk_size)|0
-                ];
-
-                if (curr_pos[0] < min_index[0] || curr_pos[0] > max_index[0] ||
-                    curr_pos[1] < min_index[1] || curr_pos[1] > max_index[1] ||
-                    curr_pos[2] < min_index[2] || curr_pos[2] > max_index[2]) {
-
-                    // this._chunks[i].geom.dispose();
-                    this._geoms.push(this._chunks[ii].geometry);
-                    this._chunks.splice(ii, 1);
-                    --ii;
-                }
-            }
-
-            //
-            // include in the generation queue the close enough chunks
-
-            for (let zz = min_index[2]; zz <= max_index[2]; ++zz)
-            for (let yy = min_index[1]; yy <= max_index[1]; ++yy)
-            for (let xx = min_index[0]; xx <= max_index[0]; ++xx) {
-
-                const position: Vec3 = [
-                    xx * chunk_size,
-                    yy * chunk_size,
-                    zz * chunk_size
-                ];
-
-                /// already processed ?
-                let found = false;
-                for (let jj = 0; jj < this._chunks.length; ++jj) {
-                    if (this._chunks[jj].position[0] === position[0] &&
-                        this._chunks[jj].position[1] === position[1] &&
-                        this._chunks[jj].position[2] === position[2]) {
-
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (found) // is already processed
-                    continue;
-
-                this._chunk_queue.push(position);
-            }
-
-            //
-            //
-
-            this._launchWorker();
+            // no -> stop here
+            return;
         }
+
+        // yes -> save as the new current chunk
+        this._savedIndex[0] = curr_index[0];
+        this._savedIndex[1] = curr_index[1];
+        this._savedIndex[2] = curr_index[2];
+
+        //
+
+        // clear the generation queue
+        this._chunkPositionQueue.length = 0;
+
+        // the range of chunk generation/exclusion
+        const range = 3|0;
+
+        const min_index: Vec3 = [
+            Math.floor(curr_index[0] - range),
+            Math.floor(curr_index[1] - range),
+            Math.floor(curr_index[2] - range),
+        ];
+        const max_index: Vec3 = [
+            Math.floor(curr_index[0] + range),
+            Math.floor(curr_index[1] + range),
+            Math.floor(curr_index[2] + range),
+        ];
+
+        //
+        // exclude the chunks that are too far away
+
+        for (let ii = 0; ii < this._chunks.length; ++ii) {
+
+            const curr_pos = [
+                (this._chunks[ii].position[0] / chunk_size)|0,
+                (this._chunks[ii].position[1] / chunk_size)|0,
+                (this._chunks[ii].position[2] / chunk_size)|0
+            ];
+
+            if (curr_pos[0] < min_index[0] || curr_pos[0] > max_index[0] ||
+                curr_pos[1] < min_index[1] || curr_pos[1] > max_index[1] ||
+                curr_pos[2] < min_index[2] || curr_pos[2] > max_index[2]) {
+
+                // this._chunks[i].geom.dispose();
+                this._geometriesPool.push(this._chunks[ii].geometry);
+                this._chunks.splice(ii, 1);
+                --ii;
+
+                if (this._def.onChunkDiscarded)
+                    this._def.onChunkDiscarded();
+            }
+        }
+
+        //
+        // include in the generation queue the close enough chunks
+
+        for (let zz = min_index[2]; zz <= max_index[2]; ++zz)
+        for (let yy = min_index[1]; yy <= max_index[1]; ++yy)
+        for (let xx = min_index[0]; xx <= max_index[0]; ++xx) {
+
+            const position: Vec3 = [
+                xx * chunk_size,
+                yy * chunk_size,
+                zz * chunk_size
+            ];
+
+            /// already processed ?
+            let found = false;
+            for (let jj = 0; jj < this._chunks.length; ++jj) {
+                if (this._chunks[jj].position[0] === position[0] &&
+                    this._chunks[jj].position[1] === position[1] &&
+                    this._chunks[jj].position[2] === position[2]) {
+
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found) // is already processed
+                continue;
+
+            this._chunkPositionQueue.push(position);
+        }
+
+        //
+        //
+
+        this._launchWorker();
     }
 
     private _launchWorker() {
@@ -250,16 +263,16 @@ class ChunkGenerator {
         // determine the next chunk to process
 
         // is there something to process?
-        if (this._chunk_queue.length == 0)
+        if (this._chunkPositionQueue.length == 0)
             return; // no
 
         let next_position: Vec3 | undefined = undefined;
 
         // if just 1 chunk left to process (or no priority callback)
         // -> just pop and process the next/last chunk in the queue
-        if (this._chunk_queue.length == 1) {
+        if (this._chunkPositionQueue.length == 1) {
 
-            next_position = this._chunk_queue.pop();
+            next_position = this._chunkPositionQueue.pop();
         }
         else {
 
@@ -270,19 +283,22 @@ class ChunkGenerator {
             };
 
             let best_index = -1;
-            let best_magnitude = 9999;
+            let best_magnitude = 999999;
             let best_pos: Vec3 | undefined = undefined;
 
-            for (let ii = 0; ii < this._chunk_queue.length; ++ii) {
+            for (let ii = 0; ii < this._chunkPositionQueue.length; ++ii) {
 
-                const try_pos = this._chunk_queue[ii];
+                const try_pos = this._chunkPositionQueue[ii];
 
-                if (best_index == -1 || this._def.chunk_is_visible(try_pos)) {
+                if (best_index == -1 || this._def.chunkIsVisible(try_pos)) {
 
-                    const magnitude = computeMagnitude(
-                        this._camera_pos[0] - try_pos[0] - chunk_size / 2,
-                        this._camera_pos[1] - try_pos[1] - chunk_size / 2,
-                        this._camera_pos[2] - try_pos[2] - chunk_size / 2);
+                    const centerOfTheChunk: Vec3 = [
+                        this._cameraPosition[0] - try_pos[0] - chunk_size / 2,
+                        this._cameraPosition[1] - try_pos[1] - chunk_size / 2,
+                        this._cameraPosition[2] - try_pos[2] - chunk_size / 2
+                    ];
+
+                    const magnitude = computeMagnitude(centerOfTheChunk[0], centerOfTheChunk[1], centerOfTheChunk[2]);
 
                     if (best_magnitude < magnitude)
                         continue;
@@ -290,12 +306,12 @@ class ChunkGenerator {
                     best_index = ii;
                     best_magnitude = magnitude;
 
-                    best_pos = this._chunk_queue[best_index];
+                    best_pos = this._chunkPositionQueue[best_index];
                 }
             }
 
             // removal
-            this._chunk_queue.splice(best_index,1);
+            this._chunkPositionQueue.splice(best_index,1);
 
             next_position = best_pos;
         }
@@ -303,7 +319,7 @@ class ChunkGenerator {
         if (next_position === undefined)
             return;
 
-        this._processing_pos.push(next_position);
+        this._processingPositions.push(next_position);
 
         currentWorker.status = WorkerStatus.working;
         currentWorker.instance.postMessage({
@@ -315,12 +331,12 @@ class ChunkGenerator {
         ]);
     }
 
-    getChunks(): Chunks {
+    getChunks(): Chunks<GeometryType> {
         return this._chunks;
     }
 
     getProcessingPositions(): Vec3[] {
-        return this._processing_pos;
+        return this._processingPositions;
     }
 };
 

@@ -5,19 +5,23 @@ import chunk_size from '../constants';
 
 import ChunkGenerator from './generation/ChunkGenerator';
 import WebGLRenderer from './webGLRenderer/WebGLRenderer';
+import GeometryWrapper from './webGLRenderer/wrappers/Geometry';
 
 import 'fpsmeter'; // <- in window.FPSMeter
 
 class WebGLExperiment {
 
-    private _fps_meter: FPSMeter;
+    private _fpsMeter: FPSMeter;
     private _renderer: WebGLRenderer;
-    private _chunkGenerator: ChunkGenerator;
+    private _chunkGenerator: ChunkGenerator<GeometryWrapper.Geometry>;
 
     private _running: boolean;
-    private _error_gcontext: boolean;
+    private _errorGraphicContext: boolean;
 
     private _touches: [number, number][] = [];
+
+    private _chunksCreated: number = 0;
+    private _chunksDiscarded: number = 0;
 
     constructor() {
 
@@ -25,11 +29,11 @@ class WebGLExperiment {
         //
         // FPS METER
 
-        const _fps_meter_elem = document.getElementById('fpsmeter');
-        if (!_fps_meter_elem)
+        const fpsMeterElem = document.getElementById('fpsmeter');
+        if (!fpsMeterElem)
             throw new Error("fpsmeter not found");
 
-        this._fps_meter = new FPSMeter(_fps_meter_elem, { theme: "transparent" });
+        this._fpsMeter = new FPSMeter(fpsMeterElem, { theme: "transparent" });
 
         // FPS METER
         //
@@ -48,19 +52,24 @@ class WebGLExperiment {
         this._renderer = new WebGLRenderer(main_element, canvas_element);
 
         this._chunkGenerator = new ChunkGenerator({
-
-            chunk_is_visible: (pos: [number, number, number]) => {
-                return this._renderer.chunk_is_visible(pos);
+            chunkIsVisible: (pos: [number, number, number]) => {
+                return this._renderer.chunkIsVisible(pos);
             },
-            point_is_visible: (pos: [number, number, number]) => {
-                return this._renderer.point_is_visible(pos);
+            pointIsVisible: (pos: [number, number, number]) => {
+                return this._renderer.pointIsVisible(pos);
             },
-            add_geom: (buffer) => {
-                return this._renderer.add_geom(buffer);
+            addGeometry: (buffer) => {
+                return this._renderer.addGeometry(buffer);
             },
-            update_geom: (geom, buffer) => {
-                return this._renderer.update_geom(geom, buffer);
+            updateGeometry: (geom, buffer) => {
+                this._renderer.updateGeometry(geom, buffer);
             },
+            onChunkCreated: () => {
+                ++this._chunksCreated;
+            },
+            onChunkDiscarded: () => {
+                ++this._chunksDiscarded;
+            }
         });
 
         //
@@ -199,14 +208,14 @@ class WebGLExperiment {
 
 
         this._running = false;
-        this._error_gcontext = false;
+        this._errorGraphicContext = false;
 
 
         this._renderer.set_on_context_lost(() => {
 
             console.log('on_context_lost');
 
-            this._error_gcontext = true;
+            this._errorGraphicContext = true;
             this.stop();
         });
 
@@ -214,7 +223,7 @@ class WebGLExperiment {
 
             console.log('on_context_restored');
 
-            this._error_gcontext = false;
+            this._errorGraphicContext = false;
             this.start();
         });
 
@@ -242,7 +251,7 @@ class WebGLExperiment {
     }
 
     isRunning() {
-        return (this._running && !this._error_gcontext);
+        return (this._running && !this._errorGraphicContext);
     }
 
     //
@@ -253,7 +262,7 @@ class WebGLExperiment {
 
         const tick = () => {
 
-            if (!this._running || this._error_gcontext)
+            if (!this._running || this._errorGraphicContext)
                 return;
 
             this._main_loop();
@@ -267,7 +276,7 @@ class WebGLExperiment {
 
     _main_loop() {
 
-        this._fps_meter.tickStart();
+        this._fpsMeter.tickStart();
 
 
 
@@ -286,7 +295,11 @@ class WebGLExperiment {
 
 
 
-        this._renderer.update(this._chunkGenerator.getChunks());
+        const chunks = this._chunkGenerator.getChunks()
+
+
+
+        this._renderer.update(chunks);
 
         // for touch events rendering
         // g_data.force_forward = this._renderer.getFreeFlyCamera().getForceForward();
@@ -297,7 +310,7 @@ class WebGLExperiment {
         //
         ////// render 3d scene
 
-        this._renderer.renderScene(this._chunkGenerator.getChunks());
+        this._renderer.renderScene(chunks);
 
         //
         //
@@ -306,14 +319,25 @@ class WebGLExperiment {
 
         {
             const coord = [
-                Math.floor(camera_pos[0] / chunk_size)|0,
-                Math.floor(camera_pos[1] / chunk_size)|0,
-                Math.floor(camera_pos[2] / chunk_size)|0
+                Math.floor(camera_pos[0] / chunk_size),
+                Math.floor(camera_pos[1] / chunk_size),
+                Math.floor(camera_pos[2] / chunk_size)
             ];
 
             const text = `Coordinates: ${coord[0]}/${coord[1]}/${coord[2]}`;
 
+            let visibleChunks = 0;
+            for (const chunk of chunks)
+                if (chunk.visible)
+                    ++visibleChunks;
+
             this._renderer.pushText(text, [0, 0], 1.0);
+
+            this._renderer.pushText(`Chunks:`, [0, 16 * 6], 1.0);
+            this._renderer.pushText(`>Generated: ${this._chunksCreated}`, [0, 16 * 5], 1.0);
+            this._renderer.pushText(`>Discarded: ${this._chunksDiscarded}`, [0, 16 * 4], 1.0);
+            this._renderer.pushText(`>Live:      ${this._chunksCreated - this._chunksDiscarded}`, [0, 16 * 3], 1.0);
+            this._renderer.pushText(`>Visible:   ${visibleChunks}`, [0, 16 * 2], 1.0);
         }
 
         {
@@ -379,7 +403,7 @@ class WebGLExperiment {
             this._chunkGenerator.getProcessingPositions(),
             this._touches);
 
-        this._fps_meter.tick();
+        this._fpsMeter.tick();
     }
 };
 

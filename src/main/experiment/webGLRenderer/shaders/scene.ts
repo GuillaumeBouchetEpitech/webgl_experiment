@@ -1,39 +1,5 @@
 
-const color_vert = `
-
-attribute vec3 a_vertexPosition;
-attribute vec3 a_vertexColor;
-
-varying vec4 v_color;
-
-uniform mat4 u_modelviewMatrix;
-uniform mat4 u_projMatrix;
-
-void main(void)
-{
-    v_color = vec4(a_vertexColor,1.0);
-
-    gl_Position = u_projMatrix * u_modelviewMatrix * vec4(a_vertexPosition, 1.0);
-}
-`;
-
-const color_frag = `
-
-precision mediump float;
-
-varying vec4 v_color;
-
-void main(void)
-{
-    gl_FragColor = v_color;
-}
-`;
-
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-
-const experimental_vert = `
+const vertex = `
 
 attribute vec3 a_vertexPosition;
 attribute vec3 a_vertexColor;
@@ -87,7 +53,7 @@ void main(void)
 }
 `;
 
-const experimental_frag = `
+const fragment = `
 
 precision mediump float;
 
@@ -161,7 +127,7 @@ void main(void)
         );
 
         vec3 blend_weights = abs( normalize( v_pureNormalInterp.xyz ) );
-        blend_weights = max( ( blend_weights - 0.2 ) * 7., 0. );
+        blend_weights = max( ( blend_weights - 0.2 ) * 7.0, 0.0 );
         blend_weights /= ( blend_weights.x + blend_weights.y + blend_weights.z );
 
         // horizontal texture coordinates -> should be a wall
@@ -213,7 +179,7 @@ void main(void)
 
         vec3 ambiant_color = tmp_color.xyz * 0.05;
         vec3 diffuse_color = tmp_color.xyz * lambertian;
-        vec3 specular_color = specular * k_specColor;
+        vec3 specular_color = k_specColor * specular;
 
         tmp_color = ambiant_color + diffuse_color + specular_color;
 
@@ -223,60 +189,4 @@ void main(void)
 }
 `;
 
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-
-const letters_vert = `
-
-precision mediump float;
-
-uniform mat4 u_modelviewMatrix;
-uniform mat4 u_projectionMatrix;
-
-
-attribute vec2 a_position;
-attribute vec2 a_texCoord;
-attribute vec2 a_offsetPosition;
-attribute vec2 a_offsetTexCoord;
-attribute float a_offsetScale;
-
-varying vec2 v_texCoord;
-
-void main(void)
-{
-    vec2 position = a_position * a_offsetScale + a_offsetPosition;
-
-    gl_Position = u_projectionMatrix * u_modelviewMatrix * vec4(position, 0.0, 1.0);
-
-    v_texCoord = a_texCoord + a_offsetTexCoord;
-}
-`;
-
-const letters_frag = `
-
-precision mediump float;
-
-uniform sampler2D u_texture;
-
-varying vec2 v_texCoord;
-
-void main(void)
-{
-    gl_FragColor = texture2D(u_texture, v_texCoord);
-}
-
-`;
-
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-
-export {
-    color_vert,
-    color_frag,
-    experimental_vert,
-    experimental_frag,
-    letters_vert,
-    letters_frag,
-};
+export { vertex, fragment };

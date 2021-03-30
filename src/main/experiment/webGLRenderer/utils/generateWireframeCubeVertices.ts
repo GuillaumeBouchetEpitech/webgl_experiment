@@ -1,7 +1,7 @@
 
 "use strict"
 
-const generateCubeVertices = (size: number, arr_color: [number, number, number], no_inside: boolean = false) => {
+const generateWireframeCubeVertices = (size: number, arr_color: [number, number, number], no_inside: boolean = false) => {
 
     const outer_side = size / 2;
     const inner_side = size / 2.1;
@@ -63,4 +63,4 @@ const generateCubeVertices = (size: number, arr_color: [number, number, number],
     return fvertices;
 }
 
-export default generateCubeVertices;
+export default generateWireframeCubeVertices;

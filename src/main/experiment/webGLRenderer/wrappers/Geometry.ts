@@ -1,8 +1,8 @@
 
-import WebGLContext from "../WebGLContext";
+import WebGLContext from "./WebGLContext";
 import ShaderProgram from "./ShaderProgram";
 
-export namespace GeometryWrapper {
+namespace GeometryWrapper {
 
     export const BytesPerPixel = 4; // float (float32 = 4 bytes)
 
@@ -220,3 +220,5 @@ export namespace GeometryWrapper {
         }
     };
 };
+
+export default GeometryWrapper

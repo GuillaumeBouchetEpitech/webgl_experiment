@@ -33,6 +33,8 @@ myself.addEventListener('message', (event: MessageEvent) => {
 
     const on_vertex_callback = (vertex: Vec3, color: Vec3, normal: Vec3) => {
 
+        // conveniently setting up the buffer to work with the receiving geometry
+
         float32buffer[buf_inc++] = vertex[0];
         float32buffer[buf_inc++] = vertex[1];
         float32buffer[buf_inc++] = vertex[2];

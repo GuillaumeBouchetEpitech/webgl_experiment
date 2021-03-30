@@ -3,21 +3,21 @@
 
 import chunk_size from '../../constants';
 
-import WebGLContext from './WebGLContext';
+import WebGLContext from './wrappers/WebGLContext';
+import ShaderProgram from './wrappers/ShaderProgram';
+import Texture from './wrappers/Texture';
+import GeometryWrapper from "./wrappers/Geometry"
+
 
 import FreeFlyCamera from './camera/FreeFlyCamera';
 import FrustumCulling from './camera/FrustumCulling';
+import sceneToScreenCoordinates from './camera/sceneToScreenCoordinates';
 
-import ShaderProgram from './utils/ShaderProgram';
-import Texture from './utils/Texture';
+import * as shaderSrc from './shaders/index';
 
-import * as ShaderSrc from './ShaderSrc';
+import generateWireframeCubeVertices from './utils/generateWireframeCubeVertices';
+import generateWireframeFrustumVertices from './utils/generateWireframeFrustumVertices';
 
-import { GeometryWrapper } from "./utils/Geometry"
-import generateCubeVertices from './utils/generateCubeVertices';
-import generateFrustumVertices from './utils/generateFrustumVertices';
-
-import glhProject from './camera/glhProject';
 
 import * as glm from 'gl-matrix';
 
@@ -25,8 +25,10 @@ import { Chunks } from '../generation/ChunkGenerator';
 
 //
 
+type Vec2 = [number, number];
 type Vec3 = [number, number, number];
 type Vec4 = [number, number, number, number];
+type Viewport = Vec4;
 
 interface IChunkRendering {
     texture: Texture;
@@ -43,7 +45,8 @@ interface IWireframeRendering {
     geometry_cubeR: GeometryWrapper.Geometry;
     geometry_cubeW: GeometryWrapper.Geometry;
     geometry_cubeG: GeometryWrapper.Geometry;
-    geometry_stack_rendering: GeometryWrapper.Geometry;
+    geometry_wireframe_stack_rendering: GeometryWrapper.Geometry;
+    geometry_thick_line_stack_rendering: GeometryWrapper.Geometry;
 };
 
 interface ITextRendering {
@@ -117,10 +120,10 @@ class WebGLRenderer {
     private _initialiseChunkRendering() {
 
         const shader = new ShaderProgram({
-            vs_src: ShaderSrc.experimental_vert,
-            fs_src: ShaderSrc.experimental_frag,
-            arr_attrib: ['a_vertexPosition','a_vertexColor','a_vertexNormal','a_vertexBCenter'],
-            arr_uniform: ['u_modelviewMatrix','u_projMatrix','u_cameraPos','u_sampler']
+            vertexSrc: shaderSrc.scene.vertex,
+            fragmentSrc: shaderSrc.scene.fragment,
+            attributes: ['a_vertexPosition','a_vertexColor','a_vertexNormal','a_vertexBCenter'],
+            uniforms: ['u_modelviewMatrix','u_projMatrix','u_cameraPos','u_sampler']
         });
 
         const geometryDefinition = {
@@ -150,13 +153,13 @@ class WebGLRenderer {
     private _initialiseWireframeRendering() {
 
         const shader = new ShaderProgram({
-            vs_src: ShaderSrc.color_vert,
-            fs_src: ShaderSrc.color_frag,
-            arr_attrib: ['a_vertexPosition','a_vertexColor'],
-            arr_uniform: ['u_modelviewMatrix','u_projMatrix']
+            vertexSrc: shaderSrc.color.vertex,
+            fragmentSrc: shaderSrc.color.fragment,
+            attributes: ['a_vertexPosition','a_vertexColor'],
+            uniforms: ['u_modelviewMatrix','u_projMatrix']
         });
 
-        const geometryDefinition = {
+        const geometryDefinitionWireframe = {
             vbos: [
                 {
                     attrs: [
@@ -182,7 +185,7 @@ class WebGLRenderer {
         vertices.push(0,0,0,  0,1,0,  0,axis_size,0,  0,1,0)
         vertices.push(0,0,0,  0,0,1,  0,0,axis_size,  0,0,1)
 
-        const geom_axis = new GeometryWrapper.Geometry(shader, geometryDefinition);
+        const geom_axis = new GeometryWrapper.Geometry(shader, geometryDefinitionWireframe);
         geom_axis.updateBuffer(0, vertices);
         geom_axis.setPrimitiveCount(vertices.length / 6);
 
@@ -201,7 +204,7 @@ class WebGLRenderer {
         vertices.push(0,0,0-cross_size,  1,1,1);
         vertices.push(0,0,0+cross_size,  1,1,1);
 
-        const geom_cross = new GeometryWrapper.Geometry(shader, geometryDefinition);
+        const geom_cross = new GeometryWrapper.Geometry(shader, geometryDefinitionWireframe);
         geom_cross.updateBuffer(0, vertices);
         geom_cross.setPrimitiveCount(vertices.length / 6);
 
@@ -209,28 +212,44 @@ class WebGLRenderer {
         //
         // geoms
 
-        vertices = generateCubeVertices(chunk_size, [1,0,0]);
-        const geom_cubeR = new GeometryWrapper.Geometry(shader, geometryDefinition);
+        vertices = generateWireframeCubeVertices(chunk_size, [1,0,0]);
+        const geom_cubeR = new GeometryWrapper.Geometry(shader, geometryDefinitionWireframe);
         geom_cubeR.updateBuffer(0, vertices);
         geom_cubeR.setPrimitiveCount(vertices.length / 6);
 
-        vertices = generateCubeVertices(chunk_size, [1,1,1]);
-        const geom_cubeW = new GeometryWrapper.Geometry(shader, geometryDefinition);
+        vertices = generateWireframeCubeVertices(chunk_size, [1,1,1]);
+        const geom_cubeW = new GeometryWrapper.Geometry(shader, geometryDefinitionWireframe);
         geom_cubeW.updateBuffer(0, vertices);
         geom_cubeW.setPrimitiveCount(vertices.length / 6);
 
-        vertices = generateCubeVertices(chunk_size, [0,1,0]);
-        const geom_cubeG = new GeometryWrapper.Geometry(shader, geometryDefinition);
+        vertices = generateWireframeCubeVertices(chunk_size, [0,1,0]);
+        const geom_cubeG = new GeometryWrapper.Geometry(shader, geometryDefinitionWireframe);
         geom_cubeG.updateBuffer(0, vertices);
         geom_cubeG.setPrimitiveCount(vertices.length / 6);
 
-        const geom_stack_rendering = new GeometryWrapper.Geometry(shader, geometryDefinition);
+        const geometry_wireframe_stack_rendering = new GeometryWrapper.Geometry(shader, geometryDefinitionWireframe);
 
-        vertices = generateFrustumVertices(70, this._aspectRatio, 0.1, 40);
-        const geom_frustum = new GeometryWrapper.Geometry(shader, geometryDefinition);
+        vertices = generateWireframeFrustumVertices(70, this._aspectRatio, 0.1, 40);
+        const geom_frustum = new GeometryWrapper.Geometry(shader, geometryDefinitionWireframe);
         geom_frustum.updateBuffer(0, vertices);
         geom_frustum.setPrimitiveCount(vertices.length / 6);
 
+
+        const geometryDefinitionThickLines = {
+            vbos: [
+                {
+                    attrs: [
+                        { name: "a_vertexPosition", type: GeometryWrapper.AttributeType.vec3f, index: 0 },
+                        { name: "a_vertexColor", type: GeometryWrapper.AttributeType.vec3f, index: 3 },
+                    ],
+                    stride: 6 * 4,
+                    instanced: false,
+                }
+            ],
+            primitiveType: GeometryWrapper.PrimitiveType.triangles,
+        };
+
+        const geometry_thick_line_stack_rendering = new GeometryWrapper.Geometry(shader, geometryDefinitionThickLines);
 
         this._wireframeRendering = {
             shader,
@@ -240,17 +259,18 @@ class WebGLRenderer {
             geometry_cubeR: geom_cubeR,
             geometry_cubeW: geom_cubeW,
             geometry_cubeG: geom_cubeG,
-            geometry_stack_rendering: geom_stack_rendering,
+            geometry_wireframe_stack_rendering: geometry_wireframe_stack_rendering,
+            geometry_thick_line_stack_rendering: geometry_thick_line_stack_rendering,
         };
     }
 
     private _initialiseTextRendering() {
 
         const textureLetterShader = new ShaderProgram({
-            vs_src: ShaderSrc.letters_vert,
-            fs_src: ShaderSrc.letters_frag,
-            arr_uniform: ["u_modelviewMatrix", "u_projectionMatrix", "u_texture"],
-            arr_attrib: ["a_position", "a_texCoord", "a_offsetPosition", "a_offsetTexCoord", "a_offsetScale"],
+            vertexSrc: shaderSrc.text.vertex,
+            fragmentSrc: shaderSrc.text.fragment,
+            attributes: ["a_position", "a_texCoord", "a_offsetPosition", "a_offsetTexCoord", "a_offsetScale"],
+            uniforms: ["u_modelviewMatrix", "u_projectionMatrix", "u_texture"],
         });
 
         const textureLetterGeometryDef = {
@@ -418,18 +438,18 @@ class WebGLRenderer {
         };
     }
 
-    chunk_is_visible(pos: Vec3) {
+    chunkIsVisible(pos: Vec3) {
 
         const hsize = chunk_size * 0.5;
 
         return this._frustum_culling.cubeInFrustum( pos[0]+hsize, pos[1]+hsize, pos[2]+hsize, hsize );
     }
 
-    point_is_visible(pos: Vec3) {
+    pointIsVisible(pos: Vec3) {
         return this._frustum_culling.pointInFrustum( pos[0], pos[1], pos[2] );
     }
 
-    add_geom(buffer: Float32Array) {
+    addGeometry(buffer: Float32Array) {
 
         const geom = new GeometryWrapper.Geometry(this._chunkRendering.shader, this._chunkRendering.geometryDefinition);
         geom.updateBuffer(0, buffer);
@@ -438,7 +458,7 @@ class WebGLRenderer {
         return geom;
     }
 
-    update_geom(geom: GeometryWrapper.Geometry, buffer: Float32Array) {
+    updateGeometry(geom: GeometryWrapper.Geometry, buffer: Float32Array) {
 
         geom.updateBuffer(0, buffer);
     }
@@ -461,7 +481,7 @@ class WebGLRenderer {
 
         this._aspectRatio = viewportSize[0] * 0.75 / viewportSize[1];
 
-        const vertices = generateFrustumVertices(70, this._aspectRatio, 0.1, 40);
+        const vertices = generateWireframeFrustumVertices(70, this._aspectRatio, 0.1, 40);
         this._wireframeRendering.geometry_frustum.updateBuffer(0, vertices);
         this._wireframeRendering.geometry_frustum.setPrimitiveCount(vertices.length / 6);
     }
@@ -529,7 +549,7 @@ class WebGLRenderer {
     }
 
 
-    update(chunks: Chunks) {
+    update(chunks: Chunks<GeometryWrapper.Geometry>) {
 
         const viewportSize = WebGLContext.getViewportSize();
 
@@ -541,32 +561,29 @@ class WebGLRenderer {
         this._free_fly_camera.updateViewMatrix( this._modelview_matrix );
         this._frustum_culling.calculateFrustum( this._projection_matrix, this._modelview_matrix );
 
-        const viewport = [0, 0, viewportSize[0]*0.75, viewportSize[1]];
+        const viewport: Viewport = [0, 0, viewportSize[0]*0.75, viewportSize[1]];
 
         for (let ii = 0; ii < chunks.length; ++ii) {
 
-            const position = chunks[ii].position;
+            const position3d = chunks[ii].position;
 
-            chunks[ii].visible = this.chunk_is_visible(position);
+            chunks[ii].visible = this.chunkIsVisible(position3d);
             chunks[ii].coord2d = null;
 
-            if (!this.point_is_visible(position))
+            if (!this.pointIsVisible(position3d))
                 continue;
 
-            const tmp_2d_position = glhProject(
-                position[0],position[1],position[2],
+            const position2d = sceneToScreenCoordinates(
+                position3d,
                 this._modelview_matrix,
                 this._projection_matrix,
                 viewport
             );
 
-            if (!tmp_2d_position)
+            if (!position2d)
                 continue;
 
-            // // flip the 'y' value
-            // tmp_2d_position[1] = viewport[3] - tmp_2d_position[1];
-
-            chunks[ii].coord2d = tmp_2d_position;
+            chunks[ii].coord2d = position2d;
         }
     }
 
@@ -599,7 +616,7 @@ class WebGLRenderer {
         }
     }
 
-    renderScene(chunks: Chunks) {
+    renderScene(chunks: Chunks<GeometryWrapper.Geometry>) {
 
         const gl = WebGLContext.getContext();
         const viewportSize = WebGLContext.getViewportSize();
@@ -659,7 +676,7 @@ class WebGLRenderer {
         ShaderProgram.unbind();
     }
 
-    renderHUD(chunks: Chunks, processing_pos: Vec3[], touches: [number, number][]) {
+    renderHUD(chunks: Chunks<GeometryWrapper.Geometry>, processing_pos: Vec3[], touches: [number, number][]) {
 
         const gl = WebGLContext.getContext();
         const viewportSize = WebGLContext.getViewportSize();
@@ -674,18 +691,18 @@ class WebGLRenderer {
 
         gl.clear(gl.DEPTH_BUFFER_BIT);
 
-        this._render_main_hud(touches);
+        this._render_main_hud(chunks, touches);
 
         this._wireframeRendering.shader.bind();
 
-        this._render_side_hud( chunks, processing_pos, [w2,h*0,w,h], [1.0, 1.2, 1.0], [0,0,1] );
-        this._render_side_hud( chunks, processing_pos, [w2,h*1,w,h], [0.0, 1.0, 0.0], [0,0,1] );
-        this._render_side_hud( chunks, processing_pos, [w2,h*2,w,h], [0.0, 0.0, 1.0], [0,1,0] );
+        this._render_side_hud(chunks, processing_pos, [w2,h*0,w,h], [1.0, 1.2, 1.0], [0,0,1]);
+        this._render_side_hud(chunks, processing_pos, [w2,h*1,w,h], [0.0, 1.0, 0.0], [0,0,1]);
+        this._render_side_hud(chunks, processing_pos, [w2,h*2,w,h], [0.0, 0.0, 1.0], [0,1,0]);
 
         ShaderProgram.unbind();
     }
 
-    private _render_main_hud(touches: [number, number][]) {
+    private _render_main_hud(chunks: Chunks<GeometryWrapper.Geometry>, touches: [number, number][]) {
 
         const gl = WebGLContext.getContext();
         const viewportSize = WebGLContext.getViewportSize();
@@ -716,76 +733,148 @@ class WebGLRenderer {
         gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, hud_modelview_matrix);
         gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_projMatrix"), false, hud_projection_matrix);
 
+        { // wireframe
+
+            // const vertices: number[] = [
+            //     // 10,10,0, 1,0,0,
+            //     // 1000,1000,0, 1,0,0,
+            // ];
 
 
-        const vertices: number[] = [
-            // 10,10,0, 1,0,0,
-            // 1000,1000,0, 1,0,0,
-        ];
+            // //
+            // //
+            // // not mature as it is
+
+            // for (let ii = 0; ii < chunks.length; ++ii) {
+
+            //     if (!chunks[ii].visible)
+            //         continue;
+
+            //     const coord2d = chunks[ii].coord2d;
+
+            //     if (!coord2d)
+            //         continue;
+
+            //     const cross_hsize = 20;
+
+            //     vertices.push(coord2d[0]-cross_hsize,coord2d[1]-cross_hsize,0, 1,1,1);
+            //     vertices.push(coord2d[0]+cross_hsize,coord2d[1]+cross_hsize,0, 1,1,1);
+
+            //     vertices.push(coord2d[0]+cross_hsize,coord2d[1]-cross_hsize,0, 1,1,1);
+            //     vertices.push(coord2d[0]-cross_hsize,coord2d[1]+cross_hsize,0, 1,1,1);
+            // }
 
 
-        //
-        //
-        // not mature as it is
+            // // not mature as it is
+            // //
+            // //
 
 
-        // for (let ii = 0; ii < chunks.length; ++ii) {
+            // for (const touch of touches) {
 
-        //     if (!chunks[ii].visible)
-        //         continue;
+            //     const cross_hsize = 200;
 
-        //     const coord2d = chunks[ii].coord2d;
+            //     vertices.push(touch[0]-cross_hsize,touch[1]-cross_hsize,0, 1,0,0);
+            //     vertices.push(touch[0]+cross_hsize,touch[1]+cross_hsize,0, 1,0,0);
 
-        //     if (!coord2d)
-        //         continue;
+            //     vertices.push(touch[0]+cross_hsize,touch[1]-cross_hsize,0, 1,0,0);
+            //     vertices.push(touch[0]-cross_hsize,touch[1]+cross_hsize,0, 1,0,0);
 
-        //     const cross_hsize = 20;
+            //     if (this._free_fly_camera.getForceForward()) {
 
-        //     vertices.push(coord2d[0]-cross_hsize,coord2d[1]-cross_hsize,0, 1,1,1);
-        //     vertices.push(coord2d[0]+cross_hsize,coord2d[1]+cross_hsize,0, 1,1,1);
+            //         vertices.push(touch[0]-cross_hsize,touch[1],0, 1,0,0);
+            //         vertices.push(touch[0]+cross_hsize,touch[1],0, 1,0,0);
 
-        //     vertices.push(coord2d[0]+cross_hsize,coord2d[1]-cross_hsize,0, 1,1,1);
-        //     vertices.push(coord2d[0]-cross_hsize,coord2d[1]+cross_hsize,0, 1,1,1);
-        // }
-
-
-        // not mature as it is
-        //
-        //
+            //         vertices.push(touch[0],touch[1]-cross_hsize,0, 1,0,0);
+            //         vertices.push(touch[0],touch[1]+cross_hsize,0, 1,0,0);
+            //     }
+            // }
 
 
-        for (const touch of touches) {
+            // this._wireframeRendering.geometry_wireframe_stack_rendering.updateBuffer(0, vertices);
+            // this._wireframeRendering.geometry_wireframe_stack_rendering.setPrimitiveCount(vertices.length / 6);
 
-            const cross_hsize = 200;
+            // this._wireframeRendering.geometry_wireframe_stack_rendering.render();
 
-            vertices.push(touch[0]-cross_hsize,touch[1]-cross_hsize,0, 1,0,0);
-            vertices.push(touch[0]+cross_hsize,touch[1]+cross_hsize,0, 1,0,0);
+        } // wireframe
 
-            vertices.push(touch[0]+cross_hsize,touch[1]-cross_hsize,0, 1,0,0);
-            vertices.push(touch[0]-cross_hsize,touch[1]+cross_hsize,0, 1,0,0);
+        { // thick lines
 
-            if (this._free_fly_camera.getForceForward()) {
+            const vertices: number[] = [];
 
-                vertices.push(touch[0]-cross_hsize,touch[1],0, 1,0,0);
-                vertices.push(touch[0]+cross_hsize,touch[1],0, 1,0,0);
+            const push_line = (posA: Vec2, posB: Vec2, thickness: number, color: Vec3 = [1,1,1]) => {
 
-                vertices.push(touch[0],touch[1]-cross_hsize,0, 1,0,0);
-                vertices.push(touch[0],touch[1]+cross_hsize,0, 1,0,0);
+                const angle = Math.atan2(posB[1] - posA[1], posB[0] - posA[0]) + Math.PI * 0.5;
+
+                const stepX = Math.cos(angle) * thickness * 0.5;
+                const stepY = Math.sin(angle) * thickness * 0.5;
+
+                const allVertices = [
+                    [posA[0] - stepX, posA[1] - stepY],
+                    [posA[0] + stepX, posA[1] + stepY],
+                    [posB[0] - stepX, posB[1] - stepY],
+                    [posB[0] + stepX, posB[1] + stepY],
+                ];
+
+                vertices.push(allVertices[0][0],allVertices[0][1],0, color[0],color[1],color[2]);
+                vertices.push(allVertices[3][0],allVertices[3][1],0, color[0],color[1],color[2]);
+                vertices.push(allVertices[2][0],allVertices[2][1],0, color[0],color[1],color[2]);
+
+                vertices.push(allVertices[0][0],allVertices[0][1],0, color[0],color[1],color[2]);
+                vertices.push(allVertices[1][0],allVertices[1][1],0, color[0],color[1],color[2]);
+                vertices.push(allVertices[3][0],allVertices[3][1],0, color[0],color[1],color[2]);
             }
-        }
-
-
-        this._wireframeRendering.geometry_stack_rendering.updateBuffer(0, vertices);
-        this._wireframeRendering.geometry_stack_rendering.setPrimitiveCount(vertices.length / 6);
-
-        this._wireframeRendering.geometry_stack_rendering.render();
 
 
 
-        // this._renderTexturedHudText();
+            // push_line([100, 100], [400, 400], 15);
+            // push_line([100, 400], [400, 100], 15);
 
-        {
-            // const gl = WebGLContext.getContext();
+
+
+            // for (let ii = 0; ii < chunks.length; ++ii) {
+
+            //     if (!chunks[ii].visible)
+            //         continue;
+
+            //     const coord2d = chunks[ii].coord2d;
+
+            //     if (!coord2d)
+            //         continue;
+
+            //     const cross_hsize = 20;
+
+            //     push_line([coord2d[0]-cross_hsize, coord2d[1]-cross_hsize], [coord2d[0]+cross_hsize, coord2d[1]+cross_hsize], 15);
+            //     push_line([coord2d[0]-cross_hsize, coord2d[1]+cross_hsize], [coord2d[0]+cross_hsize, coord2d[1]-cross_hsize], 15);
+            // }
+
+
+            for (const touch of touches) {
+
+                const color: Vec3 = [1, 0, 0];
+
+                const cross_hsize = 100;
+
+                push_line([touch[0]-cross_hsize, touch[1]-cross_hsize], [touch[0]+cross_hsize, touch[1]+cross_hsize], 15, color);
+                push_line([touch[0]-cross_hsize, touch[1]+cross_hsize], [touch[0]+cross_hsize, touch[1]-cross_hsize], 15, color);
+
+                if (this._free_fly_camera.getForceForward()) {
+
+                    push_line([touch[0]-cross_hsize, touch[1]], [touch[0]+cross_hsize, touch[1]], 15, color);
+                    push_line([touch[0], touch[1]-cross_hsize], [touch[0], touch[1]+cross_hsize], 15, color);
+                }
+            }
+
+
+            this._wireframeRendering.geometry_thick_line_stack_rendering.updateBuffer(0, vertices);
+            this._wireframeRendering.geometry_thick_line_stack_rendering.setPrimitiveCount(vertices.length / 6);
+
+            this._wireframeRendering.geometry_thick_line_stack_rendering.render();
+
+        } // thick lines
+
+
+        { // text
 
             this._textRendering.shader.bind();
 
@@ -803,10 +892,11 @@ class WebGLRenderer {
 
             // reset vertices
             this._textRendering.stack_vertices.length = 0;
-        }
+
+        } // text
     }
 
-    private _render_side_hud(chunks: Chunks, processing_pos: Vec3[], arr_viewport: Vec4, arr_target: Vec3, arr_up: Vec3) {
+    private _render_side_hud(chunks: Chunks<GeometryWrapper.Geometry>, processing_pos: Vec3[], arr_viewport: Vec4, arr_target: Vec3, arr_up: Vec3) {
 
         const gl = WebGLContext.getContext();
 

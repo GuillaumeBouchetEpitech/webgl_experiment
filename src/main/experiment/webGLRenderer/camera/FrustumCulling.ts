@@ -107,29 +107,27 @@ class FrustumCulling {
         this.normalizePlane(FrustumSide.Front);
     }
 
+    sphereInFrustum(x: number, y: number, z: number, radius: number) {
+
+        for (let ii = 0; ii < 6; ++ii) {
+
+            if (this._Frustum[ii * 4 + PlaneData.A] * x +
+                this._Frustum[ii * 4 + PlaneData.B] * y +
+                this._Frustum[ii * 4 + PlaneData.C] * z +
+                this._Frustum[ii * 4 + PlaneData.D] <= radius) {
+
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     pointInFrustum(x: number, y: number, z: number) {
 
-        for (let ii = 0; ii < 6; ++ii)
-            if (this._Frustum[ii * 4 + PlaneData.A] * x +
-                this._Frustum[ii * 4 + PlaneData.B] * y +
-                this._Frustum[ii * 4 + PlaneData.C] * z +
-                this._Frustum[ii * 4 + PlaneData.D] <= 0)
-                return false;
-
-        return true;
+        // sphere of radius 0 => point
+        return this.sphereInFrustum(x, y, z, 0);
     }
-
-    sphereInFrustum(x: number, y: number, z: number, radius: number) {
-        for (let ii = 0; ii < 6; ++ii)
-            if (this._Frustum[ii * 4 + PlaneData.A] * x +
-                this._Frustum[ii * 4 + PlaneData.B] * y +
-                this._Frustum[ii * 4 + PlaneData.C] * z +
-                this._Frustum[ii * 4 + PlaneData.D] <= radius)
-                return false;
-
-        return true;
-    }
-
 
     cubeInFrustum(x: number, y: number, z: number, size: number) {
 
