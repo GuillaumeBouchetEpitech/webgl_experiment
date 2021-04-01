@@ -7,11 +7,8 @@ import ChunkGenerator from './generation/ChunkGenerator';
 import WebGLRenderer from './webGLRenderer/WebGLRenderer';
 import GeometryWrapper from './webGLRenderer/wrappers/Geometry';
 
-import 'fpsmeter'; // <- in window.FPSMeter
-
 class WebGLExperiment {
 
-    private _fpsMeter: FPSMeter;
     private _renderer: WebGLRenderer;
     private _chunkGenerator: ChunkGenerator<GeometryWrapper.Geometry>;
 
@@ -23,33 +20,16 @@ class WebGLExperiment {
     private _chunksCreated: number = 0;
     private _chunksDiscarded: number = 0;
 
+    private _currFrameTime: number = -1;
+    private _framesDuration: number[] = [];
+
     constructor() {
 
-
-        //
-        // FPS METER
-
-        const fpsMeterElem = document.getElementById('fpsmeter');
-        if (!fpsMeterElem)
-            throw new Error("fpsmeter not found");
-
-        this._fpsMeter = new FPSMeter(fpsMeterElem, { theme: "transparent" });
-
-        // FPS METER
-        //
-
-
-        const main_element = document.getElementById("canvasesdiv");
-        if (!main_element)
-            throw new Error("canvasesdiv not found");
-
-        const canvas_element = document.getElementById("main-canvas") as HTMLCanvasElement;
-        if (!canvas_element)
+        const canvasElement = document.getElementById("main-canvas") as HTMLCanvasElement;
+        if (!canvasElement)
             throw new Error("main-canvas not found");
 
-
-
-        this._renderer = new WebGLRenderer(main_element, canvas_element);
+        this._renderer = new WebGLRenderer(canvasElement);
 
         this._chunkGenerator = new ChunkGenerator({
             chunkIsVisible: (pos: [number, number, number]) => {
@@ -73,19 +53,7 @@ class WebGLExperiment {
         });
 
         //
-
         //
-
-
-
-
-
-
-
-
-
-
-
 
 
         //
@@ -111,17 +79,13 @@ class WebGLExperiment {
             }
         };
 
-        main_element.addEventListener('touchstart', update_touches);
-        main_element.addEventListener('touchend', update_touches);
-        main_element.addEventListener('touchmove', update_touches);
+        canvasElement.addEventListener('touchstart', update_touches);
+        canvasElement.addEventListener('touchend', update_touches);
+        canvasElement.addEventListener('touchmove', update_touches);
 
         // HUD (touch positions recorder)
         //
         //
-
-
-
-
 
         //
         //
@@ -133,32 +97,18 @@ class WebGLExperiment {
 
         gui_fullscreen.addEventListener('click', () => {
 
-            const elem = document.getElementById("canvasesdiv");
-            if (!elem)
-                throw new Error("canvasesdiv not found");
-
             // go full-screen
-            if (elem.requestFullscreen)
-                elem.requestFullscreen();
-            else if ((elem as any).webkitRequestFullscreen)
-                (elem as any).webkitRequestFullscreen();
-            else if ((elem as any).mozRequestFullScreen)
-                (elem as any).mozRequestFullScreen();
-            else if ((elem as any).msRequestFullscreen)
-                (elem as any).msRequestFullscreen();
+            if (canvasElement.requestFullscreen)
+                canvasElement.requestFullscreen();
+            else if ((canvasElement as any).webkitRequestFullscreen)
+                (canvasElement as any).webkitRequestFullscreen();
+            else if ((canvasElement as any).mozRequestFullScreen)
+                (canvasElement as any).mozRequestFullScreen();
+            else if ((canvasElement as any).msRequestFullscreen)
+                (canvasElement as any).msRequestFullscreen();
         });
 
         const on_fullscreen_change = () => {
-
-            const elem = document.getElementById("canvasesdiv");
-            if (!elem)
-                throw new Error("canvasesdiv not found");
-
-            const canvas = document.getElementById("main-canvas") as HTMLCanvasElement;
-            if (!elem)
-                throw new Error("main-canvas not found");
-
-            // const s_canvas = document.getElementById("second-canvas");
 
             let tmp_width = null;
             let tmp_height = null;
@@ -168,29 +118,26 @@ class WebGLExperiment {
                 (document as any).webkitIsFullScreen ||
                 (document as any).msFullscreenElement) {
 
-                elem.style.position = "absolute";
+                canvasElement.style.position = "absolute";
 
                 tmp_width = window.innerWidth;
                 tmp_height = window.innerHeight;
             }
             else {
 
-                elem.style.position = "relative";
+                canvasElement.style.position = "relative";
 
                 tmp_width = 800;
                 tmp_height = 600;
             }
 
-            elem.style.left = "0px";
-            elem.style.top = "0px";
+            canvasElement.style.left = "0px";
+            canvasElement.style.top = "0px";
 
-            // canvas.width = s_canvas.width = tmp_width;
-            // canvas.height = s_canvas.height = tmp_height;
-            canvas.width = tmp_width;
-            canvas.height = tmp_height;
+            canvasElement.width = tmp_width;
+            canvasElement.height = tmp_height;
 
             this._renderer.resize(tmp_width, tmp_height);
-            // this.RendererCanvas.resize(tmp_width, tmp_height);
         };
 
         document.addEventListener('fullscreenchange',       on_fullscreen_change, false);
@@ -211,7 +158,7 @@ class WebGLExperiment {
         this._errorGraphicContext = false;
 
 
-        this._renderer.set_on_context_lost(() => {
+        this._renderer.setOnContextLost(() => {
 
             console.log('on_context_lost');
 
@@ -219,7 +166,7 @@ class WebGLExperiment {
             this.stop();
         });
 
-        this._renderer.set_on_context_restored(() => {
+        this._renderer.setOnContextRestored(() => {
 
             console.log('on_context_restored');
 
@@ -276,7 +223,14 @@ class WebGLExperiment {
 
     _main_loop() {
 
-        this._fpsMeter.tickStart();
+        if (this._currFrameTime > 0) {
+
+            const currentTime = Date.now();
+            const elapsedTime = currentTime - this._currFrameTime;
+            this._currFrameTime = currentTime;
+
+            this._framesDuration.push(elapsedTime / 1000);
+        }
 
 
 
@@ -301,9 +255,6 @@ class WebGLExperiment {
 
         this._renderer.update(chunks);
 
-        // for touch events rendering
-        // g_data.force_forward = this._renderer.getFreeFlyCamera().getForceForward();
-
 
 
         //
@@ -317,30 +268,40 @@ class WebGLExperiment {
         ////// HUD
 
 
-        {
-            const coord = [
+        { // bottom left text
+
+            const chunkCoord = [
                 Math.floor(camera_pos[0] / chunk_size),
                 Math.floor(camera_pos[1] / chunk_size),
                 Math.floor(camera_pos[2] / chunk_size)
             ];
-
-            const text = `Coordinates: ${coord[0]}/${coord[1]}/${coord[2]}`;
 
             let visibleChunks = 0;
             for (const chunk of chunks)
                 if (chunk.visible)
                     ++visibleChunks;
 
-            this._renderer.pushText(text, [0, 0], 1.0);
+            const textsOrigin = [10, 10];
 
-            this._renderer.pushText(`Chunks:`, [0, 16 * 6], 1.0);
-            this._renderer.pushText(`>Generated: ${this._chunksCreated}`, [0, 16 * 5], 1.0);
-            this._renderer.pushText(`>Discarded: ${this._chunksDiscarded}`, [0, 16 * 4], 1.0);
-            this._renderer.pushText(`>Live:      ${this._chunksCreated - this._chunksDiscarded}`, [0, 16 * 3], 1.0);
-            this._renderer.pushText(`>Visible:   ${visibleChunks}`, [0, 16 * 2], 1.0);
-        }
+            const allTextLines = [
+                `Chunks:`,
+                `>Generated: ${this._chunksCreated}`,
+                `>Discarded: ${this._chunksDiscarded}`,
+                `>Live:      ${this._chunksCreated - this._chunksDiscarded}`,
+                `>Visible:   ${visibleChunks}`,
+                "",
+                `Coordinates: ${chunkCoord[0]}/${chunkCoord[1]}/${chunkCoord[2]}`,
+            ];
 
-        {
+            const characterSize = this._renderer.getCharacterSize();
+
+            for (let ii = 0; ii < allTextLines.length; ++ii)
+                this._renderer.pushText(allTextLines[ii], [textsOrigin[0], textsOrigin[1] + characterSize * (6 - ii)], 1);
+
+        } // bottom left text
+
+        { // help text
+
             const time_immobile = this._renderer.getFreeFlyCamera().getTimeImmobile();
 
             const minimum_time_immbile = 3;
@@ -383,9 +344,9 @@ class WebGLExperiment {
 
                 let width = 0;
                 lines.forEach((item) => width = Math.max(width, item.length));
-                width *= 16 * scale;
+                width *= this._renderer.getCharacterSize() * scale;
 
-                const height = lines.length * 16 * scale;
+                const height = lines.length * this._renderer.getCharacterSize() * scale;
 
                 const text = lines.join("\n");
 
@@ -396,14 +357,19 @@ class WebGLExperiment {
 
                 this._renderer.pushText(text, position, scale);
             }
-        }
+
+        } // help text
 
         this._renderer.renderHUD(
             this._chunkGenerator.getChunks(),
             this._chunkGenerator.getProcessingPositions(),
-            this._touches);
+            this._touches,
+            this._framesDuration);
 
-        this._fpsMeter.tick();
+
+        this._currFrameTime = Date.now();
+        if (this._framesDuration.length > 100)
+            this._framesDuration.splice(0, this._framesDuration.length - 100);
     }
 };
 

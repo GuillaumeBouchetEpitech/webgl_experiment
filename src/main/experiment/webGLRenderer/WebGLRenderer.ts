@@ -50,6 +50,7 @@ interface IWireframeRendering {
 };
 
 interface ITextRendering {
+    characterSize: number;
     texture: Texture;
     shader: ShaderProgram;
     geometry: GeometryWrapper.Geometry;
@@ -59,56 +60,56 @@ interface ITextRendering {
 
 class WebGLRenderer {
 
-    private _free_fly_camera: FreeFlyCamera;
-    private _frustum_culling: FrustumCulling;
+    private _freeFlyCamera: FreeFlyCamera;
+    private _frustumCulling: FrustumCulling;
 
-    private _projection_matrix: glm.mat4;
-    private _modelview_matrix: glm.mat4;
+    private _projectionMatrix: glm.mat4;
+    private _modelviewMatrix: glm.mat4;
 
     private _aspectRatio: number;
 
-    private on_context_lost: (() => void) | null = null;
-    private on_context_restored: (() => void) | null = null;
+    private onContextLost: (() => void) | null = null;
+    private onContextRestored: (() => void) | null = null;
 
     private _chunkRendering!: IChunkRendering;
     private _wireframeRendering!: IWireframeRendering;
     private _textRendering!: ITextRendering;
 
-    constructor(main_element: HTMLElement, canvas_element: HTMLCanvasElement) {
+    constructor(canvasDomElement: HTMLCanvasElement) {
 
-        WebGLContext.initialise(canvas_element);
+        WebGLContext.initialise(canvasDomElement);
 
-        canvas_element.addEventListener('webglcontextlost', (event) => {
+        canvasDomElement.addEventListener('webglcontextlost', (event) => {
 
             event.preventDefault();
             console.log('context is lost');
 
-            if (this.on_context_lost)
-                this.on_context_lost();
+            if (this.onContextLost)
+                this.onContextLost();
 
         }, false);
 
-        canvas_element.addEventListener('webglcontextrestored', () => {
+        canvasDomElement.addEventListener('webglcontextrestored', () => {
 
             console.log('context is restored');
 
-            WebGLContext.initialise(canvas_element);
+            WebGLContext.initialise(canvasDomElement);
 
-            if (this.on_context_restored)
-                this.on_context_restored();
+            if (this.onContextRestored)
+                this.onContextRestored();
 
         }, false);
 
         const viewportSize = WebGLContext.getViewportSize();
 
-        this._free_fly_camera = new FreeFlyCamera(main_element);
-        this._free_fly_camera.activate();
-        this._free_fly_camera.setPosition( chunk_size/4*3, chunk_size/4*3, 0 );
+        this._freeFlyCamera = new FreeFlyCamera(canvasDomElement);
+        this._freeFlyCamera.activate();
+        this._freeFlyCamera.setPosition( chunk_size/4*3, chunk_size/4*3, 0 );
 
-        this._frustum_culling = new FrustumCulling();
+        this._frustumCulling = new FrustumCulling();
 
-        this._projection_matrix = glm.mat4.create();
-        this._modelview_matrix = glm.mat4.create();
+        this._projectionMatrix = glm.mat4.create();
+        this._modelviewMatrix = glm.mat4.create();
 
         this._aspectRatio = viewportSize[0] * 0.75 / viewportSize[1];
 
@@ -266,6 +267,8 @@ class WebGLRenderer {
 
     private _initialiseTextRendering() {
 
+        const characterSize = 16;
+
         const textureLetterShader = new ShaderProgram({
             vertexSrc: shaderSrc.text.vertex,
             fragmentSrc: shaderSrc.text.fragment,
@@ -300,7 +303,7 @@ class WebGLRenderer {
 
 
         const textureSize = [ 256, 256 ];
-        const gridSize = [ 16, 16 ];
+        const gridSize = [ characterSize, characterSize ];
 
         const letterSize = [ textureSize[0] / gridSize[0], textureSize[1] / gridSize[1] ];
         const texCoord = [ letterSize[0] / textureSize[0], letterSize[1] / textureSize[1] ];
@@ -430,6 +433,7 @@ class WebGLRenderer {
         ]);
 
         this._textRendering = {
+            characterSize,
             texture: new Texture(),
             shader: textureLetterShader,
             geometry: textureLetterGeometry,
@@ -442,11 +446,11 @@ class WebGLRenderer {
 
         const hsize = chunk_size * 0.5;
 
-        return this._frustum_culling.cubeInFrustum( pos[0]+hsize, pos[1]+hsize, pos[2]+hsize, hsize );
+        return this._frustumCulling.cubeInFrustum( pos[0]+hsize, pos[1]+hsize, pos[2]+hsize, hsize );
     }
 
     pointIsVisible(pos: Vec3) {
-        return this._frustum_culling.pointInFrustum( pos[0], pos[1], pos[2] );
+        return this._frustumCulling.pointInFrustum( pos[0], pos[1], pos[2] );
     }
 
     addGeometry(buffer: Float32Array) {
@@ -465,11 +469,15 @@ class WebGLRenderer {
 
 
     getCameraPosition() {
-        return this._free_fly_camera.getPosition();
+        return this._freeFlyCamera.getPosition();
     }
 
     getFreeFlyCamera() {
-        return this._free_fly_camera;
+        return this._freeFlyCamera;
+    }
+
+    getCharacterSize() {
+        return this._textRendering.characterSize;
     }
 
     resize(width: number, height: number) {
@@ -488,7 +496,7 @@ class WebGLRenderer {
 
     //
 
-    toggle_context_loss() {
+    toggleContextLoss() {
 
         const gl = WebGLContext.getContext();
         const extensionLoseContext = WebGLContext.getExtensionLoseContext();
@@ -504,18 +512,18 @@ class WebGLRenderer {
         }
     }
 
-    context_is_lost() {
+    contextIsLost() {
         const gl = WebGLContext.getContext();
 
         return gl.isContextLost();
     }
 
-    set_on_context_lost(callback: () => void) {
-        this.on_context_lost = callback;
+    setOnContextLost(callback: () => void) {
+        this.onContextLost = callback;
     }
 
-    set_on_context_restored(callback: () => void) {
-        this.on_context_restored = callback;
+    setOnContextRestored(callback: () => void) {
+        this.onContextRestored = callback;
     }
 
     //
@@ -553,13 +561,13 @@ class WebGLRenderer {
 
         const viewportSize = WebGLContext.getViewportSize();
 
-        this._free_fly_camera.handleKeys();
-        this._free_fly_camera.update( 1.0 / 60.0 );
+        this._freeFlyCamera.handleKeys();
+        this._freeFlyCamera.update( 1.0 / 60.0 );
 
-        glm.mat4.perspective( this._projection_matrix, 70, this._aspectRatio, 0.1, 70);
+        glm.mat4.perspective( this._projectionMatrix, 70, this._aspectRatio, 0.1, 70);
 
-        this._free_fly_camera.updateViewMatrix( this._modelview_matrix );
-        this._frustum_culling.calculateFrustum( this._projection_matrix, this._modelview_matrix );
+        this._freeFlyCamera.updateViewMatrix( this._modelviewMatrix );
+        this._frustumCulling.calculateFrustum( this._projectionMatrix, this._modelviewMatrix );
 
         const viewport: Viewport = [0, 0, viewportSize[0]*0.75, viewportSize[1]];
 
@@ -575,8 +583,8 @@ class WebGLRenderer {
 
             const position2d = sceneToScreenCoordinates(
                 position3d,
-                this._modelview_matrix,
-                this._projection_matrix,
+                this._modelviewMatrix,
+                this._projectionMatrix,
                 viewport
             );
 
@@ -590,7 +598,7 @@ class WebGLRenderer {
     pushText(message: string, position: number[], scale: number) {
 
         const textureSize = [ 256, 256 ];
-        const gridSize = [ 16, 16 ];
+        const gridSize = [ this._textRendering.characterSize, this._textRendering.characterSize ];
 
         const letterSize = [ textureSize[0] / gridSize[0], textureSize[1] / gridSize[1] ];
 
@@ -636,11 +644,11 @@ class WebGLRenderer {
         // send the texture to the shader
         gl.uniform1i(this._chunkRendering.shader.getUniform("u_sampler"), 0);
 
-        gl.uniformMatrix4fv(this._chunkRendering.shader.getUniform("u_modelviewMatrix"), false, this._modelview_matrix);
-        gl.uniformMatrix4fv(this._chunkRendering.shader.getUniform("u_projMatrix"), false, this._projection_matrix);
+        gl.uniformMatrix4fv(this._chunkRendering.shader.getUniform("u_modelviewMatrix"), false, this._modelviewMatrix);
+        gl.uniformMatrix4fv(this._chunkRendering.shader.getUniform("u_projMatrix"), false, this._projectionMatrix);
 
-        const p = this._free_fly_camera.getPosition();
-        gl.uniform3f(this._chunkRendering.shader.getUniform("u_cameraPos"), p[0],p[1],p[2]);
+        const cameraPos = this._freeFlyCamera.getPosition();
+        gl.uniform3f(this._chunkRendering.shader.getUniform("u_cameraPos"), cameraPos[0], cameraPos[1], cameraPos[2]);
 
         for (let ii = 0; ii < chunks.length; ++ii)
             if (chunks[ii].visible)
@@ -652,21 +660,19 @@ class WebGLRenderer {
 
         this._wireframeRendering.shader.bind();
 
-        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_projMatrix"), false, this._projection_matrix);
-        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, this._modelview_matrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_projMatrix"), false, this._projectionMatrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, this._modelviewMatrix);
 
-        const tmp_modelview_matrix2 = glm.mat4.create();
+        const localModelViewMatrix = glm.mat4.create();
 
         for (let ii = 0; ii < chunks.length; ++ii) {
 
             if (!chunks[ii].visible)
                 continue;
 
-            const position = chunks[ii].position;
+            glm.mat4.translate(localModelViewMatrix, this._modelviewMatrix, chunks[ii].position);
 
-            glm.mat4.translate(tmp_modelview_matrix2, this._modelview_matrix, position);
-
-            gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
+            gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, localModelViewMatrix);
 
             ///
 
@@ -676,7 +682,7 @@ class WebGLRenderer {
         ShaderProgram.unbind();
     }
 
-    renderHUD(chunks: Chunks<GeometryWrapper.Geometry>, processing_pos: Vec3[], touches: [number, number][]) {
+    renderHUD(chunks: Chunks<GeometryWrapper.Geometry>, processingPos: Vec3[], touches: [number, number][], framesDuration: number[]) {
 
         const gl = WebGLContext.getContext();
         const viewportSize = WebGLContext.getViewportSize();
@@ -691,18 +697,18 @@ class WebGLRenderer {
 
         gl.clear(gl.DEPTH_BUFFER_BIT);
 
-        this._render_main_hud(chunks, touches);
+        this._renderMainHud(chunks, touches, framesDuration);
 
         this._wireframeRendering.shader.bind();
 
-        this._render_side_hud(chunks, processing_pos, [w2,h*0,w,h], [1.0, 1.2, 1.0], [0,0,1]);
-        this._render_side_hud(chunks, processing_pos, [w2,h*1,w,h], [0.0, 1.0, 0.0], [0,0,1]);
-        this._render_side_hud(chunks, processing_pos, [w2,h*2,w,h], [0.0, 0.0, 1.0], [0,1,0]);
+        this._renderSideHud(chunks, processingPos, [w2,h*0,w,h], [1.0, 1.2, 1.0], [0,0,1]);
+        this._renderSideHud(chunks, processingPos, [w2,h*1,w,h], [0.0, 1.0, 0.0], [0,0,1]);
+        this._renderSideHud(chunks, processingPos, [w2,h*2,w,h], [0.0, 0.0, 1.0], [0,1,0]);
 
         ShaderProgram.unbind();
     }
 
-    private _render_main_hud(chunks: Chunks<GeometryWrapper.Geometry>, touches: [number, number][]) {
+    private _renderMainHud(chunks: Chunks<GeometryWrapper.Geometry>, touches: [number, number][], framesDuration: number[]) {
 
         const gl = WebGLContext.getContext();
         const viewportSize = WebGLContext.getViewportSize();
@@ -713,33 +719,91 @@ class WebGLRenderer {
         gl.viewport(0, 0, width, height);
 
 
-        const hud_projection_matrix = glm.mat4.create();
+        const hudProjectionMatrix = glm.mat4.create();
         glm.mat4.ortho(
-            hud_projection_matrix,
+            hudProjectionMatrix,
             -width * 0.5, +width * 0.5,
             -height * 0.5, +height * 0.5,
             -200, 200
         );
 
-        const hud_modelview_matrix = glm.mat4.create();
+        const hudModelViewMatrix = glm.mat4.create();
         glm.mat4.lookAt(
-            hud_modelview_matrix,
+            hudModelViewMatrix,
             [ +width * 0.5, +height * 0.5, 1 ],
             [ +width * 0.5, +height * 0.5, 0 ],
             [ 0, 1, 0 ]
         );
 
 
-        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, hud_modelview_matrix);
-        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_projMatrix"), false, hud_projection_matrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, hudModelViewMatrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_projMatrix"), false, hudProjectionMatrix);
+
 
         { // wireframe
 
-            // const vertices: number[] = [
-            //     // 10,10,0, 1,0,0,
-            //     // 1000,1000,0, 1,0,0,
-            // ];
+            const vertices: number[] = [
+                // 10,10,0, 1,0,0,
+                // 1000,1000,0, 1,0,0,
+            ];
 
+            { // fps meter
+
+                const size = [100, 50];
+                const pos = [10, viewportSize[1] - 10 - size[1]];
+                const maxValue = 1 / 30;
+
+                { // border
+
+                    vertices.push(pos[0],pos[1],0, 1,1,1);
+                    vertices.push(pos[0]+size[0],pos[1],0, 1,1,1);
+
+                    vertices.push(pos[0]+size[0],pos[1],0, 1,1,1);
+                    vertices.push(pos[0]+size[0],pos[1]+size[1],0, 1,1,1);
+
+                    vertices.push(pos[0]+size[0],pos[1]+size[1],0, 1,1,1);
+                    vertices.push(pos[0],pos[1]+size[1],0, 1,1,1);
+
+                    vertices.push(pos[0],pos[1]+size[1],0, 1,1,1);
+                    vertices.push(pos[0],pos[1],0, 1,1,1);
+
+                } // border
+
+                { // curve
+
+                    for (let ii = 1; ii < framesDuration.length; ++ii) {
+
+                        const prevCoef = (ii - 1) / framesDuration.length;
+                        const currCoef = ii / framesDuration.length;
+                        // const prevValue = framesDuration[ii - 1] / maxValue;
+                        // const currValue = framesDuration[ii] / maxValue;
+                        const prevValue = Math.min(framesDuration[ii - 1], maxValue) / maxValue;
+                        const currValue = Math.min(framesDuration[ii], maxValue) / maxValue;
+
+                        vertices.push(pos[0]+size[0]*prevCoef,pos[1]+size[1]*prevValue,0, 1,1,1);
+                        vertices.push(pos[0]+size[0]*currCoef,pos[1]+size[1]*currValue,0, 1,1,1);
+                    }
+
+                } // curve
+
+                { // counter
+
+                    let average = 0;
+                    for (const curr of framesDuration)
+                        average += curr;
+                    average /= framesDuration.length;
+
+                    const latestValue = 1 / average;
+
+                    let str = "999";
+                    if (latestValue < 999)
+                        str = latestValue.toFixed(0).padStart(3, " ");
+
+                    this.pushText(`${str}fps`, [pos[0], pos[1] - this._textRendering.characterSize], 1);
+
+                } // counter
+
+            } // fps meter
 
             // //
             // //
@@ -770,31 +834,10 @@ class WebGLRenderer {
             // //
 
 
-            // for (const touch of touches) {
+            this._wireframeRendering.geometry_wireframe_stack_rendering.updateBuffer(0, vertices);
+            this._wireframeRendering.geometry_wireframe_stack_rendering.setPrimitiveCount(vertices.length / 6);
 
-            //     const cross_hsize = 200;
-
-            //     vertices.push(touch[0]-cross_hsize,touch[1]-cross_hsize,0, 1,0,0);
-            //     vertices.push(touch[0]+cross_hsize,touch[1]+cross_hsize,0, 1,0,0);
-
-            //     vertices.push(touch[0]+cross_hsize,touch[1]-cross_hsize,0, 1,0,0);
-            //     vertices.push(touch[0]-cross_hsize,touch[1]+cross_hsize,0, 1,0,0);
-
-            //     if (this._free_fly_camera.getForceForward()) {
-
-            //         vertices.push(touch[0]-cross_hsize,touch[1],0, 1,0,0);
-            //         vertices.push(touch[0]+cross_hsize,touch[1],0, 1,0,0);
-
-            //         vertices.push(touch[0],touch[1]-cross_hsize,0, 1,0,0);
-            //         vertices.push(touch[0],touch[1]+cross_hsize,0, 1,0,0);
-            //     }
-            // }
-
-
-            // this._wireframeRendering.geometry_wireframe_stack_rendering.updateBuffer(0, vertices);
-            // this._wireframeRendering.geometry_wireframe_stack_rendering.setPrimitiveCount(vertices.length / 6);
-
-            // this._wireframeRendering.geometry_wireframe_stack_rendering.render();
+            this._wireframeRendering.geometry_wireframe_stack_rendering.render();
 
         } // wireframe
 
@@ -858,7 +901,7 @@ class WebGLRenderer {
                 push_line([touch[0]-cross_hsize, touch[1]-cross_hsize], [touch[0]+cross_hsize, touch[1]+cross_hsize], 15, color);
                 push_line([touch[0]-cross_hsize, touch[1]+cross_hsize], [touch[0]+cross_hsize, touch[1]-cross_hsize], 15, color);
 
-                if (this._free_fly_camera.getForceForward()) {
+                if (this._freeFlyCamera.getForceForward()) {
 
                     push_line([touch[0]-cross_hsize, touch[1]], [touch[0]+cross_hsize, touch[1]], 15, color);
                     push_line([touch[0], touch[1]-cross_hsize], [touch[0], touch[1]+cross_hsize], 15, color);
@@ -880,8 +923,8 @@ class WebGLRenderer {
 
             this._textRendering.texture.bind();
 
-            gl.uniformMatrix4fv(this._textRendering.shader.getUniform("u_modelviewMatrix"), false, hud_modelview_matrix);
-            gl.uniformMatrix4fv(this._textRendering.shader.getUniform("u_projectionMatrix"), false, hud_projection_matrix);
+            gl.uniformMatrix4fv(this._textRendering.shader.getUniform("u_modelviewMatrix"), false, hudModelViewMatrix);
+            gl.uniformMatrix4fv(this._textRendering.shader.getUniform("u_projectionMatrix"), false, hudProjectionMatrix);
 
             this._textRendering.geometry.updateBuffer(1, this._textRendering.stack_vertices, true);
             this._textRendering.geometry.setInstancedCount(this._textRendering.stack_vertices.length / 5);
@@ -896,39 +939,38 @@ class WebGLRenderer {
         } // text
     }
 
-    private _render_side_hud(chunks: Chunks<GeometryWrapper.Geometry>, processing_pos: Vec3[], arr_viewport: Vec4, arr_target: Vec3, arr_up: Vec3) {
+    private _renderSideHud(chunks: Chunks<GeometryWrapper.Geometry>, processingPos: Vec3[], viewport: Vec4, target: Vec3, up: Vec3) {
 
         const gl = WebGLContext.getContext();
 
-        gl.viewport(arr_viewport[0], arr_viewport[1], arr_viewport[2], arr_viewport[3]);
+        gl.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
-        const tmp_projection_matrix = glm.mat4.create();
-        const _aspectRatio2 = arr_viewport[2]/arr_viewport[3];
-        const ortho_size = 65;
+        const projectionMatrix = glm.mat4.create();
+        const aspectRatio = viewport[2] / viewport[3];
+        const orthoSize = 65;
 
         glm.mat4.ortho(
-            tmp_projection_matrix,
-            -ortho_size * _aspectRatio2, ortho_size * _aspectRatio2,
-            -ortho_size, ortho_size,
+            projectionMatrix,
+            -orthoSize * aspectRatio, orthoSize * aspectRatio,
+            -orthoSize, orthoSize,
             -200, 200);
 
-        const cpos = this._free_fly_camera.getPosition();
+        const cameraPos = this._freeFlyCamera.getPosition();
 
-        const tmp_modelview_matrix = glm.mat4.create();
+        const lookAtModelViewMatrix = glm.mat4.create();
         glm.mat4.lookAt(
-            tmp_modelview_matrix,
-            [ cpos[0] + arr_target[0], cpos[1] + arr_target[1], cpos[2] + arr_target[2] ],
-            [ cpos[0], cpos[1], cpos[2] ],
-            arr_up
+            lookAtModelViewMatrix,
+            [ cameraPos[0] + target[0], cameraPos[1] + target[1], cameraPos[2] + target[2] ],
+            cameraPos,
+            up
         );
 
-
-        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
-        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_projMatrix"), false, tmp_projection_matrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, lookAtModelViewMatrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_projMatrix"), false, projectionMatrix);
 
         this._wireframeRendering.geometry_axis.render();
 
-        const tmp_modelview_matrix2 = glm.mat4.create();
+        const localModelViewMatrix = glm.mat4.create();
 
         for (let ii = 0; ii < chunks.length; ++ii) {
 
@@ -936,54 +978,56 @@ class WebGLRenderer {
 
             ///
 
-            glm.mat4.identity(tmp_modelview_matrix2);
+            glm.mat4.identity(localModelViewMatrix);
 
             if (chunks[ii].visible) {
 
                 // render white cube
 
-                glm.mat4.translate(tmp_modelview_matrix2, tmp_modelview_matrix, position);
+                glm.mat4.translate(localModelViewMatrix, lookAtModelViewMatrix, position);
 
-                gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
+                gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, localModelViewMatrix);
                 this._wireframeRendering.geometry_cubeW.render();
             }
             else {
 
                 // render red cube (smaller -> scalled)
 
-                glm.mat4.translate(tmp_modelview_matrix2, tmp_modelview_matrix, [
+                const chunkCenter: Vec3 = [
                     position[0] + chunk_size * 0.15,
                     position[1] + chunk_size * 0.15,
                     position[2] + chunk_size * 0.15
-                ]);
-                glm.mat4.scale(tmp_modelview_matrix2, tmp_modelview_matrix2, [0.7,0.7,0.7]);
+                ];
 
-                gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
+                glm.mat4.translate(localModelViewMatrix, lookAtModelViewMatrix, chunkCenter);
+                glm.mat4.scale(localModelViewMatrix, localModelViewMatrix, [0.7,0.7,0.7]);
+
+                gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, localModelViewMatrix);
                 this._wireframeRendering.geometry_cubeR.render();
             }
         }
 
-        if (processing_pos.length > 0) {
+        if (processingPos.length > 0) {
 
-            for (let ii = 0; ii < processing_pos.length; ++ii) {
+            for (let ii = 0; ii < processingPos.length; ++ii) {
 
-                glm.mat4.translate(tmp_modelview_matrix2,tmp_modelview_matrix, [
-                    processing_pos[ii][0] + chunk_size*0.2,
-                    processing_pos[ii][1] + chunk_size*0.2,
-                    processing_pos[ii][2] + chunk_size*0.2
+                glm.mat4.translate(localModelViewMatrix,lookAtModelViewMatrix, [
+                    processingPos[ii][0] + chunk_size * 0.2,
+                    processingPos[ii][1] + chunk_size * 0.2,
+                    processingPos[ii][2] + chunk_size * 0.2
                 ]);
-                glm.mat4.scale(tmp_modelview_matrix2,tmp_modelview_matrix2, [0.6,0.6,0.6]);
+                glm.mat4.scale(localModelViewMatrix,localModelViewMatrix, [0.6,0.6,0.6]);
 
-                gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix2);
+                gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, localModelViewMatrix);
                 this._wireframeRendering.geometry_cubeG.render();
             }
         }
 
-        glm.mat4.translate(tmp_modelview_matrix,tmp_modelview_matrix, this._free_fly_camera.getPosition());
-        glm.mat4.rotate(tmp_modelview_matrix,tmp_modelview_matrix, this._free_fly_camera.getTheta() * Math.PI / 180, [0,0,1]);
-        glm.mat4.rotate(tmp_modelview_matrix,tmp_modelview_matrix, this._free_fly_camera.getPhi() * Math.PI / 180, [0,-1,0]);
+        glm.mat4.translate(lookAtModelViewMatrix,lookAtModelViewMatrix, this._freeFlyCamera.getPosition());
+        glm.mat4.rotate(lookAtModelViewMatrix,lookAtModelViewMatrix, this._freeFlyCamera.getTheta() * Math.PI / 180, [0,0,1]);
+        glm.mat4.rotate(lookAtModelViewMatrix,lookAtModelViewMatrix, this._freeFlyCamera.getPhi() * Math.PI / 180, [0,-1,0]);
 
-        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, tmp_modelview_matrix);
+        gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, lookAtModelViewMatrix);
 
         this._wireframeRendering.geometry_cross.render();
         this._wireframeRendering.geometry_frustum.render();

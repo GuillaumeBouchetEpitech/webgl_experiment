@@ -7,7 +7,7 @@ type Vec2 = [number, number];
 type Vec3 = [number, number, number];
 type Viewport = [number, number, number, number];
 
-const sceneToScreenCoordinates = (scenePos: Vec3, modelview: glm.mat4, projection: glm.mat4, arr_viewport: Viewport): Vec2 | null => {
+const sceneToScreenCoordinates = (scenePos: Vec3, modelview: glm.mat4, projection: glm.mat4, viewport: Viewport): Vec2 | null => {
 
     const inputVec4 = glm.vec4.fromValues(scenePos[0], scenePos[1], scenePos[2], 1);
     const composedMatrix = glm.mat4.create();
@@ -29,8 +29,8 @@ const sceneToScreenCoordinates = (scenePos: Vec3, modelview: glm.mat4, projectio
     // Window coordinates
     // Map x, y to range 0-1
     return [
-        (multipliedVec4[0] * 0.5 + 0.5) * arr_viewport[2] + arr_viewport[0],
-        (multipliedVec4[1] * 0.5 + 0.5) * arr_viewport[3] + arr_viewport[1]
+        (multipliedVec4[0] * 0.5 + 0.5) * viewport[2] + viewport[0],
+        (multipliedVec4[1] * 0.5 + 0.5) * viewport[3] + viewport[1]
     ];
 }
 

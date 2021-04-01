@@ -7,7 +7,6 @@
   "devDependencies": {
     "@types/fpsmeter": "^0.3.30",
     "browserify": "^16.5.0",
-    "fpsmeter": "^0.3.1",
     "gl-matrix": "^3.3.0",
     "gulp": "^4.0.2",
     "gulp-uglify": "^3.0.2",

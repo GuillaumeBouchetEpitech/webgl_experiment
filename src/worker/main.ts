@@ -18,7 +18,7 @@ const marchingCubeInstance = new MarchinCube(chunk_size, 0.0, on_sample_callback
 
 const myself = (self as unknown) as Worker; // well, that's apparently needed...
 
-myself.addEventListener('message', (event: MessageEvent) => {
+const onMainScriptMessage = (event: MessageEvent) => {
 
     const position = event.data.position as Vec3;
     const float32buffer = event.data.float32buffer as Float32Array; // we now own the vertices buffer
@@ -64,4 +64,6 @@ myself.addEventListener('message', (event: MessageEvent) => {
         // we now transfer the ownership of the vertices buffer
         float32buffer.buffer
     ]);
-}, false);
+};
+
+myself.addEventListener('message', onMainScriptMessage, false);

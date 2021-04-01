@@ -2,8 +2,8 @@
     "compilerOptions": {
         "noImplicitAny": true,
         // "allowJs": true,
-        "target": "es5",
-        "lib": [ "dom", "es2015" ]
+        "target": "es2017",
+        "lib": [ "dom", "es2017" ]
     },
     "files": [
         "./src/**/*.ts"
