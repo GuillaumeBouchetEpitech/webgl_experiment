@@ -4,7 +4,7 @@
 import chunk_size from '../constants';
 
 import ChunkGenerator from './generation/ChunkGenerator';
-import WebGLRenderer from './webGLRenderer/WebGLRenderer';
+import WebGLRenderer, { ITouchData } from './webGLRenderer/WebGLRenderer';
 import GeometryWrapper from './webGLRenderer/wrappers/Geometry';
 
 class WebGLExperiment {
@@ -15,7 +15,7 @@ class WebGLExperiment {
     private _running: boolean;
     private _errorGraphicContext: boolean;
 
-    private _touches: [number, number][] = [];
+    private _touches: ITouchData[] = [];
 
     private _chunksCreated: number = 0;
     private _chunksDiscarded: number = 0;
@@ -64,18 +64,17 @@ class WebGLExperiment {
 
             const touches = event.targetTouches;
 
-            const viewport_size = this._renderer.getSize();
+            const viewportSize = this._renderer.getSize();
 
             this._touches.length = 0; // clear array
             for (let ii = 0; ii < touches.length; ++ii) {
 
-                this._touches.push([
-
-                    touches[ii].pageX,
-
+                this._touches.push({
+                    id: touches[ii].identifier,
+                    x: touches[ii].pageX,
                     // here we must inverse the Y coordinate
-                    viewport_size[1] - touches[ii].pageY
-                ]);
+                    y: viewportSize[1] - touches[ii].pageY
+                });
             }
         };
 

@@ -1,6 +1,7 @@
 
 import chunk_size from '../../constants';
 
+type Vec2 = [number, number];
 type Vec3 = [number, number, number];
 
 interface IChunkGeneratorDef<GeometryType> {
@@ -15,7 +16,7 @@ interface IChunkGeneratorDef<GeometryType> {
 interface IChunk<GeometryType> {
     position: Vec3;
     geometry: GeometryType;
-    coord2d: [number, number] | null;
+    coord2d: Vec2 | null;
     visible: boolean;
 };
 
@@ -58,17 +59,17 @@ class ChunkGenerator<GeometryType> {
 
     private _addWorker() {
 
-        const new_worker: IWorkerInstance = {
+        const newWorker: IWorkerInstance = {
             instance: new Worker("./dist/worker.js"),
             float32buffer: new Float32Array(1000000),
             status: WorkerStatus.available,
         };
 
-        const on_worker_message = (event: MessageEvent) => {
+        const onWorkerMessage = (event: MessageEvent) => {
 
             const position = event.data.position;
-            new_worker.float32buffer = event.data.float32buffer; // we now own the vertices buffer
-            new_worker.status = WorkerStatus.available;
+            newWorker.float32buffer = event.data.float32buffer; // we now own the vertices buffer
+            newWorker.status = WorkerStatus.available;
 
             // find and remove the position
             for (let ii = 0; ii < this._processingPositions.length; ++ii) {
@@ -87,13 +88,13 @@ class ChunkGenerator<GeometryType> {
             let geometry: GeometryType | undefined = undefined;
             if (this._geometriesPool.length == 0) {
 
-                geometry = this._def.addGeometry(new_worker.float32buffer);
+                geometry = this._def.addGeometry(newWorker.float32buffer);
             }
             else {
 
                 geometry = this._geometriesPool.pop();
                 if (geometry)
-                    this._def.updateGeometry(geometry, new_worker.float32buffer);
+                    this._def.updateGeometry(geometry, newWorker.float32buffer);
             }
 
             if (!geometry) {
@@ -113,15 +114,14 @@ class ChunkGenerator<GeometryType> {
                 if (this._def.onChunkCreated)
                     this._def.onChunkCreated();
 
-
                 // launch again
                 this._launchWorker();
             }
         };
 
-        new_worker.instance.addEventListener("message", on_worker_message, false);
+        newWorker.instance.addEventListener("message", onWorkerMessage, false);
 
-        this._workers.push(new_worker);
+        this._workers.push(newWorker);
     }
 
     start() {
@@ -139,7 +139,7 @@ class ChunkGenerator<GeometryType> {
         this._geometriesPool.length = 0;
     }
 
-    update(camera_pos: Vec3) {
+    update(cameraPosition: Vec3) {
 
         if (!this._running)
             return;
@@ -150,28 +150,28 @@ class ChunkGenerator<GeometryType> {
         //          exclude chunk out of range
         //          include chunk in range
 
-        this._cameraPosition = camera_pos;
+        this._cameraPosition = cameraPosition;
 
-        const curr_index = [
-            Math.floor(camera_pos[0] / chunk_size)|0,
-            Math.floor(camera_pos[1] / chunk_size)|0,
-            Math.floor(camera_pos[2] / chunk_size)|0
+        const currIndex = [
+            Math.floor(cameraPosition[0] / chunk_size),
+            Math.floor(cameraPosition[1] / chunk_size),
+            Math.floor(cameraPosition[2] / chunk_size)
         ];
 
         // did we move to another chunk?
         if (!(this._chunks.length == 0 ||
-            curr_index[0] != this._savedIndex[0] ||
-            curr_index[1] != this._savedIndex[1] ||
-            curr_index[2] != this._savedIndex[2])) {
+            currIndex[0] != this._savedIndex[0] ||
+            currIndex[1] != this._savedIndex[1] ||
+            currIndex[2] != this._savedIndex[2])) {
 
             // no -> stop here
             return;
         }
 
         // yes -> save as the new current chunk
-        this._savedIndex[0] = curr_index[0];
-        this._savedIndex[1] = curr_index[1];
-        this._savedIndex[2] = curr_index[2];
+        this._savedIndex[0] = currIndex[0];
+        this._savedIndex[1] = currIndex[1];
+        this._savedIndex[2] = currIndex[2];
 
         //
 
@@ -181,15 +181,15 @@ class ChunkGenerator<GeometryType> {
         // the range of chunk generation/exclusion
         const range = 3|0;
 
-        const min_index: Vec3 = [
-            Math.floor(curr_index[0] - range),
-            Math.floor(curr_index[1] - range),
-            Math.floor(curr_index[2] - range),
+        const minIndex: Vec3 = [
+            Math.floor(currIndex[0] - range),
+            Math.floor(currIndex[1] - range),
+            Math.floor(currIndex[2] - range),
         ];
-        const max_index: Vec3 = [
-            Math.floor(curr_index[0] + range),
-            Math.floor(curr_index[1] + range),
-            Math.floor(curr_index[2] + range),
+        const maxIndex: Vec3 = [
+            Math.floor(currIndex[0] + range),
+            Math.floor(currIndex[1] + range),
+            Math.floor(currIndex[2] + range),
         ];
 
         //
@@ -203,9 +203,9 @@ class ChunkGenerator<GeometryType> {
                 (this._chunks[ii].position[2] / chunk_size)|0
             ];
 
-            if (curr_pos[0] < min_index[0] || curr_pos[0] > max_index[0] ||
-                curr_pos[1] < min_index[1] || curr_pos[1] > max_index[1] ||
-                curr_pos[2] < min_index[2] || curr_pos[2] > max_index[2]) {
+            if (curr_pos[0] < minIndex[0] || curr_pos[0] > maxIndex[0] ||
+                curr_pos[1] < minIndex[1] || curr_pos[1] > maxIndex[1] ||
+                curr_pos[2] < minIndex[2] || curr_pos[2] > maxIndex[2]) {
 
                 // this._chunks[i].geom.dispose();
                 this._geometriesPool.push(this._chunks[ii].geometry);
@@ -220,9 +220,9 @@ class ChunkGenerator<GeometryType> {
         //
         // include in the generation queue the close enough chunks
 
-        for (let zz = min_index[2]; zz <= max_index[2]; ++zz)
-        for (let yy = min_index[1]; yy <= max_index[1]; ++yy)
-        for (let xx = min_index[0]; xx <= max_index[0]; ++xx) {
+        for (let zz = minIndex[2]; zz <= maxIndex[2]; ++zz)
+        for (let yy = minIndex[1]; yy <= maxIndex[1]; ++yy)
+        for (let xx = minIndex[0]; xx <= maxIndex[0]; ++xx) {
 
             const position: Vec3 = [
                 xx * chunk_size,

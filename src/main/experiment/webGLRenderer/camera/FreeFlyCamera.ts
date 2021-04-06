@@ -122,8 +122,8 @@ class FreeFlyCamera {
 
                 const length = Math.sqrt(x1*x1 + y1*y1);
 
-                if (previous_distance)
-                {
+                if (previous_distance) {
+
                     if (length > previous_distance) {
                         this._movement_flag |= 1<<0; // forward
                     }
@@ -140,8 +140,8 @@ class FreeFlyCamera {
 
                     const step_x = previous_touch.pageX - touches[0].pageX;
                     const step_y = previous_touch.pageY - touches[0].pageY;
-                    this._theta -= (step_x / 5.0);
-                    this._phi   -= (step_y / 5.0);
+                    this._theta -= (step_x / 3.0);
+                    this._phi   -= (step_y / 3.0);
                 }
 
                 previous_touch = touches[0];

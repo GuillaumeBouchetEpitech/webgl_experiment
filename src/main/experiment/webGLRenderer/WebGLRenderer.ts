@@ -58,6 +58,12 @@ interface ITextRendering {
     stack_vertices: number[];
 };
 
+export interface ITouchData {
+    id: number;
+    x: number;
+    y: number;
+}
+
 class WebGLRenderer {
 
     private _freeFlyCamera: FreeFlyCamera;
@@ -74,6 +80,8 @@ class WebGLRenderer {
     private _chunkRendering!: IChunkRendering;
     private _wireframeRendering!: IWireframeRendering;
     private _textRendering!: ITextRendering;
+
+    private _touchesAngle = new Map<number, number>();
 
     constructor(canvasDomElement: HTMLCanvasElement) {
 
@@ -682,7 +690,7 @@ class WebGLRenderer {
         ShaderProgram.unbind();
     }
 
-    renderHUD(chunks: Chunks<GeometryWrapper.Geometry>, processingPos: Vec3[], touches: [number, number][], framesDuration: number[]) {
+    renderHUD(chunks: Chunks<GeometryWrapper.Geometry>, processingPos: Vec3[], touches: ITouchData[], framesDuration: number[]) {
 
         const gl = WebGLContext.getContext();
         const viewportSize = WebGLContext.getViewportSize();
@@ -708,7 +716,7 @@ class WebGLRenderer {
         ShaderProgram.unbind();
     }
 
-    private _renderMainHud(chunks: Chunks<GeometryWrapper.Geometry>, touches: [number, number][], framesDuration: number[]) {
+    private _renderMainHud(chunks: Chunks<GeometryWrapper.Geometry>, touches: ITouchData[], framesDuration: number[]) {
 
         const gl = WebGLContext.getContext();
         const viewportSize = WebGLContext.getViewportSize();
@@ -742,10 +750,7 @@ class WebGLRenderer {
 
         { // wireframe
 
-            const vertices: number[] = [
-                // 10,10,0, 1,0,0,
-                // 1000,1000,0, 1,0,0,
-            ];
+            const vertices: number[] = [];
 
             { // fps meter
 
@@ -868,46 +873,63 @@ class WebGLRenderer {
                 vertices.push(allVertices[3][0],allVertices[3][1],0, color[0],color[1],color[2]);
             }
 
+            { // touches
 
+                const pushRotatedLine = (center: Vec2, angle: number, length: number, thickness: number, color: Vec3 = [1,1,1]) => {
 
-            // push_line([100, 100], [400, 400], 15);
-            // push_line([100, 400], [400, 100], 15);
+                    push_line(
+                        [center[0] - length * Math.cos(angle), center[1] - length * Math.sin(angle)],
+                        [center[0] + length * Math.cos(angle), center[1] + length * Math.sin(angle)],
+                        thickness,
+                        color);
+                };
 
+                const idInUse = new Set<number>();
 
+                for (const touch of touches) {
 
-            // for (let ii = 0; ii < chunks.length; ++ii) {
+                    idInUse.add(touch.id);
 
-            //     if (!chunks[ii].visible)
-            //         continue;
+                    // get or set
+                    let angle = this._touchesAngle.get(touch.id);
+                    if (angle === undefined) {
+                        angle = 0;
+                        this._touchesAngle.set(touch.id, angle);
+                    }
 
-            //     const coord2d = chunks[ii].coord2d;
+                    const color: Vec3 = [1, 0, 0]; // red
 
-            //     if (!coord2d)
-            //         continue;
+                    const angles = [
+                        angle,
+                        angle + Math.PI * 0.5,
+                    ];
 
-            //     const cross_hsize = 20;
+                    if (this._freeFlyCamera.getForceForward()) {
+                        angles.push(angle + Math.PI * 0.25);
+                        angles.push(angle + Math.PI * 0.75);
+                    }
 
-            //     push_line([coord2d[0]-cross_hsize, coord2d[1]-cross_hsize], [coord2d[0]+cross_hsize, coord2d[1]+cross_hsize], 15);
-            //     push_line([coord2d[0]-cross_hsize, coord2d[1]+cross_hsize], [coord2d[0]+cross_hsize, coord2d[1]-cross_hsize], 15);
-            // }
+                    for (const currAngle of angles)
+                        pushRotatedLine([touch.x, touch.y], currAngle, 150, 15, color);
 
-
-            for (const touch of touches) {
-
-                const color: Vec3 = [1, 0, 0];
-
-                const cross_hsize = 100;
-
-                push_line([touch[0]-cross_hsize, touch[1]-cross_hsize], [touch[0]+cross_hsize, touch[1]+cross_hsize], 15, color);
-                push_line([touch[0]-cross_hsize, touch[1]+cross_hsize], [touch[0]+cross_hsize, touch[1]-cross_hsize], 15, color);
-
-                if (this._freeFlyCamera.getForceForward()) {
-
-                    push_line([touch[0]-cross_hsize, touch[1]], [touch[0]+cross_hsize, touch[1]], 15, color);
-                    push_line([touch[0], touch[1]-cross_hsize], [touch[0], touch[1]+cross_hsize], 15, color);
+                    // update the angle
+                    angle += 0.1;
+                    this._touchesAngle.set(touch.id, angle);
                 }
-            }
 
+                const idNotInUse = new Set<number>();
+
+                this._touchesAngle.forEach((value, key) => {
+
+                    if (!idInUse.has(key))
+                        idNotInUse.add(key);
+                });
+
+                idNotInUse.forEach((value) => {
+                    this._touchesAngle.delete(value);
+                });
+
+            } // touches
 
             this._wireframeRendering.geometry_thick_line_stack_rendering.updateBuffer(0, vertices);
             this._wireframeRendering.geometry_thick_line_stack_rendering.setPrimitiveCount(vertices.length / 6);

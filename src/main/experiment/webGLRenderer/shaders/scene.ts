@@ -11,17 +11,17 @@ uniform mat4 u_projMatrix;
 uniform vec3 u_cameraPos;
 
 varying vec3 v_color;
-varying vec3 v_bCenter;
+varying vec3 v_baryCenter;
 
 varying vec3 v_normalInterp;
 varying vec3 v_vertPos;
-varying float v_distance;
+varying float v_distanceToCamera;
 
 varying vec3 v_pureVertexPos;
 varying vec3 v_pureNormalInterp;
 
-const float k_range_min = 20.0;
-const float k_range_max = 23.0;
+const float k_rangeMin = 20.0;
+const float k_rangeMax = 23.0;
 
 void main(void)
 {
@@ -32,15 +32,15 @@ void main(void)
     v_pureVertexPos = a_vertexPosition;
     v_pureNormalInterp = a_vertexNormal;
 
-    float tmp_dist = length(a_vertexPosition - u_cameraPos);
+    float distanceToCamera = length(a_vertexPosition - u_cameraPos);
 
-    v_distance = tmp_dist;
+    v_distanceToCamera = distanceToCamera;
 
     v_color = a_vertexColor;
-    v_bCenter = a_vertexBCenter;
+    v_baryCenter = a_vertexBCenter;
 
-    if (tmp_dist < k_range_min ||
-        tmp_dist > k_range_max)
+    if (distanceToCamera < k_rangeMin ||
+        distanceToCamera > k_rangeMax)
     {
         gl_Position = u_projMatrix * u_modelviewMatrix * vec4(a_vertexPosition, 1.0);
     }
@@ -60,11 +60,11 @@ precision mediump float;
 uniform sampler2D u_sampler;
 
 varying vec3 v_color;
-varying vec3 v_bCenter;
+varying vec3 v_baryCenter;
 
 varying vec3 v_normalInterp;
 varying vec3 v_vertPos;
-varying float v_distance;
+varying float v_distanceToCamera;
 
 varying vec3 v_pureVertexPos;
 varying vec3 v_pureNormalInterp;
@@ -72,8 +72,8 @@ varying vec3 v_pureNormalInterp;
 const vec3 k_lightPos = vec3(0.0,0.0,0.0);
 const vec3 k_specColor = vec3(1.0, 1.0, 1.0);
 
-const float k_range_min = 20.0;
-const float k_range_max = 23.0;
+const float k_rangeMin = 20.0;
+const float k_rangeMax = 23.0;
 
 void main(void)
 {
@@ -84,12 +84,12 @@ void main(void)
         {
             // "bumped wireframe" effect on the front facing
 
-            if (v_distance > k_range_min &&
-                v_distance < k_range_max)
+            if (v_distanceToCamera > k_rangeMin &&
+                v_distanceToCamera < k_rangeMax)
             {
 
-                if (all(greaterThan(v_bCenter, vec3(0.03))) &&
-                    any(lessThan(v_bCenter, vec3(0.08))))
+                if (all(greaterThan(v_baryCenter, vec3(0.03))) &&
+                    any(lessThan(v_baryCenter, vec3(0.08))))
                 {
                     gl_FragColor = vec4(v_color, 1.0);
                     return;
@@ -102,7 +102,7 @@ void main(void)
         {
             // normal wireframe effect on the back facing
 
-            if (any(lessThan(v_bCenter, vec3(0.06))))
+            if (any(lessThan(v_baryCenter, vec3(0.06))))
             {
                 gl_FragColor = vec4(1);
                 return;
@@ -115,7 +115,7 @@ void main(void)
 
     } // /wireframe
 
-    vec3 tmp_color = v_color;
+    vec3 currentColor = v_color;
 
     { // texture
 
@@ -150,7 +150,7 @@ void main(void)
         // vertical color
         vec3 texColor3 = texture2D( u_sampler, texcoord3 ).rgb;
 
-        tmp_color = texColor1 * blend_weights.xxx +
+        currentColor = texColor1 * blend_weights.xxx +
                     texColor2 * blend_weights.yyy +
                     texColor3 * blend_weights.zzz;
 
@@ -177,15 +177,15 @@ void main(void)
 
         // lighting output
 
-        vec3 ambiant_color = tmp_color.xyz * 0.05;
-        vec3 diffuse_color = tmp_color.xyz * lambertian;
+        vec3 ambiant_color = currentColor.xyz * 0.05;
+        vec3 diffuse_color = currentColor.xyz * lambertian;
         vec3 specular_color = k_specColor * specular;
 
-        tmp_color = ambiant_color + diffuse_color + specular_color;
+        currentColor = ambiant_color + diffuse_color + specular_color;
 
     } // lighting
 
-    gl_FragColor = vec4(tmp_color, 1.0);
+    gl_FragColor = vec4(currentColor, 1.0);
 }
 `;
 
