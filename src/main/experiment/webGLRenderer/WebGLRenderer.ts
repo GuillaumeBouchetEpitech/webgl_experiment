@@ -1,8 +1,6 @@
 
 "use strict"
 
-import chunk_size from '../../constants';
-
 import WebGLContext from './wrappers/WebGLContext';
 import ShaderProgram from './wrappers/ShaderProgram';
 import Texture from './wrappers/Texture';
@@ -29,6 +27,14 @@ type Vec2 = [number, number];
 type Vec3 = [number, number, number];
 type Vec4 = [number, number, number, number];
 type Viewport = Vec4;
+
+interface IDefinition {
+    canvasDomElement: HTMLCanvasElement;
+    chunkSize: number;
+    mouseSensivity: number;
+    movingSpeed: number;
+    keyboardSensivity: number;
+};
 
 interface IChunkRendering {
     texture: Texture;
@@ -66,6 +72,8 @@ export interface ITouchData {
 
 class WebGLRenderer {
 
+    private _def: IDefinition;
+
     private _freeFlyCamera: FreeFlyCamera;
     private _frustumCulling: FrustumCulling;
 
@@ -81,13 +89,17 @@ class WebGLRenderer {
     private _wireframeRendering!: IWireframeRendering;
     private _textRendering!: ITextRendering;
 
+    private _fpsmeterAngle: number = 0;
+    private _fpsmeterSpeed: number = 0;
     private _touchesAngle = new Map<number, number>();
 
-    constructor(canvasDomElement: HTMLCanvasElement) {
+    constructor(def: IDefinition) {
 
-        WebGLContext.initialise(canvasDomElement);
+        this._def = def;
 
-        canvasDomElement.addEventListener('webglcontextlost', (event) => {
+        WebGLContext.initialise(this._def.canvasDomElement);
+
+        this._def.canvasDomElement.addEventListener('webglcontextlost', (event) => {
 
             event.preventDefault();
             console.log('context is lost');
@@ -97,11 +109,11 @@ class WebGLRenderer {
 
         }, false);
 
-        canvasDomElement.addEventListener('webglcontextrestored', () => {
+        this._def.canvasDomElement.addEventListener('webglcontextrestored', () => {
 
             console.log('context is restored');
 
-            WebGLContext.initialise(canvasDomElement);
+            WebGLContext.initialise(this._def.canvasDomElement);
 
             if (this.onContextRestored)
                 this.onContextRestored();
@@ -110,9 +122,13 @@ class WebGLRenderer {
 
         const viewportSize = WebGLContext.getViewportSize();
 
-        this._freeFlyCamera = new FreeFlyCamera(canvasDomElement);
+        this._freeFlyCamera = new FreeFlyCamera({
+            targetElement: this._def.canvasDomElement,
+            mouseSensivity: this._def.mouseSensivity,
+            movingSpeed: this._def.movingSpeed,
+            keyboardSensivity: this._def.keyboardSensivity,
+        });
         this._freeFlyCamera.activate();
-        this._freeFlyCamera.setPosition( chunk_size/4*3, chunk_size/4*3, 0 );
 
         this._frustumCulling = new FrustumCulling();
 
@@ -221,17 +237,17 @@ class WebGLRenderer {
         //
         // geoms
 
-        vertices = generateWireframeCubeVertices(chunk_size, [1,0,0]);
+        vertices = generateWireframeCubeVertices(this._def.chunkSize, [1,0,0]);
         const geom_cubeR = new GeometryWrapper.Geometry(shader, geometryDefinitionWireframe);
         geom_cubeR.updateBuffer(0, vertices);
         geom_cubeR.setPrimitiveCount(vertices.length / 6);
 
-        vertices = generateWireframeCubeVertices(chunk_size, [1,1,1]);
+        vertices = generateWireframeCubeVertices(this._def.chunkSize, [1,1,1]);
         const geom_cubeW = new GeometryWrapper.Geometry(shader, geometryDefinitionWireframe);
         geom_cubeW.updateBuffer(0, vertices);
         geom_cubeW.setPrimitiveCount(vertices.length / 6);
 
-        vertices = generateWireframeCubeVertices(chunk_size, [0,1,0]);
+        vertices = generateWireframeCubeVertices(this._def.chunkSize, [0,1,0]);
         const geom_cubeG = new GeometryWrapper.Geometry(shader, geometryDefinitionWireframe);
         geom_cubeG.updateBuffer(0, vertices);
         geom_cubeG.setPrimitiveCount(vertices.length / 6);
@@ -452,7 +468,7 @@ class WebGLRenderer {
 
     chunkIsVisible(pos: Vec3) {
 
-        const hsize = chunk_size * 0.5;
+        const hsize = this._def.chunkSize * 0.5;
 
         return this._frustumCulling.cubeInFrustum( pos[0]+hsize, pos[1]+hsize, pos[2]+hsize, hsize );
     }
@@ -565,11 +581,10 @@ class WebGLRenderer {
     }
 
 
-    update(chunks: Chunks<GeometryWrapper.Geometry>) {
+    update(elapsedTime: number, chunks: Chunks<GeometryWrapper.Geometry>) {
 
         const viewportSize = WebGLContext.getViewportSize();
 
-        this._freeFlyCamera.handleKeys();
         this._freeFlyCamera.update( 1.0 / 60.0 );
 
         glm.mat4.perspective( this._projectionMatrix, 70, this._aspectRatio, 0.1, 70);
@@ -579,18 +594,16 @@ class WebGLRenderer {
 
         const viewport: Viewport = [0, 0, viewportSize[0]*0.75, viewportSize[1]];
 
-        for (let ii = 0; ii < chunks.length; ++ii) {
+        for (const chunk of chunks) {
 
-            const position3d = chunks[ii].position;
+            chunk.visible = this.chunkIsVisible(chunk.position);
+            chunk.coord2d = null;
 
-            chunks[ii].visible = this.chunkIsVisible(position3d);
-            chunks[ii].coord2d = null;
-
-            if (!this.pointIsVisible(position3d))
+            if (!this.pointIsVisible(chunk.position))
                 continue;
 
             const position2d = sceneToScreenCoordinates(
-                position3d,
+                chunk.position,
                 this._modelviewMatrix,
                 this._projectionMatrix,
                 viewport
@@ -599,7 +612,7 @@ class WebGLRenderer {
             if (!position2d)
                 continue;
 
-            chunks[ii].coord2d = position2d;
+            chunk.coord2d = position2d;
         }
     }
 
@@ -612,7 +625,9 @@ class WebGLRenderer {
 
         const currPos = [ position[0], position[1] ];
 
-        for (const letter of message) {
+        for (let ii = 0; ii < message.length; ++ii) {
+
+            const letter = message[ii];
 
             if (letter == '\n') {
 
@@ -699,24 +714,24 @@ class WebGLRenderer {
 
         // rendered 3 times with a different viewport and point of view
 
-        const w = viewportSize[0]*0.25;
-        const w2 = viewportSize[0]*0.75;
-        const h = viewportSize[1]*0.33;
-
         gl.clear(gl.DEPTH_BUFFER_BIT);
 
-        this._renderMainHud(chunks, touches, framesDuration);
+        this._renderMainHud(chunks, touches, framesDuration, processingPos);
 
         this._wireframeRendering.shader.bind();
 
-        this._renderSideHud(chunks, processingPos, [w2,h*0,w,h], [1.0, 1.2, 1.0], [0,0,1]);
-        this._renderSideHud(chunks, processingPos, [w2,h*1,w,h], [0.0, 1.0, 0.0], [0,0,1]);
-        this._renderSideHud(chunks, processingPos, [w2,h*2,w,h], [0.0, 0.0, 1.0], [0,1,0]);
+        const hudWidth = viewportSize[0] * 0.25;
+        const hudHeight = viewportSize[1] * 0.33;
+        const hudPosX = viewportSize[0] * 0.75;
+
+        this._renderSideHud(chunks, processingPos, [hudPosX,hudHeight*0,hudWidth,hudHeight], [1.0, 1.2, 1.0], [0,0,1]);
+        this._renderSideHud(chunks, processingPos, [hudPosX,hudHeight*1,hudWidth,hudHeight], [0.0, 1.0, 0.0], [0,0,1]);
+        this._renderSideHud(chunks, processingPos, [hudPosX,hudHeight*2,hudWidth,hudHeight], [0.0, 0.0, 1.0], [0,1,0]);
 
         ShaderProgram.unbind();
     }
 
-    private _renderMainHud(chunks: Chunks<GeometryWrapper.Geometry>, touches: ITouchData[], framesDuration: number[]) {
+    private _renderMainHud(chunks: Chunks<GeometryWrapper.Geometry>, touches: ITouchData[], framesDuration: number[], processingPos: Vec3[]) {
 
         const gl = WebGLContext.getContext();
         const viewportSize = WebGLContext.getViewportSize();
@@ -747,6 +762,8 @@ class WebGLRenderer {
         gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_modelviewMatrix"), false, hudModelViewMatrix);
         gl.uniformMatrix4fv(this._wireframeRendering.shader.getUniform("u_projMatrix"), false, hudProjectionMatrix);
 
+        const fpsmeterSize = [100, 50];
+        const fpsmeterPos = [10, viewportSize[1] - 10 - fpsmeterSize[1]];
 
         { // wireframe
 
@@ -754,23 +771,21 @@ class WebGLRenderer {
 
             { // fps meter
 
-                const size = [100, 50];
-                const pos = [10, viewportSize[1] - 10 - size[1]];
                 const maxValue = 1 / 30;
 
                 { // border
 
-                    vertices.push(pos[0],pos[1],0, 1,1,1);
-                    vertices.push(pos[0]+size[0],pos[1],0, 1,1,1);
+                    vertices.push(fpsmeterPos[0],fpsmeterPos[1],0, 1,1,1);
+                    vertices.push(fpsmeterPos[0]+fpsmeterSize[0],fpsmeterPos[1],0, 1,1,1);
 
-                    vertices.push(pos[0]+size[0],pos[1],0, 1,1,1);
-                    vertices.push(pos[0]+size[0],pos[1]+size[1],0, 1,1,1);
+                    vertices.push(fpsmeterPos[0]+fpsmeterSize[0],fpsmeterPos[1],0, 1,1,1);
+                    vertices.push(fpsmeterPos[0]+fpsmeterSize[0],fpsmeterPos[1]+fpsmeterSize[1],0, 1,1,1);
 
-                    vertices.push(pos[0]+size[0],pos[1]+size[1],0, 1,1,1);
-                    vertices.push(pos[0],pos[1]+size[1],0, 1,1,1);
+                    vertices.push(fpsmeterPos[0]+fpsmeterSize[0],fpsmeterPos[1]+fpsmeterSize[1],0, 1,1,1);
+                    vertices.push(fpsmeterPos[0],fpsmeterPos[1]+fpsmeterSize[1],0, 1,1,1);
 
-                    vertices.push(pos[0],pos[1]+size[1],0, 1,1,1);
-                    vertices.push(pos[0],pos[1],0, 1,1,1);
+                    vertices.push(fpsmeterPos[0],fpsmeterPos[1]+fpsmeterSize[1],0, 1,1,1);
+                    vertices.push(fpsmeterPos[0],fpsmeterPos[1],0, 1,1,1);
 
                 } // border
 
@@ -785,8 +800,8 @@ class WebGLRenderer {
                         const prevValue = Math.min(framesDuration[ii - 1], maxValue) / maxValue;
                         const currValue = Math.min(framesDuration[ii], maxValue) / maxValue;
 
-                        vertices.push(pos[0]+size[0]*prevCoef,pos[1]+size[1]*prevValue,0, 1,1,1);
-                        vertices.push(pos[0]+size[0]*currCoef,pos[1]+size[1]*currValue,0, 1,1,1);
+                        vertices.push(fpsmeterPos[0]+fpsmeterSize[0]*prevCoef,fpsmeterPos[1]+fpsmeterSize[1]*prevValue,0, 1,1,1);
+                        vertices.push(fpsmeterPos[0]+fpsmeterSize[0]*currCoef,fpsmeterPos[1]+fpsmeterSize[1]*currValue,0, 1,1,1);
                     }
 
                 } // curve
@@ -804,7 +819,7 @@ class WebGLRenderer {
                     if (latestValue < 999)
                         str = latestValue.toFixed(0).padStart(3, " ");
 
-                    this.pushText(`${str}fps`, [pos[0], pos[1] - this._textRendering.characterSize], 1);
+                    this.pushText(`${str}fps`, [fpsmeterPos[0], fpsmeterPos[1] - this._textRendering.characterSize], 1);
 
                 } // counter
 
@@ -871,18 +886,59 @@ class WebGLRenderer {
                 vertices.push(allVertices[0][0],allVertices[0][1],0, color[0],color[1],color[2]);
                 vertices.push(allVertices[1][0],allVertices[1][1],0, color[0],color[1],color[2]);
                 vertices.push(allVertices[3][0],allVertices[3][1],0, color[0],color[1],color[2]);
-            }
+            };
+
+            const pushRotatedLine = (center: Vec2, angle: number, length: number, thickness: number, color: Vec3 = [1,1,1]) => {
+
+                push_line(
+                    [center[0] - length * Math.cos(angle), center[1] - length * Math.sin(angle)],
+                    [center[0] + length * Math.cos(angle), center[1] + length * Math.sin(angle)],
+                    thickness,
+                    color);
+            };
+
+            { // rotating wheels
+
+                if (processingPos.length > 0) {
+
+                    this._fpsmeterSpeed += 0.0005;
+                    if (this._fpsmeterSpeed > 0.02)
+                        this._fpsmeterSpeed = 0.02;
+                }
+                else {
+                    this._fpsmeterSpeed -= 0.0005;
+                    if (this._fpsmeterSpeed < 0)
+                        this._fpsmeterSpeed = 0;
+                }
+
+                this._fpsmeterAngle += this._fpsmeterSpeed;
+
+                const positions: Vec2[] = [
+                    [ fpsmeterPos[0] + fpsmeterSize[0] + fpsmeterSize[1] * 0.6, fpsmeterPos[1] + fpsmeterSize[1] * 0.5 ],
+                    [ fpsmeterPos[0] + fpsmeterSize[0] + fpsmeterSize[1] * 0.6, fpsmeterPos[1] + fpsmeterSize[1] * 0.5 ],
+                    [ fpsmeterPos[0] + fpsmeterSize[0] + fpsmeterSize[1] * 1.3, fpsmeterPos[1] + fpsmeterSize[1] * 0.5 ],
+                    [ fpsmeterPos[0] + fpsmeterSize[0] + fpsmeterSize[1] * 1.3, fpsmeterPos[1] + fpsmeterSize[1] * 0.5 ],
+                ]
+
+                const angles = [
+                    this._fpsmeterAngle,
+                    this._fpsmeterAngle + Math.PI * 0.5,
+                    -this._fpsmeterAngle + Math.PI * 0.25,
+                    -this._fpsmeterAngle + Math.PI * 0.75,
+                ];
+
+                const length = fpsmeterSize[1] * 0.45;
+                const thickness = 10;
+                const color: Vec3 = [1, 1, 1];
+
+                pushRotatedLine(positions[0], angles[0], length, thickness, color);
+                pushRotatedLine(positions[1], angles[1], length, thickness, color);
+                pushRotatedLine(positions[2], angles[2], length, thickness, color);
+                pushRotatedLine(positions[3], angles[3], length, thickness, color);
+
+            } // rotating wheels
 
             { // touches
-
-                const pushRotatedLine = (center: Vec2, angle: number, length: number, thickness: number, color: Vec3 = [1,1,1]) => {
-
-                    push_line(
-                        [center[0] - length * Math.cos(angle), center[1] - length * Math.sin(angle)],
-                        [center[0] + length * Math.cos(angle), center[1] + length * Math.sin(angle)],
-                        thickness,
-                        color);
-                };
 
                 const idInUse = new Set<number>();
 
@@ -1016,9 +1072,9 @@ class WebGLRenderer {
                 // render red cube (smaller -> scalled)
 
                 const chunkCenter: Vec3 = [
-                    position[0] + chunk_size * 0.15,
-                    position[1] + chunk_size * 0.15,
-                    position[2] + chunk_size * 0.15
+                    position[0] + this._def.chunkSize * 0.15,
+                    position[1] + this._def.chunkSize * 0.15,
+                    position[2] + this._def.chunkSize * 0.15
                 ];
 
                 glm.mat4.translate(localModelViewMatrix, lookAtModelViewMatrix, chunkCenter);
@@ -1034,9 +1090,9 @@ class WebGLRenderer {
             for (let ii = 0; ii < processingPos.length; ++ii) {
 
                 glm.mat4.translate(localModelViewMatrix,lookAtModelViewMatrix, [
-                    processingPos[ii][0] + chunk_size * 0.2,
-                    processingPos[ii][1] + chunk_size * 0.2,
-                    processingPos[ii][2] + chunk_size * 0.2
+                    processingPos[ii][0] + this._def.chunkSize * 0.2,
+                    processingPos[ii][1] + this._def.chunkSize * 0.2,
+                    processingPos[ii][2] + this._def.chunkSize * 0.2
                 ]);
                 glm.mat4.scale(localModelViewMatrix,localModelViewMatrix, [0.6,0.6,0.6]);
 

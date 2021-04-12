@@ -32,6 +32,8 @@ export default class Texture {
         const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
 
+        gl.bindTexture(gl.TEXTURE_2D, null);
+
         return new Promise<void>((resolve, reject) => {
 
             const image = new Image();

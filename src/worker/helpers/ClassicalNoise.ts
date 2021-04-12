@@ -5,6 +5,13 @@ interface IRandomiser {
     random: () => number;
 }
 
+interface IDefinition {
+    randomiser?: IRandomiser;
+    octaves: number;
+    frequency: number;
+    amplitude: number;
+}
+
 class ClassicalNoise {
 
     private _octaves: number = 1;
@@ -14,14 +21,13 @@ class ClassicalNoise {
     private _p: Uint8Array;
     private _perm: Uint8Array;
 
-    constructor(randomiser: IRandomiser, octaves: number = 1, freq: number = 1, amp: number = 0.5) {
+    constructor(def: IDefinition) {
 
-        this._octaves       = octaves;
-        this._frequency     = freq;
-        this._amplitude     = amp;
+        this._octaves       = def.octaves || 1;
+        this._frequency     = def.frequency || 1;
+        this._amplitude     = def.amplitude || 0.5;
 
-        if (randomiser == undefined)
-            randomiser = Math;
+        const randomiser = def.randomiser || Math;
 
         this._grad3 = [
             [1,1,0], [-1,1,0], [1,-1,0], [-1,-1,0],
@@ -30,7 +36,6 @@ class ClassicalNoise {
         ];
 
         this._p = new Uint8Array(256);
-
         for (let ii = 0; ii < 256; ++ii)
             this._p[ii] = Math.floor(randomiser.random() * 256)|0;
 

@@ -32,10 +32,10 @@ const build = (opts) => {
     return stream;
 };
 
-gulp.task('build-release',          () => build({ isWorker: false, isDebug: false }));
-gulp.task('build-debug',            () => build({ isWorker: false, isDebug: true }));
+gulp.task('build-main-release',     () => build({ isWorker: false, isDebug: false }));
+gulp.task('build-main-debug',       () => build({ isWorker: false, isDebug: true }));
 gulp.task('build-worker-release',   () => build({ isWorker: true, isDebug: false }));
 gulp.task('build-worker-debug',     () => build({ isWorker: true, isDebug: true }));
 
-gulp.task('default',    gulp.series(gulp.parallel('build-release', 'build-worker-release')));
-gulp.task('debug',      gulp.series(gulp.parallel('build-debug',   'build-worker-debug')));
+gulp.task('default',    gulp.series(gulp.parallel('build-main-release', 'build-worker-release')));
+gulp.task('debug',      gulp.series(gulp.parallel('build-main-debug',   'build-worker-debug')));

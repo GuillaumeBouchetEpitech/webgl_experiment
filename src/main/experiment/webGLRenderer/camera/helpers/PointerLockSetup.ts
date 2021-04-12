@@ -1,27 +1,27 @@
 
 "use strict"
 
-interface IPointerLockDef {
-    target_element: HTMLElement;
-    cb_enabled: () => void;
-    cb_disabled: () => void;
-    cb_error?: (error: any) => void;
+interface IDefinition {
+    targetElement: HTMLElement;
+    enabledCallback: () => void;
+    disabledCallback: () => void;
+    errorCallback?: (error: any) => void;
 };
 
-const PointerLockSetup = (def: IPointerLockDef) => {
+const PointerLockSetup = (def: IDefinition) => {
 
-    def.target_element.requestPointerLock = def.target_element.requestPointerLock ||
-                                            (def.target_element as any).mozRequestPointerLock ||
-                                            (def.target_element as any).webkitRequestPointerLock;
+    def.targetElement.requestPointerLock = def.targetElement.requestPointerLock ||
+                                            (def.targetElement as any).mozRequestPointerLock ||
+                                            (def.targetElement as any).webkitRequestPointerLock;
 
     document.exitPointerLock = document.exitPointerLock ||
                                (document as any).mozExitPointerLock ||
                                (document as any).webkitExitPointerLock;
 
-    def.target_element.onclick = () => {
+    def.targetElement.onclick = () => {
 
-        if (def.target_element.requestPointerLock)
-            def.target_element.requestPointerLock();
+        if (def.targetElement.requestPointerLock)
+            def.targetElement.requestPointerLock();
     };
 
     //
@@ -30,19 +30,19 @@ const PointerLockSetup = (def: IPointerLockDef) => {
 
     const onLockChange = () => {
 
-        if (document.pointerLockElement === def.target_element ||
-            (document as any).mozPointerLockElement === def.target_element ||
-            (document as any).webkitPointerLockElement === def.target_element) {
+        if (document.pointerLockElement === def.targetElement ||
+            (document as any).mozPointerLockElement === def.targetElement ||
+            (document as any).webkitPointerLockElement === def.targetElement) {
 
             console.log('The pointer lock status is now locked');
 
-            def.cb_enabled();
+            def.enabledCallback();
         }
         else {
 
             console.log('The pointer lock status is now unlocked');
 
-            def.cb_disabled();
+            def.disabledCallback();
         }
     };
 
@@ -51,8 +51,8 @@ const PointerLockSetup = (def: IPointerLockDef) => {
         console.error("Pointer lock failed");
         console.error(event);
 
-        if (def.cb_error)
-            def.cb_error(event);
+        if (def.errorCallback)
+            def.errorCallback(event);
     };
 
     //

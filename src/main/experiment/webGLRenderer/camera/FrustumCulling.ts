@@ -19,22 +19,22 @@ enum PlaneData {
 
 class FrustumCulling {
 
-    private _Frustum = new Float32Array(24); // 6 * 4 values
+    private _frustum = new Float32Array(24); // 6 * 4 values
 
     normalizePlane(side: FrustumSide) {
 
         const index = side * 4;
 
         const magnitude = Math.sqrt(
-            this._Frustum[index + PlaneData.A] * this._Frustum[index + PlaneData.A] +
-            this._Frustum[index + PlaneData.B] * this._Frustum[index + PlaneData.B] +
-            this._Frustum[index + PlaneData.C] * this._Frustum[index + PlaneData.C]
+            this._frustum[index + PlaneData.A] * this._frustum[index + PlaneData.A] +
+            this._frustum[index + PlaneData.B] * this._frustum[index + PlaneData.B] +
+            this._frustum[index + PlaneData.C] * this._frustum[index + PlaneData.C]
         );
 
-        this._Frustum[index + PlaneData.A] /= magnitude;
-        this._Frustum[index + PlaneData.B] /= magnitude;
-        this._Frustum[index + PlaneData.C] /= magnitude;
-        this._Frustum[index + PlaneData.D] /= magnitude;
+        this._frustum[index + PlaneData.A] /= magnitude;
+        this._frustum[index + PlaneData.B] /= magnitude;
+        this._frustum[index + PlaneData.C] /= magnitude;
+        this._frustum[index + PlaneData.D] /= magnitude;
     }
 
     calculateFrustum(proj: glm.mat4, modl: glm.mat4) {
@@ -64,46 +64,46 @@ class FrustumCulling {
         ///
 
         let index = FrustumSide.Right * 4;
-        this._Frustum[index + PlaneData.A] = clip[ 3] - clip[ 0];
-        this._Frustum[index + PlaneData.B] = clip[ 7] - clip[ 4];
-        this._Frustum[index + PlaneData.C] = clip[11] - clip[ 8];
-        this._Frustum[index + PlaneData.D] = clip[15] - clip[12];
+        this._frustum[index + PlaneData.A] = clip[ 3] - clip[ 0];
+        this._frustum[index + PlaneData.B] = clip[ 7] - clip[ 4];
+        this._frustum[index + PlaneData.C] = clip[11] - clip[ 8];
+        this._frustum[index + PlaneData.D] = clip[15] - clip[12];
         this.normalizePlane(FrustumSide.Right);
         index = FrustumSide.Left * 4;
-        this._Frustum[index + PlaneData.A] = clip[ 3] + clip[ 0];
-        this._Frustum[index + PlaneData.B] = clip[ 7] + clip[ 4];
-        this._Frustum[index + PlaneData.C] = clip[11] + clip[ 8];
-        this._Frustum[index + PlaneData.D] = clip[15] + clip[12];
+        this._frustum[index + PlaneData.A] = clip[ 3] + clip[ 0];
+        this._frustum[index + PlaneData.B] = clip[ 7] + clip[ 4];
+        this._frustum[index + PlaneData.C] = clip[11] + clip[ 8];
+        this._frustum[index + PlaneData.D] = clip[15] + clip[12];
         this.normalizePlane(FrustumSide.Left);
 
 
         index = FrustumSide.Bottom * 4;
-        this._Frustum[index + PlaneData.A] = clip[ 3] + clip[ 1];
-        this._Frustum[index + PlaneData.B] = clip[ 7] + clip[ 5];
-        this._Frustum[index + PlaneData.C] = clip[11] + clip[ 9];
-        this._Frustum[index + PlaneData.D] = clip[15] + clip[13];
+        this._frustum[index + PlaneData.A] = clip[ 3] + clip[ 1];
+        this._frustum[index + PlaneData.B] = clip[ 7] + clip[ 5];
+        this._frustum[index + PlaneData.C] = clip[11] + clip[ 9];
+        this._frustum[index + PlaneData.D] = clip[15] + clip[13];
         this.normalizePlane(FrustumSide.Bottom);
 
         index = FrustumSide.Top * 4;
-        this._Frustum[index + PlaneData.A] = clip[ 3] - clip[ 1];
-        this._Frustum[index + PlaneData.B] = clip[ 7] - clip[ 5];
-        this._Frustum[index + PlaneData.C] = clip[11] - clip[ 9];
-        this._Frustum[index + PlaneData.D] = clip[15] - clip[13];
+        this._frustum[index + PlaneData.A] = clip[ 3] - clip[ 1];
+        this._frustum[index + PlaneData.B] = clip[ 7] - clip[ 5];
+        this._frustum[index + PlaneData.C] = clip[11] - clip[ 9];
+        this._frustum[index + PlaneData.D] = clip[15] - clip[13];
         this.normalizePlane(FrustumSide.Top);
 
 
         index = FrustumSide.Back * 4;
-        this._Frustum[index + PlaneData.A] = clip[ 3] - clip[ 2];
-        this._Frustum[index + PlaneData.B] = clip[ 7] - clip[ 6];
-        this._Frustum[index + PlaneData.C] = clip[11] - clip[10];
-        this._Frustum[index + PlaneData.D] = clip[15] - clip[14];
+        this._frustum[index + PlaneData.A] = clip[ 3] - clip[ 2];
+        this._frustum[index + PlaneData.B] = clip[ 7] - clip[ 6];
+        this._frustum[index + PlaneData.C] = clip[11] - clip[10];
+        this._frustum[index + PlaneData.D] = clip[15] - clip[14];
         this.normalizePlane(FrustumSide.Back);
 
         index = FrustumSide.Front * 4;
-        this._Frustum[index + PlaneData.A] = clip[ 3] + clip[ 2];
-        this._Frustum[index + PlaneData.B] = clip[ 7] + clip[ 6];
-        this._Frustum[index + PlaneData.C] = clip[11] + clip[10];
-        this._Frustum[index + PlaneData.D] = clip[15] + clip[14];
+        this._frustum[index + PlaneData.A] = clip[ 3] + clip[ 2];
+        this._frustum[index + PlaneData.B] = clip[ 7] + clip[ 6];
+        this._frustum[index + PlaneData.C] = clip[11] + clip[10];
+        this._frustum[index + PlaneData.D] = clip[15] + clip[14];
         this.normalizePlane(FrustumSide.Front);
     }
 
@@ -111,10 +111,10 @@ class FrustumCulling {
 
         for (let ii = 0; ii < 6; ++ii) {
 
-            if (this._Frustum[ii * 4 + PlaneData.A] * x +
-                this._Frustum[ii * 4 + PlaneData.B] * y +
-                this._Frustum[ii * 4 + PlaneData.C] * z +
-                this._Frustum[ii * 4 + PlaneData.D] <= radius) {
+            if (this._frustum[ii * 4 + PlaneData.A] * x +
+                this._frustum[ii * 4 + PlaneData.B] * y +
+                this._frustum[ii * 4 + PlaneData.C] * z +
+                this._frustum[ii * 4 + PlaneData.D] <= radius) {
 
                 return false;
             }
@@ -135,54 +135,54 @@ class FrustumCulling {
 
             const index = ii * 4;
 
-            if (this._Frustum[index + PlaneData.A] * (x - size) +
-                this._Frustum[index + PlaneData.B] * (y - size) +
-                this._Frustum[index + PlaneData.C] * (z - size) +
-                this._Frustum[index + PlaneData.D] > 0)
+            if (this._frustum[index + PlaneData.A] * (x - size) +
+                this._frustum[index + PlaneData.B] * (y - size) +
+                this._frustum[index + PlaneData.C] * (z - size) +
+                this._frustum[index + PlaneData.D] > 0)
                 continue;
 
-            if (this._Frustum[index + PlaneData.A] * (x + size) +
-                this._Frustum[index + PlaneData.B] * (y - size) +
-                this._Frustum[index + PlaneData.C] * (z - size) +
-                this._Frustum[index + PlaneData.D] > 0)
+            if (this._frustum[index + PlaneData.A] * (x + size) +
+                this._frustum[index + PlaneData.B] * (y - size) +
+                this._frustum[index + PlaneData.C] * (z - size) +
+                this._frustum[index + PlaneData.D] > 0)
                 continue;
 
-            if (this._Frustum[index + PlaneData.A] * (x - size) +
-                this._Frustum[index + PlaneData.B] * (y + size) +
-                this._Frustum[index + PlaneData.C] * (z - size) +
-                this._Frustum[index + PlaneData.D] > 0)
+            if (this._frustum[index + PlaneData.A] * (x - size) +
+                this._frustum[index + PlaneData.B] * (y + size) +
+                this._frustum[index + PlaneData.C] * (z - size) +
+                this._frustum[index + PlaneData.D] > 0)
                 continue;
 
-            if (this._Frustum[index + PlaneData.A] * (x + size) +
-                this._Frustum[index + PlaneData.B] * (y + size) +
-                this._Frustum[index + PlaneData.C] * (z - size) +
-                this._Frustum[index + PlaneData.D] > 0)
+            if (this._frustum[index + PlaneData.A] * (x + size) +
+                this._frustum[index + PlaneData.B] * (y + size) +
+                this._frustum[index + PlaneData.C] * (z - size) +
+                this._frustum[index + PlaneData.D] > 0)
                 continue;
 
             ///
 
-            if (this._Frustum[index + PlaneData.A] * (x - size) +
-                this._Frustum[index + PlaneData.B] * (y - size) +
-                this._Frustum[index + PlaneData.C] * (z + size) +
-                this._Frustum[index + PlaneData.D] > 0)
+            if (this._frustum[index + PlaneData.A] * (x - size) +
+                this._frustum[index + PlaneData.B] * (y - size) +
+                this._frustum[index + PlaneData.C] * (z + size) +
+                this._frustum[index + PlaneData.D] > 0)
                 continue;
 
-            if (this._Frustum[index + PlaneData.A] * (x + size) +
-                this._Frustum[index + PlaneData.B] * (y - size) +
-                this._Frustum[index + PlaneData.C] * (z + size) +
-                this._Frustum[index + PlaneData.D] > 0)
+            if (this._frustum[index + PlaneData.A] * (x + size) +
+                this._frustum[index + PlaneData.B] * (y - size) +
+                this._frustum[index + PlaneData.C] * (z + size) +
+                this._frustum[index + PlaneData.D] > 0)
                 continue;
 
-            if (this._Frustum[index + PlaneData.A] * (x - size) +
-                this._Frustum[index + PlaneData.B] * (y + size) +
-                this._Frustum[index + PlaneData.C] * (z + size) +
-                this._Frustum[index + PlaneData.D] > 0)
+            if (this._frustum[index + PlaneData.A] * (x - size) +
+                this._frustum[index + PlaneData.B] * (y + size) +
+                this._frustum[index + PlaneData.C] * (z + size) +
+                this._frustum[index + PlaneData.D] > 0)
                 continue;
 
-            if (this._Frustum[index + PlaneData.A] * (x + size) +
-                this._Frustum[index + PlaneData.B] * (y + size) +
-                this._Frustum[index + PlaneData.C] * (z + size) +
-                this._Frustum[index + PlaneData.D] > 0)
+            if (this._frustum[index + PlaneData.A] * (x + size) +
+                this._frustum[index + PlaneData.B] * (y + size) +
+                this._frustum[index + PlaneData.C] * (z + size) +
+                this._frustum[index + PlaneData.D] > 0)
                 continue;
 
             return false;

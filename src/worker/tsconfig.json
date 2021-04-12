@@ -1,6 +1,11 @@
 {
     "extends": "../generic-tsconfig.json",
     "compilerOptions": {
-        "lib": ["es2017", "webworker"],
-    }
+        "lib": ["es2017", "webworker"]
+    },
+    "files": [
+        "./main.ts",
+        "./helpers/*.ts",
+        "../main/configuration.ts"
+    ]
 }

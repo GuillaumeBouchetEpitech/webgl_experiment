@@ -10,7 +10,7 @@ export interface IShaderProgramOpts {
 
 class ShaderProgram {
 
-    private _program: WebGLProgram | null;
+    private _program: WebGLProgram;
 
     private _attributes = new Map<string, number>();
     private _uniforms = new Map<string, WebGLUniformLocation>();
@@ -24,25 +24,34 @@ class ShaderProgram {
 
         //
 
-        this._program = gl.createProgram();
-        if (!this._program)
+        const program = gl.createProgram();
+        if (!program)
             throw new Error("could not create a shader program");
 
-        gl.attachShader(this._program, vertexShader);
-        gl.attachShader(this._program, fragmentShader);
-        gl.linkProgram(this._program);
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
         gl.deleteShader(vertexShader); // free up now unused memory
         gl.deleteShader(fragmentShader); // free up now unused memory
 
-        if (!gl.getProgramParameter(this._program, gl.LINK_STATUS)) {
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 
             // An error occurred while linking
-            const lastError = gl.getProgramInfoLog(this._program);
+            const lastError = gl.getProgramInfoLog(program);
 
             throw new Error("Failed to initialised shaders, Error linking:" + lastError);
         }
 
-        this._getAttribAndLocation(opt.attributes, opt.uniforms);
+        this._program = program;
+
+        // this._getAttribAndLocation(opt.attributes, opt.uniforms);
+
+        this.bind();
+
+        this._getAttributes(opt.attributes);
+        this._getUniforms(opt.uniforms);
+
+        ShaderProgram.unbind();
     }
 
     bind() {
@@ -77,14 +86,9 @@ class ShaderProgram {
         return uniform;
     }
 
-    private _getAttribAndLocation(attributes: string[], uniforms: string[]) {
+    private _getAttributes(attributes: string[]) {
 
         const gl = WebGLContext.getContext();
-
-        if (!this._program)
-            throw new Error("shader program not initialised");
-
-        gl.useProgram(this._program);
 
         for (let ii = 0; ii < attributes.length; ++ii) {
 
@@ -95,6 +99,11 @@ class ShaderProgram {
 
             this._attributes.set(attributes[ii], value);
         }
+    }
+
+    private _getUniforms(uniforms: string[]) {
+
+        const gl = WebGLContext.getContext();
 
         for (let ii = 0; ii < uniforms.length; ++ii) {
 
@@ -105,8 +114,6 @@ class ShaderProgram {
 
             this._uniforms.set(uniforms[ii], value);
         }
-
-        gl.useProgram(null);
     }
 
     //

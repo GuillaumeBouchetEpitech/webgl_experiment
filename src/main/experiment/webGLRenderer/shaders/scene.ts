@@ -11,14 +11,21 @@ uniform mat4 u_projMatrix;
 uniform vec3 u_cameraPos;
 
 varying vec3 v_color;
-varying vec3 v_baryCenter;
 
+// lighting
 varying vec3 v_normalInterp;
 varying vec3 v_vertPos;
-varying float v_distanceToCamera;
+// lighting
 
+// wireframe
+varying float v_distanceToCamera;
+varying vec3  v_baryCenter;
+// wireframe
+
+// texturing
 varying vec3 v_pureVertexPos;
 varying vec3 v_pureNormalInterp;
+// texturing
 
 const float k_rangeMin = 20.0;
 const float k_rangeMax = 23.0;
@@ -60,14 +67,21 @@ precision mediump float;
 uniform sampler2D u_sampler;
 
 varying vec3 v_color;
-varying vec3 v_baryCenter;
 
+// lighting
 varying vec3 v_normalInterp;
 varying vec3 v_vertPos;
-varying float v_distanceToCamera;
+// lighting
 
+// wireframe
+varying float v_distanceToCamera;
+varying vec3  v_baryCenter;
+// wireframe
+
+// texturing
 varying vec3 v_pureVertexPos;
 varying vec3 v_pureNormalInterp;
+// texturing
 
 const vec3 k_lightPos = vec3(0.0,0.0,0.0);
 const vec3 k_specColor = vec3(1.0, 1.0, 1.0);
@@ -87,16 +101,13 @@ void main(void)
             if (v_distanceToCamera > k_rangeMin &&
                 v_distanceToCamera < k_rangeMax)
             {
-
                 if (all(greaterThan(v_baryCenter, vec3(0.03))) &&
                     any(lessThan(v_baryCenter, vec3(0.08))))
                 {
                     gl_FragColor = vec4(v_color, 1.0);
                     return;
                 }
-
             }
-
         }
         else
         {
@@ -107,15 +118,16 @@ void main(void)
                 gl_FragColor = vec4(1);
                 return;
             }
+            else
+            {
+                // discard what is not part fo the wireframe
+                discard;
+            }
         }
-
-        // wireframe only for the backface
-        if (!gl_FrontFacing)
-            discard;
 
     } // /wireframe
 
-    vec3 currentColor = v_color;
+    vec3 currentColor = vec3(1);
 
     { // texture
 
@@ -126,33 +138,33 @@ void main(void)
             v_pureVertexPos.z - floor(v_pureVertexPos.z)
         );
 
-        vec3 blend_weights = abs( normalize( v_pureNormalInterp.xyz ) );
-        blend_weights = max( ( blend_weights - 0.2 ) * 7.0, 0.0 );
-        blend_weights /= ( blend_weights.x + blend_weights.y + blend_weights.z );
+        vec3 blendWeights = abs( normalize( v_pureNormalInterp.xyz ) );
+        blendWeights = max( ( blendWeights - 0.2 ) * 7.0, 0.0 );
+        blendWeights /= ( blendWeights.x + blendWeights.y + blendWeights.z );
 
         // horizontal texture coordinates -> should be a wall
-        vec2 texcoord1 = vec2(flooredPos.y * 0.5 + 0.5, flooredPos.z * 0.5);
-        vec2 texcoord2 = vec2(flooredPos.x * 0.5 + 0.5, flooredPos.z * 0.5);
+        vec2 texCoordX = vec2(flooredPos.y * 0.5 + 0.5, flooredPos.z * 0.5);
+        vec2 texCoordY = vec2(flooredPos.x * 0.5 + 0.5, flooredPos.z * 0.5);
 
         // vertical texture coord -> should be green grass
-        vec2 texcoord3 = vec2(flooredPos.x * 0.5, flooredPos.y * 0.5 + 0.5);
+        vec2 texCoordZ = vec2(flooredPos.x * 0.5, flooredPos.y * 0.5 + 0.5);
 
         if (v_pureNormalInterp.z < 0.0)
         {
             // switch the texture Y -> dirt on the ceilling instead of grass
-            texcoord3.y -= 0.5;
+            texCoordZ.y -= 0.5;
         }
 
         // horizontal color
-        vec3 texColor1 = texture2D( u_sampler, texcoord1 ).rgb;
-        vec3 texColor2 = texture2D( u_sampler, texcoord2 ).rgb;
+        vec3 texColorX = texture2D( u_sampler, texCoordX ).rgb;
+        vec3 texColorY = texture2D( u_sampler, texCoordY ).rgb;
 
         // vertical color
-        vec3 texColor3 = texture2D( u_sampler, texcoord3 ).rgb;
+        vec3 texColorZ = texture2D( u_sampler, texCoordZ ).rgb;
 
-        currentColor = texColor1 * blend_weights.xxx +
-                    texColor2 * blend_weights.yyy +
-                    texColor3 * blend_weights.zzz;
+        currentColor = texColorX * blendWeights.xxx +
+                       texColorY * blendWeights.yyy +
+                       texColorZ * blendWeights.zzz;
 
     } // texture
 
@@ -166,7 +178,7 @@ void main(void)
 
         if (lambertian > 0.0)
         {
-            // lighting specular
+            // specular
 
             vec3 reflectDir = reflect(-lightDir, normal);
             vec3 viewDir = normalize(-v_vertPos);
@@ -175,13 +187,11 @@ void main(void)
             specular = pow(specAngle, 16.0);
         }
 
-        // lighting output
+        vec3 ambiantColor = currentColor.xyz * 0.05;
+        vec3 diffuseColor = currentColor.xyz * lambertian;
+        vec3 specularColor = k_specColor * specular;
 
-        vec3 ambiant_color = currentColor.xyz * 0.05;
-        vec3 diffuse_color = currentColor.xyz * lambertian;
-        vec3 specular_color = k_specColor * specular;
-
-        currentColor = ambiant_color + diffuse_color + specular_color;
+        currentColor = ambiantColor + diffuseColor + specularColor;
 
     } // lighting
 

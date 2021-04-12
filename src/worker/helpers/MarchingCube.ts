@@ -381,29 +381,29 @@ namespace utilities {
 
 class MarchingCube {
 
-    private _chunk_size: number;
-    private _fTv: number;
-    private _sample_cb: (x: number, y: number, z: number) => number;
-    private _step_size: number;
-    private _current_geom_callback: GeomCallback;
+    private _chunkSize: number;
+    private _limit: number;
+    private _sampleCallback: (x: number, y: number, z: number) => number;
+    private _stepSize: number;
+    private _currentGeometryCallback: GeomCallback | undefined;
 
-    constructor(chunk_size: number, fTv: number, sample_cb: (x: number, y: number, z: number) => number) {
+    constructor(chunkSize: number, limit: number, sampleCallback: (x: number, y: number, z: number) => number) {
 
-        this._chunk_size = chunk_size;
-        this._fTv = fTv;
-        this._sample_cb = sample_cb;
+        this._chunkSize = chunkSize;
+        this._limit = limit;
+        this._sampleCallback = sampleCallback;
 
-        this._step_size = 1.0 / this._chunk_size;
+        this._stepSize = 1.0 / this._chunkSize;
     }
 
     getNormal(fX: number, fY: number, fZ: number): Vec3 {
 
-        const step_dec = this._step_size * 0.1;
+        const stepDecalage = this._stepSize * 0.1;
 
         const normal: Vec3 = [
-            this._sample_cb( fX - step_dec, fY, fZ ) - this._sample_cb( fX + step_dec, fY, fZ ),
-            this._sample_cb( fX, fY - step_dec, fZ ) - this._sample_cb( fX, fY + step_dec, fZ ),
-            this._sample_cb( fX, fY, fZ - step_dec ) - this._sample_cb( fX, fY, fZ + step_dec )
+            this._sampleCallback( fX - stepDecalage, fY, fZ ) - this._sampleCallback( fX + stepDecalage, fY, fZ ),
+            this._sampleCallback( fX, fY - stepDecalage, fZ ) - this._sampleCallback( fX, fY + stepDecalage, fZ ),
+            this._sampleCallback( fX, fY, fZ - stepDecalage ) - this._sampleCallback( fX, fY, fZ + stepDecalage )
         ];
 
         return utilities.normalizeVector( normal );
@@ -425,24 +425,24 @@ class MarchingCube {
         ];
     }
 
-    generate(pos: number[], geom_callback: GeomCallback, marchTetrahedron: boolean = false) {
+    generate(pos: number[], geomCallback: GeomCallback, marchTetrahedron: boolean = false) {
 
-        if (!geom_callback)
+        if (!geomCallback)
             throw new Error("no geometry callback supplied");
 
-        this._current_geom_callback = geom_callback;
+        this._currentGeometryCallback = geomCallback;
 
-        const generate_callback = marchTetrahedron
+        const generateCallback = marchTetrahedron
                                     ? this._marchTetrahedron.bind(this)
-                                    : this._marchCube_single.bind(this);
+                                    : this._marchCubeSingle.bind(this);
 
-        for (let iX = 0; iX <= this._chunk_size; ++iX)
-        for (let iY = 0; iY <= this._chunk_size; ++iY)
-        for (let iZ = 0; iZ <= this._chunk_size; ++iZ)
-            generate_callback( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
+        for (let iX = 0; iX <= this._chunkSize; ++iX)
+        for (let iY = 0; iY <= this._chunkSize; ++iY)
+        for (let iZ = 0; iZ <= this._chunkSize; ++iZ)
+            generateCallback( pos[0] + iX, pos[1] + iY, pos[2] + iZ );
     }
 
-    private _marchCube_single(iX: number, iY: number, iZ: number) {
+    private _marchCubeSingle(iX: number, iY: number, iZ: number) {
 
         const afCubeValue = [ 0,0,0,0, 0,0,0,0 ];
         const asEdgeVertex: Vec3[] =  [
@@ -457,20 +457,20 @@ class MarchingCube {
         ];
 
         /// add chunk pos here
-        const fX = iX * this._step_size;
-        const fY = iY * this._step_size;
-        const fZ = iZ * this._step_size;
+        const fX = iX * this._stepSize;
+        const fY = iY * this._stepSize;
+        const fZ = iZ * this._stepSize;
 
         /// Make a local copy of the values at the cube's corners
         for (let iVertex = 0; iVertex < 8; ++iVertex)
-            afCubeValue[iVertex] = this._sample_cb( fX + a2fVertexOffset[iVertex][0] * this._step_size,
-                                                    fY + a2fVertexOffset[iVertex][1] * this._step_size,
-                                                    fZ + a2fVertexOffset[iVertex][2] * this._step_size );
+            afCubeValue[iVertex] = this._sampleCallback( fX + a2fVertexOffset[iVertex][0] * this._stepSize,
+                                                    fY + a2fVertexOffset[iVertex][1] * this._stepSize,
+                                                    fZ + a2fVertexOffset[iVertex][2] * this._stepSize );
 
         //Find which vertices are inside of the surface and which are outside
         let iFlagIndex = 0|0;
         for (let iVertexTest = 0|0; iVertexTest < 8; ++iVertexTest)
-            if (afCubeValue[iVertexTest] <= this._fTv)
+            if (afCubeValue[iVertexTest] <= this._limit)
                 iFlagIndex |= (1 << iVertexTest);
 
         //Find which edges are intersected by the surface
@@ -490,12 +490,12 @@ class MarchingCube {
                 const fOffset = utilities.getOffset(
                     afCubeValue[ a2iEdgeConnection[iEdge][0] ],
                     afCubeValue[ a2iEdgeConnection[iEdge][1] ],
-                    this._fTv
+                    this._limit
                 );
 
-                asEdgeVertex[iEdge][0] = fX + ( a2fVertexOffset[ a2iEdgeConnection[iEdge][0] ][0] + fOffset * a2fEdgeDirection[iEdge][0] ) * this._step_size;
-                asEdgeVertex[iEdge][1] = fY + ( a2fVertexOffset[ a2iEdgeConnection[iEdge][0] ][1] + fOffset * a2fEdgeDirection[iEdge][1] ) * this._step_size;
-                asEdgeVertex[iEdge][2] = fZ + ( a2fVertexOffset[ a2iEdgeConnection[iEdge][0] ][2] + fOffset * a2fEdgeDirection[iEdge][2] ) * this._step_size;
+                asEdgeVertex[iEdge][0] = fX + ( a2fVertexOffset[ a2iEdgeConnection[iEdge][0] ][0] + fOffset * a2fEdgeDirection[iEdge][0] ) * this._stepSize;
+                asEdgeVertex[iEdge][1] = fY + ( a2fVertexOffset[ a2iEdgeConnection[iEdge][0] ][1] + fOffset * a2fEdgeDirection[iEdge][1] ) * this._stepSize;
+                asEdgeVertex[iEdge][2] = fZ + ( a2fVertexOffset[ a2iEdgeConnection[iEdge][0] ][2] + fOffset * a2fEdgeDirection[iEdge][2] ) * this._stepSize;
 
                 asEdgeNorm[iEdge] = this.getNormal( asEdgeVertex[iEdge][0], asEdgeVertex[iEdge][1], asEdgeVertex[iEdge][2] );
             }
@@ -517,57 +517,29 @@ class MarchingCube {
                 //
 
                 const vertex: Vec3 = [
-                    asEdgeVertex[iVertex][0] * this._chunk_size,
-                    asEdgeVertex[iVertex][1] * this._chunk_size,
-                    asEdgeVertex[iVertex][2] * this._chunk_size
+                    asEdgeVertex[iVertex][0] * this._chunkSize,
+                    asEdgeVertex[iVertex][1] * this._chunkSize,
+                    asEdgeVertex[iVertex][2] * this._chunkSize
                 ];
 
                 const normal = asEdgeNorm[iVertex];
 
                 //
 
-                if (this._current_geom_callback)
-                    this._current_geom_callback( vertex, color, normal );
+                if (this._currentGeometryCallback)
+                    this._currentGeometryCallback( vertex, color, normal );
 
             } // for (iCorner = [...]
 
         } // for (iTriangle = [...]
-
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private _marchTetrahedron(iX: number, iY: number, iZ: number) {
 
         /// add chunk pos here
-        const fX = iX * this._step_size;
-        const fY = iY * this._step_size;
-        const fZ = iZ * this._step_size;
+        const fX = iX * this._stepSize;
+        const fY = iY * this._stepSize;
+        const fZ = iZ * this._stepSize;
 
         const asCubePosition: Vec3[] = [
             [0,0,0], [0,0,0], [0,0,0], [0,0,0],
@@ -577,16 +549,16 @@ class MarchingCube {
         // Make a local copy of the cube's corner positions
         for (let iVertex = 0; iVertex < 8; ++iVertex) {
 
-            asCubePosition[iVertex][0] = fX + a2fVertexOffset[iVertex][0]*this._step_size;
-            asCubePosition[iVertex][1] = fY + a2fVertexOffset[iVertex][1]*this._step_size;
-            asCubePosition[iVertex][2] = fZ + a2fVertexOffset[iVertex][2]*this._step_size;
+            asCubePosition[iVertex][0] = fX + a2fVertexOffset[iVertex][0]*this._stepSize;
+            asCubePosition[iVertex][1] = fY + a2fVertexOffset[iVertex][1]*this._stepSize;
+            asCubePosition[iVertex][2] = fZ + a2fVertexOffset[iVertex][2]*this._stepSize;
         }
 
         const afCubeValue = [0,0,0,0,0,0,0,0];
 
         // Make a local copy of the cube's corner values
         for (let iVertex = 0; iVertex < 8; iVertex++)
-            afCubeValue[iVertex] = this._sample_cb( asCubePosition[iVertex][0],
+            afCubeValue[iVertex] = this._sampleCallback( asCubePosition[iVertex][0],
                                                 asCubePosition[iVertex][1],
                                                 asCubePosition[iVertex][2]);
 
@@ -606,11 +578,11 @@ class MarchingCube {
                 afTetrahedronValue[iVertex] = afCubeValue[iVertexInACube];
             }
 
-            this._vMarchTetrahedron( asTetrahedronPosition, afTetrahedronValue );
+            this._marchTetrahedronSingle( asTetrahedronPosition, afTetrahedronValue );
         }
     }
 
-    private _vMarchTetrahedron(pasTetrahedronPosition: Vec3[], pafTetrahedronValue: number[]) {
+    private _marchTetrahedronSingle(pasTetrahedronPosition: Vec3[], pafTetrahedronValue: number[]) {
 
         const asEdgeVertex: Vec3[] = [ [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0] ];
         const asEdgeNorm: Vec3[] = [ [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0] ];
@@ -618,7 +590,7 @@ class MarchingCube {
         //Find which vertices are inside of the surface and which are outside
         let iFlagIndex = 0;
         for (let iVertex = 0; iVertex < 4; iVertex++)
-            if (pafTetrahedronValue[iVertex] <= this._fTv)
+            if (pafTetrahedronValue[iVertex] <= this._limit)
                 iFlagIndex |= 1<<iVertex;
 
         //Find which edges are intersected by the surface
@@ -637,7 +609,7 @@ class MarchingCube {
                 const fOffset = utilities.getOffset(
                     pafTetrahedronValue[iVert0],
                     pafTetrahedronValue[iVert1],
-                    this._fTv
+                    this._limit
                 );
                 const fInvOffset = 1.0 - fOffset;
 
@@ -661,18 +633,15 @@ class MarchingCube {
                 const color = utilities.getColor( asEdgeNorm[iVertex] );
 
                 const vertex: Vec3 = [
-                    asEdgeVertex[iVertex][0] * this._chunk_size,
-                    asEdgeVertex[iVertex][1] * this._chunk_size,
-                    asEdgeVertex[iVertex][2] * this._chunk_size
-                    // asEdgeVertex[iVertex][0],
-                    // asEdgeVertex[iVertex][1],
-                    // asEdgeVertex[iVertex][2]
+                    asEdgeVertex[iVertex][0] * this._chunkSize,
+                    asEdgeVertex[iVertex][1] * this._chunkSize,
+                    asEdgeVertex[iVertex][2] * this._chunkSize
                 ];
 
                 const normal = asEdgeNorm[iVertex];
 
-                if (this._current_geom_callback)
-                    this._current_geom_callback( vertex, color, normal );
+                if (this._currentGeometryCallback)
+                    this._currentGeometryCallback( vertex, color, normal );
             }
         }
     }

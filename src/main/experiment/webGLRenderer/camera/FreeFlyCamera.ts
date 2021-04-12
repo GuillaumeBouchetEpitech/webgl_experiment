@@ -6,7 +6,25 @@ import * as glm from 'gl-matrix';
 import { KeyboardHandler, keyCodes } from './helpers/KeyboardHandler';
 import PointerLockSetup from './helpers/PointerLockSetup';
 
+enum Directions {
+    forward     = (1 << 0),
+    backward    = (1 << 1),
+    left        = (1 << 2),
+    right       = (1 << 3),
+};
+
+interface IDefinition {
+    targetElement: HTMLElement;
+    movingSpeed: number;
+    mouseSensivity: number;
+    keyboardSensivity: number;
+};
+
 class FreeFlyCamera {
+
+    private _movingSpeed: number;
+    private _mouseSensivity: number;
+    private _keyboardSensivity: number;
 
     private _phi: number = 0;
     private _theta: number = 0;
@@ -14,48 +32,50 @@ class FreeFlyCamera {
     private _left: [number, number, number] = [0,0,0];
     private _position: [number, number, number] = [0,0,0];
     private _target: [number, number, number] = [0,0,0];
-    private _movement_flag: number = 0;
-    private _keyboard_handler = new KeyboardHandler();
-    private _force_forward = false;
+    private _movementFlag: number = 0;
+    private _keyboardHandler = new KeyboardHandler();
+    private _forceForward = false;
 
-    private _time_immobile: number = 0;
-    private _last_time: number = 0;
+    private _timeImmobile: number = 0;
+    private _lastTime: number = 0;
 
-    constructor(main_element: HTMLElement) {
+    constructor(def: IDefinition) {
 
-        this._last_time = Date.now();
+        this._movingSpeed = def.movingSpeed;
+        this._mouseSensivity = def.mouseSensivity;
+        this._keyboardSensivity = def.keyboardSensivity;
+
+        this._lastTime = Date.now();
 
         ///
         /// MOUSE
         ///
 
-        const callback_mousemove = (event: MouseEvent) => {
+        const mouseMoveCallback = (event: MouseEvent) => {
 
-            const movementX = event.movementX || (event as any).mozMovementX || (event as any).webkitMovementX || 0;
-            const movementY = event.movementY || (event as any).mozMovementY || (event as any).webkitMovementY || 0;
+            const movementX: number = event.movementX || (event as any).mozMovementX || (event as any).webkitMovementX || 0;
+            const movementY: number = event.movementY || (event as any).mozMovementY || (event as any).webkitMovementY || 0;
 
-            // console.log('Mouse movement: ' + movementX + ',' + movementY);
+            this._theta -= movementX * this._mouseSensivity;
+            this._phi   -= movementY * this._mouseSensivity;
 
-            this._theta -= movementX / 5.0;
-            this._phi   -= movementY / 5.0;
-
-            this._time_immobile = 0;
+            this._timeImmobile = 0;
         };
 
-        const callback_mouse_locked = () => {
-            main_element.addEventListener('mousemove', callback_mousemove, false);
+        const mouseLockedCallback = () => {
+            def.targetElement.addEventListener('mousemove', mouseMoveCallback, false);
         };
 
-        const callback_mouse_unlocked = () => {
-            main_element.removeEventListener('mousemove', callback_mousemove, false);
+        const mouseUnlockedCallback = () => {
+            def.targetElement.removeEventListener('mousemove', mouseMoveCallback, false);
         };
 
         //
 
         PointerLockSetup({
-            target_element: main_element,
-            cb_enabled: callback_mouse_locked,
-            cb_disabled: callback_mouse_unlocked
+            targetElement: def.targetElement,
+            enabledCallback: mouseLockedCallback,
+            disabledCallback: mouseUnlockedCallback
         });
 
         ///
@@ -72,7 +92,7 @@ class FreeFlyCamera {
         let previous_distance: number|null = null;
         let saved_time: number = Date.now();
 
-        main_element.addEventListener('touchstart', (event: TouchEvent) => {
+        def.targetElement.addEventListener('touchstart', (event: TouchEvent) => {
 
             event.preventDefault();
 
@@ -90,23 +110,23 @@ class FreeFlyCamera {
                 // second tap must happen before 0.25sec
                 (current_time - saved_time) < 250) {
 
-                this._force_forward = true;
+                this._forceForward = true;
             }
 
             saved_time = current_time;
         });
 
-        main_element.addEventListener('touchend', (event: TouchEvent) => {
+        def.targetElement.addEventListener('touchend', (event: TouchEvent) => {
 
             event.preventDefault();
 
             previous_touch = null;
             previous_distance = null;
 
-            this._force_forward = false;
+            this._forceForward = false;
         });
 
-        main_element.addEventListener('touchmove', (event: TouchEvent) => {
+        def.targetElement.addEventListener('touchmove', (event: TouchEvent) => {
 
             event.preventDefault();
 
@@ -125,10 +145,10 @@ class FreeFlyCamera {
                 if (previous_distance) {
 
                     if (length > previous_distance) {
-                        this._movement_flag |= 1<<0; // forward
+                        this._movementFlag |= Directions.forward;
                     }
                     else {
-                        this._movement_flag |= 1<<1; // backward
+                        this._movementFlag |= Directions.backward;
                     }
                 }
 
@@ -147,7 +167,7 @@ class FreeFlyCamera {
                 previous_touch = touches[0];
             }
 
-            this._time_immobile = 0;
+            this._timeImmobile = 0;
         });
 
         ///
@@ -156,48 +176,46 @@ class FreeFlyCamera {
 
     }
 
-    update(elapsed_sec: number) {
+    update(elapsedTime: number) {
 
-        this.handleKeys();
+        this._handleKeys(elapsedTime);
 
 
         const current_time = Date.now();
 
-        this._time_immobile += elapsed_sec;
+        this._timeImmobile += elapsedTime;
 
         // if not update for more than 3 seconds -> jump to 10sec of immobile time
-        if ((current_time - this._last_time) > 3000)
-            this._time_immobile = 10;
+        if ((current_time - this._lastTime) > 3000)
+            this._timeImmobile = 10;
 
-        this._last_time = current_time;
-
-
-        if (this._force_forward)
-            this._time_immobile = 0;
+        this._lastTime = current_time;
 
 
-        const speed = 16;
+        if (this._forceForward)
+            this._timeImmobile = 0;
 
-        if (this._movement_flag & 1<<0 || this._force_forward == true) {
+
+        if (this._movementFlag & Directions.forward || this._forceForward == true) {
             for (let ii = 0; ii < 3; ++ii)
-                this._position[ii] += this._forward[ii] * elapsed_sec * speed;
+                this._position[ii] += this._forward[ii] * elapsedTime * this._movingSpeed;
         }
-        else if (this._movement_flag & 1<<1) {
+        else if (this._movementFlag & Directions.backward) {
             for (let ii = 0; ii < 3; ++ii)
-                this._position[ii] -= this._forward[ii] * elapsed_sec * speed;
+                this._position[ii] -= this._forward[ii] * elapsedTime * this._movingSpeed;
         }
 
 
-        if (this._movement_flag & 1<<2) {
+        if (this._movementFlag & Directions.left) {
             for (let ii = 0; ii < 3; ++ii)
-                this._position[ii] -= this._left[ii] * elapsed_sec * speed;
+                this._position[ii] -= this._left[ii] * elapsedTime * this._movingSpeed;
         }
-        else if (this._movement_flag & 1<<3) {
+        else if (this._movementFlag & Directions.right) {
             for (let ii = 0; ii < 3; ++ii)
-                this._position[ii] += this._left[ii] * elapsed_sec * speed;
+                this._position[ii] += this._left[ii] * elapsedTime * this._movingSpeed;
         }
 
-        this._movement_flag = 0;
+        this._movementFlag = 0;
 
 
 
@@ -259,11 +277,11 @@ class FreeFlyCamera {
     }
 
     getForceForward() {
-        return this._force_forward;
+        return this._forceForward;
     }
 
     getTimeImmobile() {
-        return this._time_immobile;
+        return this._timeImmobile;
     }
 
     ///
@@ -271,74 +289,76 @@ class FreeFlyCamera {
     ///
     /// KEYBOARD
 
-    handleKeys() {
+    activate() {
+
+        this._keyboardHandler.activate();
+    }
+
+    deactivate() {
+
+        this._keyboardHandler.deactivate();
+    }
+
+    private _handleKeys(elapsedTime: number) {
+
+        const oldMovementFlag = this._movementFlag;
+        const oldPhi = this._phi;
+        const oldTheta = this._theta;
 
         // forward
-        if (this._keyboard_handler.isPressed( keyCodes.KEY_Z ) ||
-            this._keyboard_handler.isPressed( keyCodes.KEY_W )) {
+        if (this._keyboardHandler.isPressed( keyCodes.KEY_Z ) ||
+            this._keyboardHandler.isPressed( keyCodes.KEY_W )) {
 
-            this._movement_flag |= 1<<0;
-            this._time_immobile = 0;
+            this._movementFlag |= Directions.forward;
         }
 
         // backward
-        if (this._keyboard_handler.isPressed( keyCodes.KEY_S )) {
+        if (this._keyboardHandler.isPressed( keyCodes.KEY_S )) {
 
-            this._movement_flag |= 1<<1;
-            this._time_immobile = 0;
+            this._movementFlag |= Directions.backward;
         }
 
         // strafe left
-        if (this._keyboard_handler.isPressed( keyCodes.KEY_A ) ||
-            this._keyboard_handler.isPressed( keyCodes.KEY_Q )) {
+        if (this._keyboardHandler.isPressed( keyCodes.KEY_A ) ||
+            this._keyboardHandler.isPressed( keyCodes.KEY_Q )) {
 
-            this._movement_flag |= 1<<2;
-            this._time_immobile = 0;
+            this._movementFlag |= Directions.left;
         }
 
         // strafe right
-        if (this._keyboard_handler.isPressed( keyCodes.KEY_D )) {
+        if (this._keyboardHandler.isPressed( keyCodes.KEY_D )) {
 
-            this._movement_flag |= 1<<3;
-            this._time_immobile = 0;
+            this._movementFlag |= Directions.right;
         }
 
         /// /// ///
 
         // look up
-        if (this._keyboard_handler.isPressed( keyCodes.ARROW_UP )) {
-            this._phi++;
-            this._time_immobile = 0;
+        if (this._keyboardHandler.isPressed( keyCodes.ARROW_UP )) {
+            this._phi += this._keyboardSensivity * elapsedTime;
         }
 
         // look down
-        if (this._keyboard_handler.isPressed( keyCodes.ARROW_DOWN )) {
-            this._phi--;
-            this._time_immobile = 0;
+        if (this._keyboardHandler.isPressed( keyCodes.ARROW_DOWN )) {
+            this._phi -= this._keyboardSensivity * elapsedTime;
         }
 
         // look left
-        if (this._keyboard_handler.isPressed( keyCodes.ARROW_LEFT )) {
-            this._theta++;
-            this._time_immobile = 0;
+        if (this._keyboardHandler.isPressed( keyCodes.ARROW_LEFT )) {
+            this._theta += this._keyboardSensivity * elapsedTime;
         }
 
         // look right
-        if (this._keyboard_handler.isPressed( keyCodes.ARROW_RIGHT )) {
-            this._theta--;
-            this._time_immobile = 0;
+        if (this._keyboardHandler.isPressed( keyCodes.ARROW_RIGHT )) {
+            this._theta -= this._keyboardSensivity * elapsedTime;
         }
 
-    }
+        if (oldMovementFlag != this._movementFlag ||
+            oldPhi != this._phi ||
+            oldTheta != this._theta) {
 
-    activate() {
-
-        this._keyboard_handler.activate();
-    }
-
-    deactivate() {
-
-        this._keyboard_handler.deactivate();
+            this._timeImmobile = 0;
+        }
     }
 
     /// KEYBOARD
