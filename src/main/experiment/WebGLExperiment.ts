@@ -32,9 +32,9 @@ class WebGLExperiment {
         this._renderer = new WebGLRenderer({
             canvasDomElement: canvasElement,
             chunkSize: configuration.chunkSize,
-            mouseSensivity: configuration.controllerMouseSensivity,
+            mouseSensitivity: configuration.controllerMouseSensitivity,
             movingSpeed: configuration.controllerMovingSpeed,
-            keyboardSensivity: configuration.controllerKeyboardSensivity,
+            keyboardSensitivity: configuration.controllerKeyboardSensitivity,
         });
 
         // put the camera outside the known chunk

@@ -1,11 +1,10 @@
 {
-    "extends": "../generic-tsconfig.json",
+    "extends": "../base-tsconfig.json",
     "compilerOptions": {
-        "lib": ["es2017", "webworker"]
+        "lib": ["es6", "webworker"]
     },
-    "files": [
-        "./main.ts",
-        "./helpers/*.ts",
-        "../main/configuration.ts"
+    "include": [
+        "./**/*.ts",
+        "../main/**/*.ts"
     ]
 }

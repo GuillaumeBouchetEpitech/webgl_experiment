@@ -4,8 +4,8 @@ export const chunkLimit = 0;
 export const chunkRange = 3;
 
 export const controllerMovingSpeed = 16;
-export const controllerMouseSensivity = 1 / 5;
-export const controllerKeyboardSensivity = 80;
+export const controllerMouseSensitivity = 1 / 5;
+export const controllerKeyboardSensitivity = 80;
 
 export const workerFile = "./dist/worker.js";
 export const workerTotal = 2;

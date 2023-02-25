@@ -8,8 +8,8 @@ interface IChunkGeneratorDef<GeometryType> {
     workerTotal: number;
     workerFile: string;
     workerBufferSize: number;
-    chunkIsVisible: ((pos: Vec3) => void);
-    pointIsVisible: ((pos: Vec3) => void);
+    chunkIsVisible: ((pos: Vec3) => boolean);
+    pointIsVisible: ((pos: Vec3) => boolean);
     addGeometry: ((buffer: Float32Array) => GeometryType);
     updateGeometry: ((geom: GeometryType, buffer: Float32Array) => void);
     onChunkCreated?: () => void;

@@ -31,9 +31,9 @@ type Viewport = Vec4;
 interface IDefinition {
     canvasDomElement: HTMLCanvasElement;
     chunkSize: number;
-    mouseSensivity: number;
+    mouseSensitivity: number;
     movingSpeed: number;
-    keyboardSensivity: number;
+    keyboardSensitivity: number;
 };
 
 interface IChunkRendering {
@@ -124,9 +124,9 @@ class WebGLRenderer {
 
         this._freeFlyCamera = new FreeFlyCamera({
             targetElement: this._def.canvasDomElement,
-            mouseSensivity: this._def.mouseSensivity,
+            mouseSensitivity: this._def.mouseSensitivity,
             movingSpeed: this._def.movingSpeed,
-            keyboardSensivity: this._def.keyboardSensivity,
+            keyboardSensitivity: this._def.keyboardSensitivity,
         });
         this._freeFlyCamera.activate();
 
@@ -585,7 +585,7 @@ class WebGLRenderer {
 
         const viewportSize = WebGLContext.getViewportSize();
 
-        this._freeFlyCamera.update( 1.0 / 60.0 );
+        this._freeFlyCamera.update(elapsedTime);
 
         glm.mat4.perspective( this._projectionMatrix, 70, this._aspectRatio, 0.1, 70);
 

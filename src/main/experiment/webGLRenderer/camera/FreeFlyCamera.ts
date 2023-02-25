@@ -16,15 +16,15 @@ enum Directions {
 interface IDefinition {
     targetElement: HTMLElement;
     movingSpeed: number;
-    mouseSensivity: number;
-    keyboardSensivity: number;
+    mouseSensitivity: number;
+    keyboardSensitivity: number;
 };
 
 class FreeFlyCamera {
 
     private _movingSpeed: number;
-    private _mouseSensivity: number;
-    private _keyboardSensivity: number;
+    private _mouseSensitivity: number;
+    private _keyboardSensitivity: number;
 
     private _phi: number = 0;
     private _theta: number = 0;
@@ -42,8 +42,8 @@ class FreeFlyCamera {
     constructor(def: IDefinition) {
 
         this._movingSpeed = def.movingSpeed;
-        this._mouseSensivity = def.mouseSensivity;
-        this._keyboardSensivity = def.keyboardSensivity;
+        this._mouseSensitivity = def.mouseSensitivity;
+        this._keyboardSensitivity = def.keyboardSensitivity;
 
         this._lastTime = Date.now();
 
@@ -56,8 +56,8 @@ class FreeFlyCamera {
             const movementX: number = event.movementX || (event as any).mozMovementX || (event as any).webkitMovementX || 0;
             const movementY: number = event.movementY || (event as any).mozMovementY || (event as any).webkitMovementY || 0;
 
-            this._theta -= movementX * this._mouseSensivity;
-            this._phi   -= movementY * this._mouseSensivity;
+            this._theta -= movementX * this._mouseSensitivity;
+            this._phi   -= movementY * this._mouseSensitivity;
 
             this._timeImmobile = 0;
         };
@@ -335,22 +335,22 @@ class FreeFlyCamera {
 
         // look up
         if (this._keyboardHandler.isPressed( keyCodes.ARROW_UP )) {
-            this._phi += this._keyboardSensivity * elapsedTime;
+            this._phi += this._keyboardSensitivity * elapsedTime;
         }
 
         // look down
         if (this._keyboardHandler.isPressed( keyCodes.ARROW_DOWN )) {
-            this._phi -= this._keyboardSensivity * elapsedTime;
+            this._phi -= this._keyboardSensitivity * elapsedTime;
         }
 
         // look left
         if (this._keyboardHandler.isPressed( keyCodes.ARROW_LEFT )) {
-            this._theta += this._keyboardSensivity * elapsedTime;
+            this._theta += this._keyboardSensitivity * elapsedTime;
         }
 
         // look right
         if (this._keyboardHandler.isPressed( keyCodes.ARROW_RIGHT )) {
-            this._theta -= this._keyboardSensivity * elapsedTime;
+            this._theta -= this._keyboardSensitivity * elapsedTime;
         }
 
         if (oldMovementFlag != this._movementFlag ||
