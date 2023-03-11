@@ -3,11 +3,9 @@
         "noImplicitAny": true,
         "target": "es6",
         "module": "es6",
+        "baseUrl": "./",
         "rootDir": ".",
         "strict": true,
-        "moduleResolution": "node",
-        "composite": true,
-        "declarationMap": true,
-        "sourceMap": true
+        "moduleResolution": "node"
     }
 }

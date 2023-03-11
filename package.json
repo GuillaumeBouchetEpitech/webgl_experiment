@@ -2,6 +2,7 @@
   "name": "browserify_test",
   "type": "module",
   "scripts": {
+    "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
     "build-main-script": "export BUILD_TARGET='MAIN' && rollup --config ./rollup.config.js",
     "build-worker-script": "export BUILD_TARGET='WORKER' && rollup --config ./rollup.config.js",
     "build-release": "export BUILD_MODE='RELEASE' && npm run build-main-script && npm run build-worker-script",
@@ -18,6 +19,7 @@
     "fpsmeter": "^0.3.1",
     "gl-matrix": "^3.3.0",
     "rollup": "^3.2.3",
+    "prettier": "^2.8.4",
     "tslib": "^2.5.0",
     "typescript": "^3.7.2",
     "@rollup/plugin-node-resolve": "^15.0.1"
