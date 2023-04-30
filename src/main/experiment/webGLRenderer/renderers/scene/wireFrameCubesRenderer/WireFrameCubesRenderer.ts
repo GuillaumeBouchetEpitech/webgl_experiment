@@ -1,6 +1,6 @@
-import { WebGLContext, ShaderProgram, GeometryWrapper } from '../wrappers';
+import { ShaderProgram, GeometryWrapper } from '../../../wrappers';
 
-import { wireFrameCubes } from './shaders';
+import * as shaders from './shaders/wireFrameCubes';
 
 import * as glm from 'gl-matrix';
 
@@ -46,15 +46,34 @@ const generateWireFrameCubeVertices = (inSize: number): number[] => {
 //
 //
 
-export class WireFrameCubesRenderer {
+export interface IWireFrameCubesRenderer {
+
+  pushCenteredCube(
+    inCenter: glm.ReadonlyVec3,
+    inScale: number,
+    inColor: glm.ReadonlyVec3
+  ): void;
+
+  pushOriginBoundCube(
+    inOrigin: glm.ReadonlyVec3,
+    inScale: number,
+    inColor: glm.ReadonlyVec3
+  ): void;
+
+  clear(): void;
+}
+
+export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
   private _shader: ShaderProgram;
   private _geometry: GeometryWrapper.Geometry;
-  private _vertices: number[] = [];
+
+  private _buffer = new Float32Array(7 * 1024 * 4);
+  private _currentSize: number = 0;
 
   constructor() {
     this._shader = new ShaderProgram({
-      vertexSrc: wireFrameCubes.vertex,
-      fragmentSrc: wireFrameCubes.fragment,
+      vertexSrc: shaders.vertex,
+      fragmentSrc: shaders.fragment,
       attributes: [
         'a_vertex_position',
         'a_offset_center',
@@ -102,10 +121,9 @@ export class WireFrameCubesRenderer {
       primitiveType: GeometryWrapper.PrimitiveType.lines
     } as GeometryWrapper.GeometryDefinition;
 
-    this._geometry = new GeometryWrapper.Geometry(this._shader, geometryDef);
-
     const vertices = generateWireFrameCubeVertices(1);
 
+    this._geometry = new GeometryWrapper.Geometry(this._shader, geometryDef);
     this._geometry.updateBuffer(0, vertices);
     this._geometry.setPrimitiveCount(vertices.length / 3);
   }
@@ -115,15 +133,19 @@ export class WireFrameCubesRenderer {
     inScale: number,
     inColor: glm.ReadonlyVec3
   ) {
-    this._vertices.push(
-      inCenter[0],
-      inCenter[1],
-      inCenter[2],
-      inScale,
-      inColor[0],
-      inColor[1],
-      inColor[2]
-    );
+
+    if (this._currentSize + 7 >= this._buffer.length)
+      return;
+
+    this._buffer[this._currentSize + 0] = inCenter[0];
+    this._buffer[this._currentSize + 1] = inCenter[1];
+    this._buffer[this._currentSize + 2] = inCenter[2];
+    this._buffer[this._currentSize + 3] = inScale;
+    this._buffer[this._currentSize + 4] = inColor[0];
+    this._buffer[this._currentSize + 5] = inColor[1];
+    this._buffer[this._currentSize + 6] = inColor[2];
+    this._currentSize += 7;
+
   }
 
   pushOriginBoundCube(
@@ -131,28 +153,38 @@ export class WireFrameCubesRenderer {
     inScale: number,
     inColor: glm.ReadonlyVec3
   ) {
-    this._vertices.push(
-      inOrigin[0] + inScale * 0.5,
-      inOrigin[1] + inScale * 0.5,
-      inOrigin[2] + inScale * 0.5,
-      inScale,
-      inColor[0],
-      inColor[1],
-      inColor[2]
-    );
+
+    if (this._currentSize + 7 >= this._buffer.length)
+      return;
+
+    this._buffer[this._currentSize + 0] = inOrigin[0] + inScale * 0.5;
+    this._buffer[this._currentSize + 1] = inOrigin[1] + inScale * 0.5;
+    this._buffer[this._currentSize + 2] = inOrigin[2] + inScale * 0.5;
+    this._buffer[this._currentSize + 3] = inScale;
+    this._buffer[this._currentSize + 4] = inColor[0];
+    this._buffer[this._currentSize + 5] = inColor[1];
+    this._buffer[this._currentSize + 6] = inColor[2];
+    this._currentSize += 7;
+
   }
 
   flush(composedMatrix: glm.mat4) {
-    const gl = WebGLContext.getContext();
+
+    if (this._currentSize === 0)
+      return;
 
     this._shader.bind();
     this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
 
-    this._geometry.updateBuffer(1, this._vertices, true);
-    this._geometry.setInstancedCount(this._vertices.length / 7);
+    this._geometry.updateBuffer(1, this._buffer, true);
+    this._geometry.setInstancedCount(this._currentSize / 7);
     this._geometry.render();
 
+    this.clear();
+  }
+
+  clear(): void {
     // reset vertices
-    this._vertices.length = 0;
+    this._currentSize = 0;
   }
 }

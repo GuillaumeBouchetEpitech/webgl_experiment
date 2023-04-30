@@ -5,15 +5,8 @@ import { FreeFlyController } from './controllers/FreeFlyController';
 import { IFrustumCulling, FrustumCulling } from './camera/FrustumCulling';
 import sceneToScreenCoordinates from './camera/sceneToScreenCoordinates';
 
-import {
-  ITextRenderer,
-  TextRenderer,
-  WireFrameCubesRenderer,
-  StackRenderers,
-  ChunksRenderer,
-  IStackRenderers,
-  IChunksRenderer
-} from './renderers';
+import * as scene from './renderers/scene';
+import * as hud from './renderers/hud';
 
 import { generateWireFrameFrustumVertices } from './utils';
 
@@ -22,6 +15,8 @@ import * as glm from 'gl-matrix';
 import { Chunks } from '../generation/ChunkGenerator';
 
 import { GlobalMouseManager, GlobalTouchManager } from '../inputManagers';
+import { IStackRenderers, ITextRenderer } from './renderers/hud';
+import { IChunksRenderer } from './renderers/scene';
 
 //
 
@@ -32,6 +27,17 @@ interface IDefinition {
   movingSpeed: number;
   keyboardSensibility: number;
   touchSensibility: number;
+}
+
+interface IScene {
+  wireFrameCubesRenderer: scene.WireFrameCubesRenderer;
+  chunksRenderer: scene.ChunksRenderer;
+}
+
+interface IHud {
+  textRenderer: hud.TextRenderer;
+  stackRenderers: hud.StackRenderers;
+  wireFrameCubesRenderer: hud.WireFrameCubesRenderer;
 }
 
 export class WebGLRenderer {
@@ -51,10 +57,13 @@ export class WebGLRenderer {
   private onContextLost: (() => void) | null = null;
   private onContextRestored: (() => void) | null = null;
 
-  private _textRenderer: TextRenderer;
-  private _wireFrameCubesRenderer: WireFrameCubesRenderer;
-  private _stackRenderers: StackRenderers;
-  private _chunksRenderer: ChunksRenderer;
+  // private _textRenderer: TextRenderer;
+  // private _wireFrameCubesRenderer: WireFrameCubesRenderer;
+  // private _stackRenderers: StackRenderers;
+  // private _chunksRenderer: ChunksRenderer;
+
+  private _scene: IScene;
+  private _hud: IHud;
 
   private _fpsMeterAngle: number = 0;
   private _fpsMeterSpeed: number = 0;
@@ -112,10 +121,16 @@ export class WebGLRenderer {
 
     this._aspectRatio = (this._viewportSize[0] * 0.75) / this._viewportSize[1];
 
-    this._textRenderer = new TextRenderer();
-    this._wireFrameCubesRenderer = new WireFrameCubesRenderer();
-    this._stackRenderers = new StackRenderers();
-    this._chunksRenderer = new ChunksRenderer();
+    this._scene = {
+      wireFrameCubesRenderer: new scene.WireFrameCubesRenderer(),
+      chunksRenderer: new scene.ChunksRenderer(),
+    };
+
+    this._hud = {
+      textRenderer: new hud.TextRenderer(),
+      stackRenderers: new hud.StackRenderers(),
+      wireFrameCubesRenderer: new hud.WireFrameCubesRenderer(),
+    };
   }
 
   resize(width: number, height: number) {
@@ -174,10 +189,11 @@ export class WebGLRenderer {
 
     gl.disable(gl.CULL_FACE);
 
-    gl.enable(gl.TEXTURE_2D);
     gl.activeTexture(gl.TEXTURE0);
 
-    await this._chunksRenderer.initialize();
+    gl.enable(gl.CULL_FACE);
+
+    await this._scene.chunksRenderer.initialize();
   }
 
   getSize(): glm.ReadonlyVec2 {
@@ -272,7 +288,7 @@ export class WebGLRenderer {
       .filter((chunk) => chunk.visible)
       .map((chunk) => chunk.geometry);
 
-    this._chunksRenderer.render(
+    this._scene.chunksRenderer.render(
       this._viewMatrix,
       this._projectionMatrix,
       cameraPos,
@@ -286,14 +302,14 @@ export class WebGLRenderer {
     for (let ii = 0; ii < chunks.length; ++ii) {
       if (!chunks[ii].visible) continue;
 
-      this._wireFrameCubesRenderer.pushOriginBoundCube(
+      this._scene.wireFrameCubesRenderer.pushOriginBoundCube(
         chunks[ii].position,
         15,
         [1, 1, 1]
       );
     }
 
-    this._wireFrameCubesRenderer.flush(this._composedMatrix);
+    this._scene.wireFrameCubesRenderer.flush(this._composedMatrix);
   }
 
   renderHUD(
@@ -374,6 +390,8 @@ export class WebGLRenderer {
     const hudComposedMatrix = glm.mat4.create();
     glm.mat4.multiply(hudComposedMatrix, hudProjectionMatrix, hudViewMatrix);
 
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+
     const widgetSize: glm.ReadonlyVec2 = [100, 50];
     const widgetPos: glm.ReadonlyVec3 = [
       10,
@@ -383,118 +401,6 @@ export class WebGLRenderer {
 
     {
       // wireFrame
-
-      // const vertices: number[] = [];
-
-      {
-        // fps meter
-
-        const maxValue = 1 / 30;
-
-        {
-          // border
-
-          this._stackRenderers.pushOriginBoundRectangle(
-            widgetPos,
-            widgetSize,
-            [0, 0, 0, 0.5]
-          );
-
-          const allVertices: [
-            glm.ReadonlyVec3,
-            glm.ReadonlyVec3,
-            glm.ReadonlyVec3,
-            glm.ReadonlyVec3
-          ] = [
-            [
-              widgetPos[0] + widgetSize[0] * 0,
-              widgetPos[1] + widgetSize[1] * 0,
-              0
-            ],
-            [
-              widgetPos[0] + widgetSize[0] * 1,
-              widgetPos[1] + widgetSize[1] * 0,
-              0
-            ],
-            [
-              widgetPos[0] + widgetSize[0] * 1,
-              widgetPos[1] + widgetSize[1] * 1,
-              0
-            ],
-            [
-              widgetPos[0] + widgetSize[0] * 0,
-              widgetPos[1] + widgetSize[1] * 1,
-              0
-            ]
-          ];
-
-          this._stackRenderers.pushLine(
-            allVertices[0],
-            allVertices[1],
-            [1, 1, 1]
-          );
-          this._stackRenderers.pushLine(
-            allVertices[1],
-            allVertices[2],
-            [1, 1, 1]
-          );
-          this._stackRenderers.pushLine(
-            allVertices[2],
-            allVertices[3],
-            [1, 1, 1]
-          );
-          this._stackRenderers.pushLine(
-            allVertices[3],
-            allVertices[0],
-            [1, 1, 1]
-          );
-        } // border
-
-        {
-          // curve
-
-          for (let ii = 1; ii < framesDuration.length; ++ii) {
-            const prevCoefficient = (ii - 1) / framesDuration.length;
-            const currCoefficient = ii / framesDuration.length;
-            const prevValue =
-              Math.min(framesDuration[ii - 1], maxValue) / maxValue;
-            const currValue = Math.min(framesDuration[ii], maxValue) / maxValue;
-
-            const pointA: glm.ReadonlyVec3 = [
-              widgetPos[0] + widgetSize[0] * prevCoefficient,
-              widgetPos[1] + widgetSize[1] * prevValue,
-              0
-            ];
-            const pointB: glm.ReadonlyVec3 = [
-              widgetPos[0] + widgetSize[0] * currCoefficient,
-              widgetPos[1] + widgetSize[1] * currValue,
-              0
-            ];
-
-            this._stackRenderers.pushLine(pointA, pointB, [1, 1, 1]);
-          }
-        } // curve
-
-        {
-          // counter
-
-          let average = 0;
-          for (const curr of framesDuration) average += curr;
-          average /= framesDuration.length;
-
-          const latestValue = 1 / average;
-
-          let str = '999';
-          if (latestValue < 999) str = latestValue.toFixed(0).padStart(3, ' ');
-
-          this._textRenderer.pushText(
-            `${str}fps`,
-            [widgetPos[0] + 7, widgetPos[1] - 8],
-            14
-          );
-        } // counter
-      } // fps meter
-
       // //
       // //
       // // not mature as it is
@@ -577,7 +483,7 @@ export class WebGLRenderer {
         const color: glm.ReadonlyVec3 = [1, 1, 1];
 
         allRotatedLines.forEach((rotatedLine) => {
-          this._stackRenderers.pushRotatedLine(
+          this._hud.stackRenderers.pushRotatedLine(
             rotatedLine.position,
             rotatedLine.angle,
             length,
@@ -624,7 +530,7 @@ export class WebGLRenderer {
                 0
               ];
 
-              this._stackRenderers.pushRotatedLine(
+              this._hud.stackRenderers.pushRotatedLine(
                 position,
                 finalAngle,
                 150,
@@ -655,8 +561,8 @@ export class WebGLRenderer {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_DST_ALPHA);
 
-    this._stackRenderers.flush(hudComposedMatrix);
-    this._textRenderer.flush(hudComposedMatrix);
+    this._hud.stackRenderers.flush(hudComposedMatrix);
+    this._hud.textRenderer.flush(hudComposedMatrix);
 
     gl.disable(gl.BLEND);
   }
@@ -706,25 +612,25 @@ export class WebGLRenderer {
     {
       const axis_size = 20;
 
-      this._stackRenderers.pushLine(
+      this._hud.stackRenderers.pushLine(
         [0, 0, 0],
         [0 + axis_size, 0, 0],
         [1, 0, 0]
       );
 
-      this._stackRenderers.pushLine(
+      this._hud.stackRenderers.pushLine(
         [0, 0, 0],
         [0, 0 + axis_size, 0],
         [0, 1, 0]
       );
 
-      this._stackRenderers.pushLine(
+      this._hud.stackRenderers.pushLine(
         [0, 0, 0],
         [0, 0, 0 + axis_size],
         [0, 0, 1]
       );
 
-      this._stackRenderers.flush(composedMatrix);
+      this._hud.stackRenderers.flush(composedMatrix);
     }
 
     for (const currChunk of chunks) {
@@ -733,7 +639,7 @@ export class WebGLRenderer {
       if (currChunk.visible) {
         // render white cubes
 
-        this._wireFrameCubesRenderer.pushOriginBoundCube(
+        this._hud.wireFrameCubesRenderer.pushOriginBoundCube(
           currChunk.position,
           15,
           [1, 1, 1]
@@ -747,7 +653,7 @@ export class WebGLRenderer {
           currChunk.position[2] + 15 * 0.5
         ];
 
-        this._wireFrameCubesRenderer.pushCenteredCube(
+        this._hud.wireFrameCubesRenderer.pushCenteredCube(
           chunkCenter,
           15 * 0.7,
           [1, 0, 0]
@@ -765,7 +671,7 @@ export class WebGLRenderer {
           currPos[2] + 15 * 0.5
         ];
 
-        this._wireFrameCubesRenderer.pushCenteredCube(
+        this._hud.wireFrameCubesRenderer.pushCenteredCube(
           chunkCenter,
           15 * 0.6,
           [0, 1, 0]
@@ -773,7 +679,7 @@ export class WebGLRenderer {
       }
     }
 
-    this._wireFrameCubesRenderer.flush(composedMatrix);
+    this._hud.wireFrameCubesRenderer.flush(composedMatrix);
 
     glm.mat4.translate(
       lookAtViewMatrix,
@@ -811,7 +717,7 @@ export class WebGLRenderer {
       for (let ii = 0; ii < crossIndices.length; ii += 2) {
         const vertexA = crossVertices[ii + 0];
         const vertexB = crossVertices[ii + 1];
-        this._stackRenderers.pushLine(vertexA, vertexB, [1, 1, 1]);
+        this._hud.stackRenderers.pushLine(vertexA, vertexB, [1, 1, 1]);
       }
 
       const vertices2 = generateWireFrameFrustumVertices(
@@ -823,18 +729,18 @@ export class WebGLRenderer {
       for (let ii = 0; ii < vertices2.length; ii += 2) {
         const vertexA = vertices2[ii + 0];
         const vertexB = vertices2[ii + 1];
-        this._stackRenderers.pushLine(vertexA, vertexB, [1, 1, 0]);
+        this._hud.stackRenderers.pushLine(vertexA, vertexB, [1, 1, 0]);
       }
 
-      this._stackRenderers.flush(composedMatrix);
+      this._hud.stackRenderers.flush(composedMatrix);
     }
   }
 
   get freeFlyController() { return this._freeFlyController; }
 
-  get stackRenderers(): IStackRenderers { return this._stackRenderers; }
-  get textRenderer(): ITextRenderer { return this._textRenderer; }
+  get stackRenderers(): IStackRenderers { return this._hud.stackRenderers; }
+  get textRenderer(): ITextRenderer { return this._hud.textRenderer; }
   get frustumCulling(): IFrustumCulling { return this._frustumCulling; }
-  get chunksRenderer(): IChunksRenderer { return this._chunksRenderer; }
+  get chunksRenderer(): IChunksRenderer { return this._scene.chunksRenderer; }
 
 }

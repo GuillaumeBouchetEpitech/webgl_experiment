@@ -244,6 +244,14 @@ export class FreeFlyController {
     return this._target;
   }
 
+  getForwardAxis(): glm.ReadonlyVec3 {
+    return this._forwardAxis;
+  }
+
+  getLeftAxis(): glm.ReadonlyVec3 {
+    return this._leftAxis;
+  }
+
   getUpAxis(): glm.ReadonlyVec3 {
     return this._upAxis;
   }

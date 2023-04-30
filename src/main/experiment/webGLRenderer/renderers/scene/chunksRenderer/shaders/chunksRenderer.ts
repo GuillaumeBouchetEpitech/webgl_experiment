@@ -1,4 +1,4 @@
-const vertex = `
+export const vertex = `
 #version 300 es
 
 precision highp float;
@@ -63,7 +63,7 @@ void main(void)
 }
 `.trim();
 
-const fragment = `
+export const fragment = `
 #version 300 es
 
 precision lowp float;
@@ -97,11 +97,10 @@ const float k_rangeMax = 23.0;
 
 void main(void)
 {
-
   { // wireFrame
 
-    if (gl_FrontFacing)
-    {
+    // if (gl_FrontFacing)
+    // {
       // "bumped wireFrame" effect on the front facing
 
       if (
@@ -116,23 +115,23 @@ void main(void)
           return;
         }
       }
-    }
-    else
-    {
-      // normal wireFrame effect on the back facing
+    // }
+    // else
+    // {
+    //   // normal wireFrame effect on the back facing
 
-      if (any(lessThan(v_baryCenter, vec3(0.06))))
-      {
-        o_color = vec4(1.0);
-        return;
-      }
-      else
-      {
-        // discard what is not part fo the wireFrame
-        discard;
-        return;
-      }
-    }
+    //   if (any(lessThan(v_baryCenter, vec3(0.06))))
+    //   {
+    //     o_color = vec4(1.0);
+    //     return;
+    //   }
+    //   else
+    //   {
+    //     // discard what is not part fo the wireFrame
+    //     discard;
+    //     return;
+    //   }
+    // }
 
   } // /wireFrame
 
@@ -204,7 +203,6 @@ void main(void)
   } // lighting
 
   o_color = vec4(currentColor, 1.0);
+
 }
 `.trim();
-
-export { vertex, fragment };

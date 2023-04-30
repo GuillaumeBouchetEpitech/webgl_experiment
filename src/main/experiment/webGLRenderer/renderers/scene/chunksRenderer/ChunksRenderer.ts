@@ -1,10 +1,10 @@
-import { chunksRenderer } from './shaders';
+import * as chunksRenderer from './shaders/chunksRenderer';
 import {
   WebGLContext,
   GeometryWrapper,
   ShaderProgram,
   Texture
-} from '../wrappers';
+} from '../../../wrappers';
 
 import * as glm from 'gl-matrix';
 

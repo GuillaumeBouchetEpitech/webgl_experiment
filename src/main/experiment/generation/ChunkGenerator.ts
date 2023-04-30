@@ -130,7 +130,7 @@ export class ChunkGenerator<GeometryType> {
   update(cameraPosition: glm.ReadonlyVec3) {
     if (!this._running) return;
 
-    //  check if move to ask chunks
+    //  check if moved enough to justify asking for new chunks
     //      -> if yes
     //          reset chunk queue
     //          exclude chunk out of range
@@ -186,9 +186,9 @@ export class ChunkGenerator<GeometryType> {
 
     for (let ii = 0; ii < this._chunks.length; ++ii) {
       const curr_pos = [
-        (this._chunks[ii].position[0] / this._def.chunkSize) | 0,
-        (this._chunks[ii].position[1] / this._def.chunkSize) | 0,
-        (this._chunks[ii].position[2] / this._def.chunkSize) | 0
+        Math.floor(this._chunks[ii].position[0] / this._def.chunkSize),
+        Math.floor(this._chunks[ii].position[1] / this._def.chunkSize),
+        Math.floor(this._chunks[ii].position[2] / this._def.chunkSize)
       ];
 
       if (
@@ -199,7 +199,7 @@ export class ChunkGenerator<GeometryType> {
         curr_pos[2] < minIndex[2] ||
         curr_pos[2] > maxIndex[2]
       ) {
-        // this._chunks[i].geom.dispose();
+
         this._geometriesPool.push(this._chunks[ii].geometry);
         this._chunks.splice(ii, 1);
         --ii;
@@ -222,8 +222,8 @@ export class ChunkGenerator<GeometryType> {
 
           /// already processed ?
           let found = false;
-          for (let ii = 0; ii < this._chunks.length; ++ii) {
-            const currPosition = this._chunks[ii].position;
+          for (const currChunk of this._chunks) {
+            const currPosition = currChunk.position;
 
             if (
               currPosition[0] === position[0] &&
@@ -268,43 +268,41 @@ export class ChunkGenerator<GeometryType> {
     } else {
       // from here, we determine the next best chunk to process
 
-      const computeMagnitude = (vector: glm.ReadonlyVec3) => {
-        return Math.sqrt(
-          vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]
-        );
+      const _getDistanceToCamera = (chunkPosition: glm.ReadonlyVec3) => {
+        const chunkHSize = this._def.chunkSize * 0.5;
+
+        const chunkCenter: glm.ReadonlyVec3 = [
+          this._cameraPosition[0] - chunkPosition[0] - chunkHSize,
+          this._cameraPosition[1] - chunkPosition[1] - chunkHSize,
+          this._cameraPosition[2] - chunkPosition[2] - chunkHSize
+        ];
+
+        const magnitude = glm.vec3.length(chunkCenter);
+
+        return magnitude;
       };
 
-      let bestIndex = -1;
-      let bestMagnitude = 999999;
-      let bestPosition: glm.ReadonlyVec3 | undefined = undefined;
+      let bestIndex = 0;
+      let bestMagnitude = _getDistanceToCamera(this._chunkPositionQueue[bestIndex]);
 
-      for (let ii = 0; ii < this._chunkPositionQueue.length; ++ii) {
+      for (let ii = 1; ii < this._chunkPositionQueue.length; ++ii) {
         const chunkPosition = this._chunkPositionQueue[ii];
 
-        if (bestIndex == -1 || this._def.chunkIsVisible(chunkPosition)) {
-          const chunkHSize = this._def.chunkSize * 0.5;
+        if (!this._def.chunkIsVisible(chunkPosition))
+          continue;
 
-          const chunkCenter: glm.ReadonlyVec3 = [
-            this._cameraPosition[0] - chunkPosition[0] - chunkHSize,
-            this._cameraPosition[1] - chunkPosition[1] - chunkHSize,
-            this._cameraPosition[2] - chunkPosition[2] - chunkHSize
-          ];
+        const magnitude = _getDistanceToCamera(chunkPosition);
+        if (bestMagnitude < magnitude)
+          continue;
 
-          const magnitude = computeMagnitude(chunkCenter);
-
-          if (bestMagnitude < magnitude) continue;
-
-          bestIndex = ii;
-          bestMagnitude = magnitude;
-
-          bestPosition = this._chunkPositionQueue[bestIndex];
-        }
+        bestIndex = ii;
+        bestMagnitude = magnitude;
       }
+
+      nextPosition = this._chunkPositionQueue[bestIndex];
 
       // removal
       this._chunkPositionQueue.splice(bestIndex, 1);
-
-      nextPosition = bestPosition;
     }
 
     if (nextPosition === undefined) return;

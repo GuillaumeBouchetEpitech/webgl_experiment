@@ -4,18 +4,20 @@ import {
   GlobalPointerLockManager,
   GlobalKeyboardManager,
   GlobalMouseManager,
-  GlobalTouchManager
+  GlobalTouchManager,
+  GlobalFullScreenManager,
 } from './inputManagers';
 
 import { ChunkGenerator } from './generation/ChunkGenerator';
 import { WebGLRenderer } from './webGLRenderer/WebGLRenderer';
 import { GeometryWrapper } from './webGLRenderer/wrappers';
+import { renderControls } from './webGLRenderer/renderers/hud/widgets/renderControls';
+import { renderFpsMeter } from './webGLRenderer/renderers/hud/widgets/renderFpsMeter';
 
 import * as glm from 'gl-matrix';
 
 export class WebGLExperiment {
   private _canvasElement: HTMLCanvasElement;
-  private _helperTextCountDown: number;
 
   private _renderer: WebGLRenderer;
   private _chunkGenerator: ChunkGenerator<GeometryWrapper.Geometry>;
@@ -31,7 +33,6 @@ export class WebGLExperiment {
 
   constructor(canvasElement: HTMLCanvasElement) {
     this._canvasElement = canvasElement;
-    this._helperTextCountDown = 4000;
 
     this._renderer = new WebGLRenderer({
       canvasDomElement: canvasElement,
@@ -131,36 +132,24 @@ export class WebGLExperiment {
     if (!guiFullscreen) throw new Error('guiFullscreen not found');
 
     guiFullscreen.addEventListener('click', () => {
-      // go full-screen
-      if (canvasElement.requestFullscreen) canvasElement.requestFullscreen();
-      else if ((canvasElement as any).webkitRequestFullscreen)
-        (canvasElement as any).webkitRequestFullscreen();
-      else if ((canvasElement as any).mozRequestFullScreen)
-        (canvasElement as any).mozRequestFullScreen();
-      else if ((canvasElement as any).msRequestFullscreen)
-        (canvasElement as any).msRequestFullscreen();
+
+      GlobalFullScreenManager.requestFullScreen(canvasElement);
     });
 
-    const onFullScreenChangeCallback = () => {
-      let currentWidth = null;
-      let currentHeight = null;
+    GlobalFullScreenManager.addOnFullScreenChange(() => {
 
-      const isInFullScreen =
-        document.fullscreenElement !== null ||
-        (document as any).mozFullScreen ||
-        (document as any).webkitIsFullScreen ||
-        (document as any).msFullscreenElement;
+      let currentWidth = 800;
+      let currentHeight = 600;
 
-      if (isInFullScreen) {
+      if (GlobalFullScreenManager.isFullScreen(canvasElement)) {
+
         canvasElement.style.position = 'absolute';
 
         currentWidth = window.innerWidth;
         currentHeight = window.innerHeight;
+
       } else {
         canvasElement.style.position = 'relative';
-
-        currentWidth = 800;
-        currentHeight = 600;
       }
 
       canvasElement.style.left = '0px';
@@ -170,28 +159,7 @@ export class WebGLExperiment {
       canvasElement.height = currentHeight;
 
       this._renderer.resize(currentWidth, currentHeight);
-    };
-
-    document.addEventListener(
-      'fullscreenchange',
-      onFullScreenChangeCallback,
-      false
-    );
-    document.addEventListener(
-      'mozfullscreenchange',
-      onFullScreenChangeCallback,
-      false
-    );
-    document.addEventListener(
-      'webkitfullscreenchange',
-      onFullScreenChangeCallback,
-      false
-    );
-    document.addEventListener(
-      'msfullscreenchange',
-      onFullScreenChangeCallback,
-      false
-    );
+    });
 
     // GUI (fullscreen button)
     //
@@ -246,10 +214,10 @@ export class WebGLExperiment {
     const tick = () => {
       if (!this._running || this._errorGraphicContext) return;
 
-      this._mainLoop();
-
       // plan the next frame
       window.requestAnimationFrame(tick);
+
+      this._mainLoop();
     };
 
     tick();
@@ -260,11 +228,6 @@ export class WebGLExperiment {
     const elapsedTime = Math.min(currentTime - this._currFrameTime, 30);
     this._currFrameTime = currentTime;
     this._framesDuration.push(elapsedTime / 1000);
-
-    if (this._helperTextCountDown > 0) {
-      this._helperTextCountDown -= elapsedTime;
-      if (this._helperTextCountDown < 0) this._helperTextCountDown = 0;
-    }
 
     //
     //
@@ -291,6 +254,9 @@ export class WebGLExperiment {
     //
     //
     ////// HUD
+
+    this._renderer.stackRenderers.clear();
+    this._renderer.textRenderer.clear();
 
     {
       // top right text
@@ -341,182 +307,196 @@ export class WebGLExperiment {
       this._renderer.textRenderer.pushText(allLines.join('\n'), textsOrigin, 14);
     } // bottom left text
 
-    {
-      // help text
 
-      type Indicator = {
-        center: glm.ReadonlyVec2;
-        size: glm.ReadonlyVec2;
-        text?: string;
-        lines?: {
-          a: glm.ReadonlyVec2;
-          b: glm.ReadonlyVec2;
-          thickness: number;
-          color: glm.ReadonlyVec3;
-        }[];
-        color: glm.ReadonlyVec3;
-      };
 
-      const allIndicator: Indicator[] = [];
+    renderControls(
+      this._canvasElement,
+      this._renderer.stackRenderers,
+      this._renderer.textRenderer);
 
-      const defaultColor: glm.ReadonlyVec3 = [0.2, 0.2, 0.2];
-      const activatedColor: glm.ReadonlyVec3 = [0.2, 0.6, 0.2];
+    renderFpsMeter(
+      [ 10, this._canvasElement.height - 60, 0 ],
+      [ 100, 50 ],
+      this._framesDuration,
+      this._renderer.stackRenderers,
+      this._renderer.textRenderer);
 
-      allIndicator.push({
-        center: [480, 125],
-        size: [40, 40],
-        text: 'A\nQ',
-        color: GlobalKeyboardManager.isPressed('A', 'Q')
-          ? activatedColor
-          : defaultColor
-      });
+    // {
+    //   // help text
 
-      allIndicator.push({
-        center: [480 + 45 * 1, 125],
-        size: [40, 40],
-        text: 'S',
-        color: GlobalKeyboardManager.isPressed('S')
-          ? activatedColor
-          : defaultColor
-      });
+    //   type Indicator = {
+    //     center: glm.ReadonlyVec2;
+    //     size: glm.ReadonlyVec2;
+    //     text?: string;
+    //     lines?: {
+    //       a: glm.ReadonlyVec2;
+    //       b: glm.ReadonlyVec2;
+    //       thickness: number;
+    //       color: glm.ReadonlyVec3;
+    //     }[];
+    //     color: glm.ReadonlyVec3;
+    //   };
 
-      allIndicator.push({
-        center: [480 + 45 * 1, 125 + 45],
-        size: [40, 40],
-        text: 'W\nZ',
-        color: GlobalKeyboardManager.isPressed('W', 'Z')
-          ? activatedColor
-          : defaultColor
-      });
+    //   const allIndicator: Indicator[] = [];
 
-      allIndicator.push({
-        center: [480 + 45 * 2, 125],
-        size: [40, 40],
-        text: 'D',
-        color: GlobalKeyboardManager.isPressed('D')
-          ? activatedColor
-          : defaultColor
-      });
+    //   const defaultColor: glm.ReadonlyVec3 = [0.2, 0.2, 0.2];
+    //   const activatedColor: glm.ReadonlyVec3 = [0.2, 0.6, 0.2];
 
-      // left
-      allIndicator.push({
-        center: [480, 25],
-        size: [40, 40],
-        lines: [
-          { a: [15, 0], b: [-8, 0], thickness: 6, color: [1, 1, 1] },
-          { a: [0, 10], b: [-12, -2], thickness: 6, color: [1, 1, 1] },
-          { a: [0, -10], b: [-12, 2], thickness: 6, color: [1, 1, 1] }
-        ],
-        color: GlobalKeyboardManager.isPressed('ArrowLeft')
-          ? activatedColor
-          : defaultColor
-      });
+    //   allIndicator.push({
+    //     center: [480, 125],
+    //     size: [40, 40],
+    //     text: 'A\nQ',
+    //     color: GlobalKeyboardManager.isPressed('A', 'Q')
+    //       ? activatedColor
+    //       : defaultColor
+    //   });
 
-      // down
-      allIndicator.push({
-        center: [480 + 45, 25],
-        size: [40, 40],
-        lines: [
-          { a: [0, 15], b: [0, -8], thickness: 6, color: [1, 1, 1] },
-          { a: [10, 0], b: [-2, -12], thickness: 6, color: [1, 1, 1] },
-          { a: [-10, 0], b: [2, -12], thickness: 6, color: [1, 1, 1] }
-        ],
-        color: GlobalKeyboardManager.isPressed('ArrowDown')
-          ? activatedColor
-          : defaultColor
-      });
+    //   allIndicator.push({
+    //     center: [480 + 45 * 1, 125],
+    //     size: [40, 40],
+    //     text: 'S',
+    //     color: GlobalKeyboardManager.isPressed('S')
+    //       ? activatedColor
+    //       : defaultColor
+    //   });
 
-      // up
-      allIndicator.push({
-        center: [480 + 45, 25 + 45],
-        size: [40, 40],
-        lines: [
-          { a: [0, -15], b: [0, 8], thickness: 6, color: [1, 1, 1] },
-          { a: [10, 0], b: [-2, 12], thickness: 6, color: [1, 1, 1] },
-          { a: [-10, 0], b: [2, 12], thickness: 6, color: [1, 1, 1] }
-        ],
-        color: GlobalKeyboardManager.isPressed('ArrowUp')
-          ? activatedColor
-          : defaultColor
-      });
+    //   allIndicator.push({
+    //     center: [480 + 45 * 1, 125 + 45],
+    //     size: [40, 40],
+    //     text: 'W\nZ',
+    //     color: GlobalKeyboardManager.isPressed('W', 'Z')
+    //       ? activatedColor
+    //       : defaultColor
+    //   });
 
-      // right
-      allIndicator.push({
-        center: [480 + 45 * 2, 25],
-        size: [40, 40],
-        lines: [
-          { a: [-15, 0], b: [8, 0], thickness: 6, color: [1, 1, 1] },
-          { a: [0, 10], b: [12, -2], thickness: 6, color: [1, 1, 1] },
-          { a: [0, -10], b: [12, 2], thickness: 6, color: [1, 1, 1] }
-        ],
-        color: GlobalKeyboardManager.isPressed('ArrowRight')
-          ? activatedColor
-          : defaultColor
-      });
+    //   allIndicator.push({
+    //     center: [480 + 45 * 2, 125],
+    //     size: [40, 40],
+    //     text: 'D',
+    //     color: GlobalKeyboardManager.isPressed('D')
+    //       ? activatedColor
+    //       : defaultColor
+    //   });
 
-      if (GlobalTouchManager.isSupported()) {
-        allIndicator.push({
-          center: [120, 35],
-          size: [230, 60],
-          text: 'Touch Events\nSupported\n(double tap)',
-          color: [0, 0.5, 0]
-        });
-      } else {
-        allIndicator.push({
-          center: [120, 35],
-          size: [230, 60],
-          text: 'Touch Events\nNot Supported',
-          color: [0.5, 0, 0]
-        });
-      }
+    //   // left
+    //   allIndicator.push({
+    //     center: [480, 25],
+    //     size: [40, 40],
+    //     lines: [
+    //       { a: [15, 0], b: [-8, 0], thickness: 6, color: [1, 1, 1] },
+    //       { a: [0, 10], b: [-12, -2], thickness: 6, color: [1, 1, 1] },
+    //       { a: [0, -10], b: [-12, 2], thickness: 6, color: [1, 1, 1] }
+    //     ],
+    //     color: GlobalKeyboardManager.isPressed('ArrowLeft')
+    //       ? activatedColor
+    //       : defaultColor
+    //   });
 
-      if (GlobalPointerLockManager.canBePointerLocked(this._canvasElement)) {
-        allIndicator.push({
-          center: [350, 35],
-          size: [210, 60],
-          text: 'Mouse\nSupported',
-          color: [0, 0.5, 0]
-        });
-      } else {
-        allIndicator.push({
-          center: [350, 35],
-          size: [210, 60],
-          text: 'Mouse Events\nNot Supported',
-          color: [0.5, 0, 0]
-        });
-      }
+    //   // down
+    //   allIndicator.push({
+    //     center: [480 + 45, 25],
+    //     size: [40, 40],
+    //     lines: [
+    //       { a: [0, 15], b: [0, -8], thickness: 6, color: [1, 1, 1] },
+    //       { a: [10, 0], b: [-2, -12], thickness: 6, color: [1, 1, 1] },
+    //       { a: [-10, 0], b: [2, -12], thickness: 6, color: [1, 1, 1] }
+    //     ],
+    //     color: GlobalKeyboardManager.isPressed('ArrowDown')
+    //       ? activatedColor
+    //       : defaultColor
+    //   });
 
-      allIndicator.forEach((currIndicator) => {
-        const { center } = currIndicator;
+    //   // up
+    //   allIndicator.push({
+    //     center: [480 + 45, 25 + 45],
+    //     size: [40, 40],
+    //     lines: [
+    //       { a: [0, -15], b: [0, 8], thickness: 6, color: [1, 1, 1] },
+    //       { a: [10, 0], b: [-2, 12], thickness: 6, color: [1, 1, 1] },
+    //       { a: [-10, 0], b: [2, 12], thickness: 6, color: [1, 1, 1] }
+    //     ],
+    //     color: GlobalKeyboardManager.isPressed('ArrowUp')
+    //       ? activatedColor
+    //       : defaultColor
+    //   });
 
-        this._renderer.stackRenderers.pushCenteredRectangle(
-          glm.vec3.fromValues(center[0], center[1], -0.3),
-          currIndicator.size,
-          [0, 0, 0]
-        );
+    //   // right
+    //   allIndicator.push({
+    //     center: [480 + 45 * 2, 25],
+    //     size: [40, 40],
+    //     lines: [
+    //       { a: [-15, 0], b: [8, 0], thickness: 6, color: [1, 1, 1] },
+    //       { a: [0, 10], b: [12, -2], thickness: 6, color: [1, 1, 1] },
+    //       { a: [0, -10], b: [12, 2], thickness: 6, color: [1, 1, 1] }
+    //     ],
+    //     color: GlobalKeyboardManager.isPressed('ArrowRight')
+    //       ? activatedColor
+    //       : defaultColor
+    //   });
 
-        this._renderer.stackRenderers.pushCenteredRectangle(
-          glm.vec3.fromValues(center[0], center[1], -0.2),
-          [currIndicator.size[0] - 2, currIndicator.size[1] - 2],
-          currIndicator.color
-        );
+    //   if (GlobalTouchManager.isSupported()) {
+    //     allIndicator.push({
+    //       center: [120, 35],
+    //       size: [230, 60],
+    //       text: 'Touch Events\nSupported\n(double tap)',
+    //       color: [0, 0.5, 0]
+    //     });
+    //   } else {
+    //     allIndicator.push({
+    //       center: [120, 35],
+    //       size: [230, 60],
+    //       text: 'Touch Events\nNot Supported',
+    //       color: [0.5, 0, 0]
+    //     });
+    //   }
 
-        if (currIndicator.text) {
-          this._renderer.textRenderer.pushCenteredText(currIndicator.text, center, 16);
-        }
+    //   if (GlobalPointerLockManager.canBePointerLocked(this._canvasElement)) {
+    //     allIndicator.push({
+    //       center: [350, 35],
+    //       size: [210, 60],
+    //       text: 'Mouse\nSupported',
+    //       color: [0, 0.5, 0]
+    //     });
+    //   } else {
+    //     allIndicator.push({
+    //       center: [350, 35],
+    //       size: [210, 60],
+    //       text: 'Mouse Events\nNot Supported',
+    //       color: [0.5, 0, 0]
+    //     });
+    //   }
 
-        if (currIndicator.lines) {
-          currIndicator.lines.forEach((currLine) => {
-            this._renderer.stackRenderers.pushThickLine(
-              [center[0] + currLine.a[0], center[1] + currLine.a[1], 0],
-              [center[0] + currLine.b[0], center[1] + currLine.b[1], 0],
-              currLine.thickness,
-              currLine.color
-            );
-          });
-        }
-      });
-    } // help text
+    //   allIndicator.forEach((currIndicator) => {
+    //     const { center } = currIndicator;
+
+    //     this._renderer.stackRenderers.pushCenteredRectangle(
+    //       glm.vec3.fromValues(center[0], center[1], -0.3),
+    //       currIndicator.size,
+    //       [0, 0, 0]
+    //     );
+
+    //     this._renderer.stackRenderers.pushCenteredRectangle(
+    //       glm.vec3.fromValues(center[0], center[1], -0.2),
+    //       [currIndicator.size[0] - 2, currIndicator.size[1] - 2],
+    //       currIndicator.color
+    //     );
+
+    //     if (currIndicator.text) {
+    //       this._renderer.textRenderer.pushCenteredText(currIndicator.text, center, 16);
+    //     }
+
+    //     if (currIndicator.lines) {
+    //       currIndicator.lines.forEach((currLine) => {
+    //         this._renderer.stackRenderers.pushThickLine(
+    //           [center[0] + currLine.a[0], center[1] + currLine.a[1], 0],
+    //           [center[0] + currLine.b[0], center[1] + currLine.b[1], 0],
+    //           currLine.thickness,
+    //           currLine.color
+    //         );
+    //       });
+    //     }
+    //   });
+    // } // help text
 
     this._renderer.renderHUD(
       this._chunkGenerator.getChunks(),

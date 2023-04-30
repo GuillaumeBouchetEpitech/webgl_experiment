@@ -1,7 +1,6 @@
+import { ShaderProgram, GeometryWrapper } from '../../../wrappers';
 
-import { ShaderProgram, GeometryWrapper } from '../wrappers';
-
-import { stackRenderer } from './shaders';
+import * as shaders from './shaders/stackRenderer';
 
 import { WireFramesStackRenderer } from './internals/WireFramesStackRenderer';
 import { TrianglesStackRenderer } from './internals/TrianglesStackRenderer';
@@ -9,12 +8,11 @@ import { TrianglesStackRenderer } from './internals/TrianglesStackRenderer';
 import * as glm from 'gl-matrix';
 
 export interface IStackRenderers {
-
   pushLine(
     inPointA: glm.ReadonlyVec3,
     inPointB: glm.ReadonlyVec3,
     inColor: glm.ReadonlyVec3
-  ): void
+  ): void;
 
   pushThickLine(
     inPointA: glm.ReadonlyVec3,
@@ -44,8 +42,8 @@ export interface IStackRenderers {
   ): void;
 
   flush(composedMatrix: glm.ReadonlyMat4): void;
-
-};
+  clear(): void
+}
 
 export class StackRenderers implements IStackRenderers {
   private _shader: ShaderProgram;
@@ -55,8 +53,8 @@ export class StackRenderers implements IStackRenderers {
 
   constructor() {
     this._shader = new ShaderProgram({
-      vertexSrc: stackRenderer.vertex,
-      fragmentSrc: stackRenderer.fragment,
+      vertexSrc: shaders.vertex,
+      fragmentSrc: shaders.fragment,
       attributes: ['a_vertex_position', 'a_vertex_color'],
       uniforms: ['u_composedMatrix']
     });
@@ -169,4 +167,10 @@ export class StackRenderers implements IStackRenderers {
     this._wireFramesStackRenderer.flush();
     this._trianglesStackRenderer.flush();
   }
+
+  clear(): void {
+    this._wireFramesStackRenderer.clear();
+    this._trianglesStackRenderer.clear();
+  }
+
 }

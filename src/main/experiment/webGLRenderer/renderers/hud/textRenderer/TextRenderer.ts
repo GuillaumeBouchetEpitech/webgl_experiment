@@ -1,7 +1,6 @@
+import { ShaderProgram, Texture, GeometryWrapper } from '../../../wrappers';
 
-import { ShaderProgram, Texture, GeometryWrapper } from '../wrappers';
-
-import { textRenderer } from './shaders';
+import * as shaders from './shaders/textRenderer';
 
 import { asciiTextureHex } from './internals/asciiTextureHex';
 
@@ -11,25 +10,38 @@ const k_gridSize: glm.ReadonlyVec2 = [16, 6];
 const k_texCoord: glm.ReadonlyVec2 = [1 / k_gridSize[0], 1 / k_gridSize[1]];
 
 export interface ITextRenderer {
-
-  pushText(inMessage: string, inPosition: glm.ReadonlyVec2, inScale: number): void;
-  pushCenteredText(inMessage: string, inCenter: glm.ReadonlyVec2, inScale: number): void;
-  pushRightAlignedText(inMessage: string, inRightOrigin: glm.ReadonlyVec2, inScale: number): void
+  pushText(
+    inMessage: string,
+    inPosition: glm.ReadonlyVec2,
+    inScale: number
+  ): void;
+  pushCenteredText(
+    inMessage: string,
+    inCenter: glm.ReadonlyVec2,
+    inScale: number
+  ): void;
+  pushRightAlignedText(
+    inMessage: string,
+    inRightOrigin: glm.ReadonlyVec2,
+    inScale: number
+  ): void;
   flush(composedMatrix: glm.ReadonlyMat4): void;
-
-};
+  clear(): void;
+}
 
 export class TextRenderer implements ITextRenderer {
   private _shader: ShaderProgram;
   private _geometry: GeometryWrapper.Geometry;
   private _texture = new Texture();
   private _texCoordMap: Map<string, glm.ReadonlyVec2>;
-  private _vertices: number[] = [];
+
+  private _buffer = new Float32Array(9 * 1024 * 4);
+  private _currentSize: number = 0;
 
   constructor() {
     this._shader = new ShaderProgram({
-      vertexSrc: textRenderer.vertex,
-      fragmentSrc: textRenderer.fragment,
+      vertexSrc: shaders.vertex,
+      fragmentSrc: shaders.fragment,
       attributes: [
         'a_vertex_position',
         'a_vertex_texCoord',
@@ -112,7 +124,7 @@ export class TextRenderer implements ITextRenderer {
       }
     ];
 
-    const indices = [1, 0, 2, 1, 3, 2];
+    const indices = [1, 0, 2, 1, 2, 3];
 
     const letterVertices: number[] = [];
     for (const index of indices) {
@@ -277,7 +289,11 @@ export class TextRenderer implements ITextRenderer {
     }
   }
 
-  pushCenteredText(inMessage: string, inCenter: glm.ReadonlyVec2, inScale: number) {
+  pushCenteredText(
+    inMessage: string,
+    inCenter: glm.ReadonlyVec2,
+    inScale: number
+  ) {
     const allLineWidth: number[] = [0];
     for (let ii = 0; ii < inMessage.length; ++ii) {
       if (inMessage[ii] == '\n') {
@@ -353,7 +369,15 @@ export class TextRenderer implements ITextRenderer {
     }
   }
 
-  private _pushLetter(inCharacter: string, inPosition: glm.ReadonlyVec2, inScale: number) {
+  private _pushLetter(
+    inCharacter: string,
+    inPosition: glm.ReadonlyVec2,
+    inScale: number
+  ) {
+
+    if (this._currentSize + 9 * 10 >= this._buffer.length)
+      return;
+
     const texCoord = this._texCoordMap.get(inCharacter);
 
     if (!texCoord)
@@ -364,49 +388,53 @@ export class TextRenderer implements ITextRenderer {
 
     for (let yy = -1; yy <= 1; ++yy) {
       for (let xx = -1; xx <= 1; ++xx) {
-        this._vertices.push(
-          inPosition[0] + 2 * xx,
-          inPosition[1] + 2 * yy,
-          -0.1,
 
-          texCoord[0],
-          texCoord[1],
-
-          blackColor[0],
-          blackColor[1],
-          blackColor[2],
-
-          inScale
-        );
+        this._buffer[this._currentSize + 0] = inPosition[0] + 2 * xx;
+        this._buffer[this._currentSize + 1] = inPosition[1] + 2 * yy;
+        this._buffer[this._currentSize + 2] = -0.1;
+        this._buffer[this._currentSize + 3] = texCoord[0];
+        this._buffer[this._currentSize + 4] = texCoord[1];
+        this._buffer[this._currentSize + 5] = blackColor[0];
+        this._buffer[this._currentSize + 6] = blackColor[1];
+        this._buffer[this._currentSize + 7] = blackColor[2];
+        this._buffer[this._currentSize + 8] = inScale;
+        this._currentSize += 9;
       }
     }
 
-    this._vertices.push(
-      inPosition[0],
-      inPosition[1],
-      0.0,
-      texCoord[0],
-      texCoord[1],
-      whiteColor[0],
-      whiteColor[1],
-      whiteColor[2],
-      inScale
-    );
+    this._buffer[this._currentSize + 0] = inPosition[0];
+    this._buffer[this._currentSize + 1] = inPosition[1];
+    this._buffer[this._currentSize + 2] = 0.0;
+    this._buffer[this._currentSize + 3] = texCoord[0];
+    this._buffer[this._currentSize + 4] = texCoord[1];
+    this._buffer[this._currentSize + 5] = whiteColor[0];
+    this._buffer[this._currentSize + 6] = whiteColor[1];
+    this._buffer[this._currentSize + 7] = whiteColor[2];
+    this._buffer[this._currentSize + 8] = inScale;
+    this._currentSize += 9;
   }
 
   flush(composedMatrix: glm.ReadonlyMat4) {
+
+    if (this._currentSize === 0)
+      return;
+
     this._shader.bind();
     this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
 
     this._texture.bind();
 
-    this._geometry.updateBuffer(1, this._vertices, true);
-    this._geometry.setInstancedCount(this._vertices.length / 9);
+    this._geometry.updateBuffer(1, this._buffer, true);
+    this._geometry.setInstancedCount(this._currentSize / 9);
     this._geometry.render();
 
     Texture.unbind();
 
+    this.clear();
+  }
+
+  clear(): void {
     // reset vertices
-    this._vertices.length = 0;
+    this._currentSize = 0;
   }
 }

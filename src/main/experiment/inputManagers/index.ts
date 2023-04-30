@@ -1,3 +1,4 @@
+export * from './FullScreenManager';
 export * from './KeyboardManager';
 export * from './KeyCodes';
 export * from './MouseManager';

@@ -48,6 +48,9 @@ export class WebGLContext {
 
     WebGLContext._extensionLoseContext =
       WebGLContext._gl.getExtension('WEBGL_lose_context');
+
+    WebGLContext._gl.getExtension('EXT_color_buffer_float');
+    WebGLContext._gl.getExtension('EXT_float_blend');
   }
 
   //
