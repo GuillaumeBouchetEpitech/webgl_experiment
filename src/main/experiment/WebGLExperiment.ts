@@ -266,7 +266,10 @@ export class WebGLExperiment {
         if (chunk.visible) ++visibleChunks;
       });
 
-      const textsOrigin: glm.ReadonlyVec2 = [590, 590];
+      const textsOrigin: glm.ReadonlyVec2 = [
+        this._canvasElement.width / 4 * 3 - 10,
+        this._canvasElement.height - 10
+      ];
 
       const text: string = [
         `Chunks\nGenerated:\n${this._chunksCreated} <`,
@@ -302,7 +305,7 @@ export class WebGLExperiment {
         `Z: ${chunkCoord[2]}`
       ];
 
-      const textsOrigin: glm.ReadonlyVec2 = [14, 500];
+      const textsOrigin: glm.ReadonlyVec2 = [14, this._canvasElement.height - 100];
 
       this._renderer.textRenderer.pushText(allLines.join('\n'), textsOrigin, 14);
     } // bottom left text
@@ -320,183 +323,6 @@ export class WebGLExperiment {
       this._framesDuration,
       this._renderer.stackRenderers,
       this._renderer.textRenderer);
-
-    // {
-    //   // help text
-
-    //   type Indicator = {
-    //     center: glm.ReadonlyVec2;
-    //     size: glm.ReadonlyVec2;
-    //     text?: string;
-    //     lines?: {
-    //       a: glm.ReadonlyVec2;
-    //       b: glm.ReadonlyVec2;
-    //       thickness: number;
-    //       color: glm.ReadonlyVec3;
-    //     }[];
-    //     color: glm.ReadonlyVec3;
-    //   };
-
-    //   const allIndicator: Indicator[] = [];
-
-    //   const defaultColor: glm.ReadonlyVec3 = [0.2, 0.2, 0.2];
-    //   const activatedColor: glm.ReadonlyVec3 = [0.2, 0.6, 0.2];
-
-    //   allIndicator.push({
-    //     center: [480, 125],
-    //     size: [40, 40],
-    //     text: 'A\nQ',
-    //     color: GlobalKeyboardManager.isPressed('A', 'Q')
-    //       ? activatedColor
-    //       : defaultColor
-    //   });
-
-    //   allIndicator.push({
-    //     center: [480 + 45 * 1, 125],
-    //     size: [40, 40],
-    //     text: 'S',
-    //     color: GlobalKeyboardManager.isPressed('S')
-    //       ? activatedColor
-    //       : defaultColor
-    //   });
-
-    //   allIndicator.push({
-    //     center: [480 + 45 * 1, 125 + 45],
-    //     size: [40, 40],
-    //     text: 'W\nZ',
-    //     color: GlobalKeyboardManager.isPressed('W', 'Z')
-    //       ? activatedColor
-    //       : defaultColor
-    //   });
-
-    //   allIndicator.push({
-    //     center: [480 + 45 * 2, 125],
-    //     size: [40, 40],
-    //     text: 'D',
-    //     color: GlobalKeyboardManager.isPressed('D')
-    //       ? activatedColor
-    //       : defaultColor
-    //   });
-
-    //   // left
-    //   allIndicator.push({
-    //     center: [480, 25],
-    //     size: [40, 40],
-    //     lines: [
-    //       { a: [15, 0], b: [-8, 0], thickness: 6, color: [1, 1, 1] },
-    //       { a: [0, 10], b: [-12, -2], thickness: 6, color: [1, 1, 1] },
-    //       { a: [0, -10], b: [-12, 2], thickness: 6, color: [1, 1, 1] }
-    //     ],
-    //     color: GlobalKeyboardManager.isPressed('ArrowLeft')
-    //       ? activatedColor
-    //       : defaultColor
-    //   });
-
-    //   // down
-    //   allIndicator.push({
-    //     center: [480 + 45, 25],
-    //     size: [40, 40],
-    //     lines: [
-    //       { a: [0, 15], b: [0, -8], thickness: 6, color: [1, 1, 1] },
-    //       { a: [10, 0], b: [-2, -12], thickness: 6, color: [1, 1, 1] },
-    //       { a: [-10, 0], b: [2, -12], thickness: 6, color: [1, 1, 1] }
-    //     ],
-    //     color: GlobalKeyboardManager.isPressed('ArrowDown')
-    //       ? activatedColor
-    //       : defaultColor
-    //   });
-
-    //   // up
-    //   allIndicator.push({
-    //     center: [480 + 45, 25 + 45],
-    //     size: [40, 40],
-    //     lines: [
-    //       { a: [0, -15], b: [0, 8], thickness: 6, color: [1, 1, 1] },
-    //       { a: [10, 0], b: [-2, 12], thickness: 6, color: [1, 1, 1] },
-    //       { a: [-10, 0], b: [2, 12], thickness: 6, color: [1, 1, 1] }
-    //     ],
-    //     color: GlobalKeyboardManager.isPressed('ArrowUp')
-    //       ? activatedColor
-    //       : defaultColor
-    //   });
-
-    //   // right
-    //   allIndicator.push({
-    //     center: [480 + 45 * 2, 25],
-    //     size: [40, 40],
-    //     lines: [
-    //       { a: [-15, 0], b: [8, 0], thickness: 6, color: [1, 1, 1] },
-    //       { a: [0, 10], b: [12, -2], thickness: 6, color: [1, 1, 1] },
-    //       { a: [0, -10], b: [12, 2], thickness: 6, color: [1, 1, 1] }
-    //     ],
-    //     color: GlobalKeyboardManager.isPressed('ArrowRight')
-    //       ? activatedColor
-    //       : defaultColor
-    //   });
-
-    //   if (GlobalTouchManager.isSupported()) {
-    //     allIndicator.push({
-    //       center: [120, 35],
-    //       size: [230, 60],
-    //       text: 'Touch Events\nSupported\n(double tap)',
-    //       color: [0, 0.5, 0]
-    //     });
-    //   } else {
-    //     allIndicator.push({
-    //       center: [120, 35],
-    //       size: [230, 60],
-    //       text: 'Touch Events\nNot Supported',
-    //       color: [0.5, 0, 0]
-    //     });
-    //   }
-
-    //   if (GlobalPointerLockManager.canBePointerLocked(this._canvasElement)) {
-    //     allIndicator.push({
-    //       center: [350, 35],
-    //       size: [210, 60],
-    //       text: 'Mouse\nSupported',
-    //       color: [0, 0.5, 0]
-    //     });
-    //   } else {
-    //     allIndicator.push({
-    //       center: [350, 35],
-    //       size: [210, 60],
-    //       text: 'Mouse Events\nNot Supported',
-    //       color: [0.5, 0, 0]
-    //     });
-    //   }
-
-    //   allIndicator.forEach((currIndicator) => {
-    //     const { center } = currIndicator;
-
-    //     this._renderer.stackRenderers.pushCenteredRectangle(
-    //       glm.vec3.fromValues(center[0], center[1], -0.3),
-    //       currIndicator.size,
-    //       [0, 0, 0]
-    //     );
-
-    //     this._renderer.stackRenderers.pushCenteredRectangle(
-    //       glm.vec3.fromValues(center[0], center[1], -0.2),
-    //       [currIndicator.size[0] - 2, currIndicator.size[1] - 2],
-    //       currIndicator.color
-    //     );
-
-    //     if (currIndicator.text) {
-    //       this._renderer.textRenderer.pushCenteredText(currIndicator.text, center, 16);
-    //     }
-
-    //     if (currIndicator.lines) {
-    //       currIndicator.lines.forEach((currLine) => {
-    //         this._renderer.stackRenderers.pushThickLine(
-    //           [center[0] + currLine.a[0], center[1] + currLine.a[1], 0],
-    //           [center[0] + currLine.b[0], center[1] + currLine.b[1], 0],
-    //           currLine.thickness,
-    //           currLine.color
-    //         );
-    //       });
-    //     }
-    //   });
-    // } // help text
 
     this._renderer.renderHUD(
       this._chunkGenerator.getChunks(),

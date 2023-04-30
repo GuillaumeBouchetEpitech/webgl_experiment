@@ -19,56 +19,50 @@ class TouchData {
 }
 
 class TouchManager {
-  private _pressedButtonsSet = new Set<number>();
   private _activated: boolean = false;
+  private _allTouchDataMap = new Map<string, TouchData>();
+  private _allCachedTouchDataArray: TouchData[] = [];
+
   private _handleTouchStart: (event: TouchEvent) => void;
   private _handleTouchEnd: (event: TouchEvent) => void;
   private _handleTouchMove: (event: TouchEvent) => void;
-
-  private _allTouchData: TouchData[] = [];
 
   constructor() {
     const handleTouchStart = (event: TouchEvent) => {
       event.preventDefault();
 
       for (let ii = 0; ii < event.changedTouches.length; ++ii) {
-        const currTouch = event.changedTouches[ii];
-        this._allTouchData.push(
-          new TouchData(currTouch.identifier, currTouch.pageX, currTouch.pageY)
-        );
+        const { identifier, pageX, pageY } = event.changedTouches[ii];
+        const newData = new TouchData(identifier, pageX, pageY);
+
+        this._allTouchDataMap.set(`${identifier}`, newData);
+        this._allCachedTouchDataArray.length = 0;
       }
     };
     const handleTouchEnd = (event: TouchEvent) => {
       event.preventDefault();
 
       for (let ii = 0; ii < event.changedTouches.length; ++ii) {
-        const currTouch = event.changedTouches[ii];
+        const { identifier } = event.changedTouches[ii];
 
-        const index = this._allTouchData.findIndex(
-          (item) => item.id === currTouch.identifier
-        );
-        if (index < 0) continue;
-
-        this._allTouchData.splice(index, 1);
+        this._allTouchDataMap.delete(`${identifier}`);
+        this._allCachedTouchDataArray.length = 0;
       }
     };
     const handleTouchMove = (event: TouchEvent) => {
       event.preventDefault();
 
       for (let ii = 0; ii < event.changedTouches.length; ++ii) {
-        const currTouch = event.changedTouches[ii];
+        const { identifier, pageX, pageY } = event.changedTouches[ii];
 
-        const index = this._allTouchData.findIndex(
-          (item) => item.id === currTouch.identifier
-        );
-        if (index < 0) continue;
+        const currData = this._allTouchDataMap.get(`${identifier}`);
+        if (!currData)
+          continue;
 
-        const savedTouch = this._allTouchData[index];
-
-        savedTouch.deltaX += currTouch.pageX - savedTouch.positionX;
-        savedTouch.deltaY += currTouch.pageY - savedTouch.positionY;
-        savedTouch.positionX = currTouch.pageX;
-        savedTouch.positionY = currTouch.pageY;
+        currData.deltaX += pageX - currData.positionX;
+        currData.deltaY += pageY - currData.positionY;
+        currData.positionX = pageX;
+        currData.positionY = pageY;
       }
     };
 
@@ -86,11 +80,13 @@ class TouchManager {
     if (!this.isSupported()) return;
     if (this._activated) return;
 
-    this._pressedButtonsSet.clear();
+    this._allTouchDataMap.clear();
+    this._allCachedTouchDataArray.length = 0;
 
     document.addEventListener('touchstart', this._handleTouchStart);
     document.addEventListener('touchend', this._handleTouchEnd);
-    document.addEventListener('touchmove', this._handleTouchMove);
+    document.addEventListener('touchcancel', this._handleTouchEnd);
+    document.addEventListener('touchmove', this._handleTouchMove, { passive:false });
 
     this._activated = true;
   }
@@ -98,21 +94,31 @@ class TouchManager {
   deactivate() {
     if (!this._activated) return;
 
-    this._pressedButtonsSet.clear();
+    this._allTouchDataMap.clear();
+    this._allCachedTouchDataArray.length = 0;
 
     document.removeEventListener('touchstart', this._handleTouchStart);
     document.removeEventListener('touchend', this._handleTouchEnd);
+    document.removeEventListener('touchcancel', this._handleTouchEnd);
     document.removeEventListener('touchmove', this._handleTouchMove);
 
     this._activated = false;
   }
 
+  private _refreshCache() {
+    if (this._allCachedTouchDataArray.length === 0) {
+      this._allCachedTouchDataArray = [...this._allTouchDataMap.values()];
+    }
+  }
+
   getTouchData(): ReadonlyArray<TouchData> {
-    return this._allTouchData;
+    this._refreshCache();
+    return this._allCachedTouchDataArray;
   }
 
   resetDeltas() {
-    this._allTouchData.forEach((item) => item.resetDelta());
+    this._refreshCache();
+    this._allCachedTouchDataArray.forEach((item) => item.resetDelta());
   }
 }
 
