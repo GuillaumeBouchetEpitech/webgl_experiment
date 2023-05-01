@@ -20,7 +20,7 @@ export class WireFramesStackRenderer {
     };
 
     this._geometry = new GeometryWrapper.Geometry(inShader, geometryDef);
-    this._geometry.setFloatBufferSize(0, k_bufferSize, true);
+    this._geometry.setFloatBufferSize(0, k_bufferSize);
   }
 
   pushLine(
@@ -60,7 +60,7 @@ export class WireFramesStackRenderer {
   flush() {
     if (!this.canRender()) return;
 
-    this._geometry.updateBuffer(0, this._buffer, this._currentSize, true);
+    this._geometry.updateBuffer(0, this._buffer, this._currentSize);
     this._geometry.setPrimitiveCount(this._currentSize / 7);
 
     this._geometry.render();

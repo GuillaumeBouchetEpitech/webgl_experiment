@@ -1,4 +1,4 @@
-import * as chunksRenderer from './shaders/chunksRenderer';
+import * as shaders from './shaders';
 import {
   WebGLContext,
   GeometryWrapper,
@@ -8,8 +8,54 @@ import {
 
 import * as glm from 'gl-matrix';
 
+export interface ILiveGeometry {
+  update(inBuffer: Float32Array, inSize: number): void;
+  setVisibility(isVisible: boolean): void;
+}
+
+class LiveGeometry implements ILiveGeometry {
+
+  private _geometry: GeometryWrapper.Geometry;
+  private _isVisible: boolean = false;
+
+  constructor(
+    inShader: ShaderProgram,
+    inGeometryDefinition: GeometryWrapper.GeometryDefinition,
+    preAllocatedSize: number,
+  ) {
+
+    this._geometry = new GeometryWrapper.Geometry(
+      inShader,
+      inGeometryDefinition
+    );
+    this._geometry.setFloatBufferSize(0, preAllocatedSize);
+  }
+
+  update(inBuffer: Float32Array, inSize: number): void {
+    this._geometry.updateBuffer(0, inBuffer, inSize);
+    this._geometry.setPrimitiveCount(inSize / 6);
+  }
+
+  // dispose(): void {
+  //   this._geometry.dispose();
+  // }
+
+  render() {
+    if (!this._isVisible) {
+      return;
+    }
+
+    this._geometry.render();
+  }
+
+  setVisibility(isVisible: boolean): void {
+    this._isVisible = isVisible;
+  }
+}
+
 export interface IChunksRenderer {
-  buildGeometry(size: number): GeometryWrapper.Geometry;
+  acquireGeometry(size: number): ILiveGeometry;
+  releaseGeometry(geom: ILiveGeometry): void;
 }
 
 export class ChunksRenderer implements IChunksRenderer {
@@ -17,10 +63,13 @@ export class ChunksRenderer implements IChunksRenderer {
   private _texture = new Texture();
   private _geometryDefinition: GeometryWrapper.GeometryDefinition;
 
+  private _unusedGeometries: LiveGeometry[] = [];
+  private _inUseGeometries: LiveGeometry[] = [];
+
   constructor() {
     this._shader = new ShaderProgram({
-      vertexSrc: chunksRenderer.vertex,
-      fragmentSrc: chunksRenderer.fragment,
+      vertexSrc: shaders.chunksRenderer.vertex,
+      fragmentSrc: shaders.chunksRenderer.fragment,
       attributes: [
         'a_vertex_position',
         'a_vertex_normal',
@@ -55,20 +104,38 @@ export class ChunksRenderer implements IChunksRenderer {
     await this._texture.load('assets/texture.png');
   }
 
-  buildGeometry(inSize: number): GeometryWrapper.Geometry {
-    const geom = new GeometryWrapper.Geometry(
+  acquireGeometry(inSize: number): ILiveGeometry {
+
+    if (this._unusedGeometries.length > 0) {
+      const reusedGeom = this._unusedGeometries.pop()!;
+      this._inUseGeometries.push(reusedGeom);
+      return reusedGeom;
+    }
+
+    const newGeom = new LiveGeometry(
       this._shader,
-      this._geometryDefinition
+      this._geometryDefinition,
+      inSize,
     );
-    geom.setFloatBufferSize(0, inSize, false)
-    return geom;
+    this._inUseGeometries.push(newGeom);
+    return newGeom;
   }
+
+  releaseGeometry(geom: ILiveGeometry): void {
+
+    const index = this._inUseGeometries.indexOf(geom as LiveGeometry);
+    if (index < 0)
+      return;
+
+    this._unusedGeometries.push(geom as LiveGeometry);
+    this._inUseGeometries.splice(index, 1);
+  }
+
 
   render(
     viewMatrix: glm.mat4,
     projectionMatrix: glm.mat4,
     eyePosition: glm.ReadonlyVec3,
-    geometries: GeometryWrapper.Geometry[]
   ) {
     const gl = WebGLContext.getContext();
     gl.disable(gl.BLEND);
@@ -86,8 +153,6 @@ export class ChunksRenderer implements IChunksRenderer {
 
     this._texture.bind();
 
-    geometries.forEach((geometry) => {
-      geometry.render();
-    });
+    this._inUseGeometries.forEach((geometry) => geometry.render());
   }
 }

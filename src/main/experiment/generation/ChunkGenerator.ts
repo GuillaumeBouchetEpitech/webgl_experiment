@@ -1,27 +1,27 @@
 import * as glm from 'gl-matrix';
 
-interface IChunkGeneratorDef<GeometryType> {
+import { ILiveGeometry } from '../webGLRenderer/WebGLRenderer';
+
+interface IChunkGeneratorDef {
   chunkSize: number;
   chunkRange: number;
   workerTotal: number;
   workerFile: string;
   workerBufferSize: number;
   chunkIsVisible: (pos: glm.ReadonlyVec3) => boolean;
-  pointIsVisible: (pos: glm.ReadonlyVec3) => boolean;
-  addGeometry: (size: number) => GeometryType;
-  updateGeometry: (geom: GeometryType, buffer: Float32Array, size: number) => void;
+  acquireGeometry: () => ILiveGeometry;
+  releaseGeometry: (inGeom: ILiveGeometry) => void;
   onChunkCreated?: () => void;
   onChunkDiscarded?: () => void;
 }
 
-interface IChunk<GeometryType> {
+interface IChunk {
   position: glm.ReadonlyVec3;
-  geometry: GeometryType;
-  coord2d: glm.ReadonlyVec2 | null;
-  visible: boolean;
+  geometry: ILiveGeometry;
+  isVisible: boolean;
 }
 
-export type Chunks<GeometryType> = IChunk<GeometryType>[];
+export type Chunks = IChunk[];
 
 enum WorkerStatus {
   available = 1,
@@ -34,13 +34,12 @@ interface IWorkerInstance {
   status: WorkerStatus;
 }
 
-export class ChunkGenerator<GeometryType> {
-  private _def: IChunkGeneratorDef<GeometryType>;
+export class ChunkGenerator {
+  private _def: IChunkGeneratorDef;
 
   private _running: boolean = false;
-  private _chunks: Chunks<GeometryType> = []; // live chunks
+  private _chunks: Chunks = []; // live chunks
   private _chunkPositionQueue: glm.ReadonlyVec3[] = []; // position to be processed
-  private _geometriesPool: GeometryType[] = [];
   private _savedIndex: glm.vec3 = [999, 999, 999]; // any other value than 0/0/0 will work
 
   private _workers: IWorkerInstance[] = [];
@@ -49,7 +48,7 @@ export class ChunkGenerator<GeometryType> {
 
   private _processingPositions: glm.ReadonlyVec3[] = [];
 
-  constructor(def: IChunkGeneratorDef<GeometryType>) {
+  constructor(def: IChunkGeneratorDef) {
     this._def = def;
 
     for (let ii = 0; ii < this._def.workerTotal; ++ii) this._addWorker();
@@ -83,22 +82,15 @@ export class ChunkGenerator<GeometryType> {
 
       if (!this._running) return;
 
-      const _getGeometry = () => {
-        if (this._geometriesPool.length > 0)
-          return this._geometriesPool.pop()!;
-        return this._def.addGeometry(this._def.workerBufferSize);
-      }
+      const geometry = this._def.acquireGeometry();
 
-      const geometry = _getGeometry();
-
-      this._def.updateGeometry(geometry, newWorker.float32buffer, sizeUsed);
+      geometry.update(newWorker.float32buffer, sizeUsed);
 
       // save
       this._chunks.push({
         position,
         geometry,
-        coord2d: null,
-        visible: false
+        isVisible: false
       });
 
       if (this._def.onChunkCreated) this._def.onChunkCreated();
@@ -122,12 +114,36 @@ export class ChunkGenerator<GeometryType> {
     this._running = false;
 
     this._chunkPositionQueue.length = 0;
+    this._chunks.forEach(chunk => this._def.releaseGeometry(chunk.geometry));
     this._chunks.length = 0;
-    this._geometriesPool.length = 0;
   }
 
   update(cameraPosition: glm.ReadonlyVec3) {
     if (!this._running) return;
+
+    //
+    //
+
+    this._updateGeneration(cameraPosition);
+
+    //
+    //
+
+    for (const currChunk of this._chunks) {
+
+      const isVisible = this._def.chunkIsVisible(currChunk.position);
+
+      currChunk.isVisible = isVisible;
+      currChunk.geometry.setVisibility(isVisible);
+    }
+
+    //
+    //
+
+    this._launchWorker();
+  }
+
+  private _updateGeneration(cameraPosition: glm.ReadonlyVec3) {
 
     //  check if moved enough to justify asking for new chunks
     //      -> if yes
@@ -199,7 +215,7 @@ export class ChunkGenerator<GeometryType> {
         curr_pos[2] > maxIndex[2]
       ) {
 
-        this._geometriesPool.push(this._chunks[ii].geometry);
+        this._def.releaseGeometry(this._chunks[ii].geometry);
         this._chunks.splice(ii, 1);
         --ii;
 
@@ -210,8 +226,8 @@ export class ChunkGenerator<GeometryType> {
     //
     // include in the generation queue the close enough chunks
 
-    for (let zz = minIndex[2]; zz <= maxIndex[2]; ++zz)
-      for (let yy = minIndex[1]; yy <= maxIndex[1]; ++yy)
+    for (let zz = minIndex[2]; zz <= maxIndex[2]; ++zz) {
+      for (let yy = minIndex[1]; yy <= maxIndex[1]; ++yy) {
         for (let xx = minIndex[0]; xx <= maxIndex[0]; ++xx) {
           const position: glm.ReadonlyVec3 = [
             xx * this._def.chunkSize,
@@ -240,11 +256,9 @@ export class ChunkGenerator<GeometryType> {
 
           this._chunkPositionQueue.push(position);
         }
+      }
+    }
 
-    //
-    //
-
-    this._launchWorker();
   }
 
   private _launchWorker() {
@@ -321,7 +335,7 @@ export class ChunkGenerator<GeometryType> {
     );
   }
 
-  getChunks(): Chunks<GeometryType> {
+  getChunks(): Chunks {
     return this._chunks;
   }
 

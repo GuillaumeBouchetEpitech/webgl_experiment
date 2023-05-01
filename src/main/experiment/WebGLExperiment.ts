@@ -9,8 +9,7 @@ import {
 } from './inputManagers';
 
 import { ChunkGenerator } from './generation/ChunkGenerator';
-import { WebGLRenderer } from './webGLRenderer/WebGLRenderer';
-import { GeometryWrapper } from './webGLRenderer/wrappers';
+import { ILiveGeometry, WebGLRenderer } from './webGLRenderer/WebGLRenderer';
 import { renderControls } from './webGLRenderer/renderers/hud/widgets/renderControls';
 import { renderFpsMeter } from './webGLRenderer/renderers/hud/widgets/renderFpsMeter';
 
@@ -20,7 +19,7 @@ export class WebGLExperiment {
   private _canvasElement: HTMLCanvasElement;
 
   private _renderer: WebGLRenderer;
-  private _chunkGenerator: ChunkGenerator<GeometryWrapper.Geometry>;
+  private _chunkGenerator: ChunkGenerator;
 
   private _running: boolean;
   private _errorGraphicContext: boolean;
@@ -73,15 +72,11 @@ export class WebGLExperiment {
           hSize
         );
       },
-      pointIsVisible: (pos: glm.ReadonlyVec3) => {
-        return this._renderer.frustumCulling.pointInFrustum(pos[0], pos[1], pos[2]);
+      acquireGeometry: () => {
+        return this._renderer.chunksRenderer.acquireGeometry(configuration.workerBufferSize);
       },
-      addGeometry: (inSize: number) => {
-        return this._renderer.chunksRenderer.buildGeometry(inSize);
-      },
-      updateGeometry: (geom, buffer, inSize) => {
-        geom.updateBuffer(0, buffer, inSize);
-        geom.setPrimitiveCount(inSize / 6);
+      releaseGeometry: (inGeom: ILiveGeometry) => {
+        this._renderer.chunksRenderer.releaseGeometry(inGeom);
       },
       onChunkCreated: () => {
         ++this._chunksCreated;
@@ -232,25 +227,36 @@ export class WebGLExperiment {
 
     //
     //
-    ////// generation
+
+    this._renderer.update(elapsedTime / 1000);
 
     const camera_pos = this._renderer.freeFlyController.getPosition();
 
     this._chunkGenerator.update(camera_pos);
 
-    ////// /generation
-    //
-    //
-
-    const chunks = this._chunkGenerator.getChunks();
-
-    this._renderer.update(elapsedTime / 1000, chunks);
-
     //
     //
     ////// render 3d scene
 
-    this._renderer.renderScene(chunks);
+    let visibleChunks = 0;
+
+    this._renderer.wireFrameCubesRenderer.clear();
+
+    this._chunkGenerator.getChunks().forEach((chunk) => {
+
+      if (!chunk.isVisible) return;
+
+      ++visibleChunks;
+
+      this._renderer.wireFrameCubesRenderer.pushOriginBoundCube(
+        chunk.position,
+        15,
+        [1, 1, 1]
+      );
+
+    });
+
+    this._renderer.renderScene();
 
     //
     //
@@ -261,11 +267,6 @@ export class WebGLExperiment {
 
     {
       // top right text
-
-      let visibleChunks = 0;
-      chunks.forEach((chunk) => {
-        if (chunk.visible) ++visibleChunks;
-      });
 
       const textsOrigin: glm.ReadonlyVec2 = [
         this._canvasElement.width / 4 * 3 - 10,
@@ -294,11 +295,6 @@ export class WebGLExperiment {
         Math.floor(camera_pos[2] / configuration.chunkSize)
       ];
 
-      let visibleChunks = 0;
-      chunks.forEach((chunk) => {
-        if (chunk.visible) ++visibleChunks;
-      });
-
       const allLines: string[] = [
         `Coordinates:`,
         `X: ${chunkCoord[0]}`,
@@ -316,19 +312,20 @@ export class WebGLExperiment {
     renderControls(
       this._canvasElement,
       this._renderer.stackRenderers,
-      this._renderer.textRenderer);
+      this._renderer.textRenderer,
+    );
 
     renderFpsMeter(
       [ 10, this._canvasElement.height - 60, 0 ],
       [ 100, 50 ],
       this._framesDuration,
       this._renderer.stackRenderers,
-      this._renderer.textRenderer);
+      this._renderer.textRenderer,
+    );
 
     this._renderer.renderHUD(
       this._chunkGenerator.getChunks(),
       this._chunkGenerator.getProcessingPositions(),
-      this._framesDuration
     );
 
     if (this._framesDuration.length > 100)

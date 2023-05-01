@@ -20,7 +20,7 @@ export class TrianglesStackRenderer {
     };
 
     this._geometry = new GeometryWrapper.Geometry(inShader, geometryDef);
-    this._geometry.setFloatBufferSize(0, k_bufferSize, true);
+    this._geometry.setFloatBufferSize(0, k_bufferSize);
   }
 
   pushLine(
@@ -30,8 +30,9 @@ export class TrianglesStackRenderer {
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
 
-    if (this._currentSize + 7 * 6 >= this._buffer.length)
+    if (this._currentSize + 7 * 6 >= this._buffer.length) {
       return;
+    }
 
     const diffX = inPointB[0] - inPointA[0];
     const diffY = inPointB[1] - inPointA[1];
@@ -136,8 +137,9 @@ export class TrianglesStackRenderer {
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
 
-    if (this._currentSize + 7 * 6 >= this._buffer.length)
+    if (this._currentSize + 7 * 6 >= this._buffer.length) {
       return;
+    }
 
     const maxCoord: glm.ReadonlyVec2 = [
       inOrigin[0] + inSize[0],
@@ -230,9 +232,9 @@ export class TrianglesStackRenderer {
   }
 
   flush() {
-    if (!this.canRender()) return;
+    if (!this.canRender()) { return; }
 
-    this._geometry.updateBuffer(0, this._buffer, this._currentSize, true);
+    this._geometry.updateBuffer(0, this._buffer, this._currentSize);
     this._geometry.setPrimitiveCount(this._currentSize / 7);
 
     this._geometry.render();

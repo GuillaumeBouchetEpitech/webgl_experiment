@@ -1,5 +1,5 @@
 
-import { WebGLContext, ShaderProgram, GeometryWrapper } from './wrappers';
+import { WebGLContext, ShaderProgram } from './wrappers';
 
 import { FreeFlyController } from './controllers/FreeFlyController';
 import { IFrustumCulling, FrustumCulling } from './camera/FrustumCulling';
@@ -208,7 +208,7 @@ export class WebGLRenderer {
     return this._viewportSize;
   }
 
-  update(elapsedTime: number, chunks: Chunks<GeometryWrapper.Geometry>) {
+  update(elapsedTime: number) {
     this._freeFlyController.update(elapsedTime);
 
     GlobalMouseManager.resetDelta();
@@ -243,43 +243,9 @@ export class WebGLRenderer {
       this._viewMatrix
     );
 
-    const viewport: glm.ReadonlyVec4 = [
-      0,
-      0,
-      this._viewportSize[0] * 0.75,
-      this._viewportSize[1]
-    ];
-
-    const hSize = this._def.chunkSize * 0.5;
-
-    for (const chunk of chunks) {
-
-      chunk.visible = this._frustumCulling.cubeInFrustum(
-        chunk.position[0] + hSize,
-        chunk.position[1] + hSize,
-        chunk.position[2] + hSize,
-        hSize
-      );
-
-      chunk.coord2d = null;
-
-      if (!this._frustumCulling.pointInFrustum(chunk.position[0], chunk.position[1], chunk.position[2]))
-        continue;
-
-      const position2d = sceneToScreenCoordinates(
-        chunk.position,
-        this._viewMatrix,
-        this._projectionMatrix,
-        viewport
-      );
-
-      if (!position2d) continue;
-
-      chunk.coord2d = position2d;
-    }
   }
 
-  renderScene(chunks: Chunks<GeometryWrapper.Geometry>) {
+  renderScene() {
     const gl = WebGLContext.getContext();
 
     gl.viewport(0, 0, this._viewportSize[0] * 0.75, this._viewportSize[1]);
@@ -292,40 +258,22 @@ export class WebGLRenderer {
 
     const cameraPos = this._freeFlyController.getPosition();
 
-    const allVisibleGeometries = chunks
-      .filter((chunk) => chunk.visible)
-      .map((chunk) => chunk.geometry);
-
     this._scene.chunksRenderer.render(
       this._viewMatrix,
       this._projectionMatrix,
       cameraPos,
-      allVisibleGeometries
     );
 
     //
     //
     //
 
-    this._common.wireFrameCubesRenderer.clear();
-
-    for (let ii = 0; ii < chunks.length; ++ii) {
-      if (!chunks[ii].visible) continue;
-
-      this._common.wireFrameCubesRenderer.pushOriginBoundCube(
-        chunks[ii].position,
-        15,
-        [1, 1, 1]
-      );
-    }
-
     this._common.wireFrameCubesRenderer.flush(this._composedMatrix);
   }
 
   renderHUD(
-    chunks: Chunks<GeometryWrapper.Geometry>,
+    chunks: Chunks,
     processingPos: glm.ReadonlyVec3[],
-    framesDuration: number[]
   ) {
     const gl = WebGLContext.getContext();
 
@@ -333,7 +281,7 @@ export class WebGLRenderer {
 
     gl.clear(gl.DEPTH_BUFFER_BIT);
 
-    this._renderMainHud(chunks, framesDuration, processingPos);
+    this._renderMainHud(chunks, processingPos);
 
     const hudWidth = this._viewportSize[0] * 0.25;
     const hudHeight = this._viewportSize[1] * 0.33;
@@ -365,8 +313,7 @@ export class WebGLRenderer {
   }
 
   private _renderMainHud(
-    chunks: Chunks<GeometryWrapper.Geometry>,
-    framesDuration: number[],
+    chunks: Chunks,
     processingPos: glm.ReadonlyVec3[]
   ) {
     const gl = WebGLContext.getContext();
@@ -578,7 +525,7 @@ export class WebGLRenderer {
   }
 
   private _renderSideHud(
-    chunks: Chunks<GeometryWrapper.Geometry>,
+    chunks: Chunks,
     processingPos: glm.ReadonlyVec3[],
     viewport: glm.ReadonlyVec4,
     target: glm.ReadonlyVec3,
@@ -648,7 +595,7 @@ export class WebGLRenderer {
     for (const currChunk of chunks) {
       ///
 
-      if (currChunk.visible) {
+      if (currChunk.isVisible) {
         // render white cubes
 
         this._common.wireFrameCubesRenderer.pushOriginBoundCube(
@@ -750,9 +697,12 @@ export class WebGLRenderer {
 
   get freeFlyController() { return this._freeFlyController; }
 
+  get wireFrameCubesRenderer(): common.IWireFrameCubesRenderer { return this._common.wireFrameCubesRenderer; }
   get stackRenderers(): IStackRenderers { return this._hud.stackRenderers; }
   get textRenderer(): ITextRenderer { return this._hud.textRenderer; }
   get frustumCulling(): IFrustumCulling { return this._frustumCulling; }
   get chunksRenderer(): IChunksRenderer { return this._scene.chunksRenderer; }
 
 }
+
+export { ILiveGeometry } from "./renderers/scene/chunksRenderer/ChunksRenderer";

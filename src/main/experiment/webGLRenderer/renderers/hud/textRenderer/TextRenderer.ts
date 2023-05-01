@@ -1,6 +1,6 @@
 import { ShaderProgram, Texture, GeometryWrapper } from '../../../wrappers';
 
-import * as shaders from './shaders/textRenderer';
+import * as shaders from './shaders';
 
 import { asciiTextureHex } from './internals/asciiTextureHex';
 
@@ -42,8 +42,8 @@ export class TextRenderer implements ITextRenderer {
 
   constructor() {
     this._shader = new ShaderProgram({
-      vertexSrc: shaders.vertex,
-      fragmentSrc: shaders.fragment,
+      vertexSrc: shaders.textRenderer.vertex,
+      fragmentSrc: shaders.textRenderer.fragment,
       attributes: [
         'a_vertex_position',
         'a_vertex_texCoord',
@@ -71,7 +71,8 @@ export class TextRenderer implements ITextRenderer {
             }
           ],
           stride: 4 * 4,
-          instanced: false
+          instanced: false,
+          dynamic: false,
         },
         {
           attrs: [
@@ -97,7 +98,8 @@ export class TextRenderer implements ITextRenderer {
             }
           ],
           stride: 9 * 4,
-          instanced: true
+          instanced: true,
+          dynamic: true,
         }
       ],
       primitiveType: GeometryWrapper.PrimitiveType.triangles
@@ -139,9 +141,9 @@ export class TextRenderer implements ITextRenderer {
       );
     }
 
-    this._geometry.updateBuffer(0, letterVertices, letterVertices.length, false);
+    this._geometry.updateBuffer(0, letterVertices, letterVertices.length);
     this._geometry.setPrimitiveCount(letterVertices.length / 4);
-    this._geometry.setFloatBufferSize(1, k_bufferSize, true);
+    this._geometry.setFloatBufferSize(1, k_bufferSize);
 
     this._texCoordMap = new Map<string, glm.ReadonlyVec2>([
       [' ', [0 * k_texCoord[0], 0 * k_texCoord[1]]],
@@ -378,8 +380,9 @@ export class TextRenderer implements ITextRenderer {
     inScale: number
   ) {
 
-    if (this._currentSize + 9 * 10 >= this._buffer.length)
+    if (this._currentSize + 9 * 10 >= this._buffer.length) {
       return;
+    }
 
     const texCoord = this._texCoordMap.get(inCharacter);
 
@@ -417,15 +420,16 @@ export class TextRenderer implements ITextRenderer {
 
   flush(composedMatrix: glm.ReadonlyMat4) {
 
-    if (this._currentSize === 0)
+    if (this._currentSize === 0) {
       return;
+    }
 
     this._shader.bind();
     this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
 
     this._texture.bind();
 
-    this._geometry.updateBuffer(1, this._buffer, this._currentSize, true);
+    this._geometry.updateBuffer(1, this._buffer, this._currentSize);
     this._geometry.setInstancedCount(this._currentSize / 9);
     this._geometry.render();
 

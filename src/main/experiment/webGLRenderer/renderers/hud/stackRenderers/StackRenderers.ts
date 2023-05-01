@@ -1,6 +1,6 @@
 import { ShaderProgram, GeometryWrapper } from '../../../wrappers';
 
-import * as shaders from './shaders/stackRenderer';
+import * as shaders from './shaders';
 
 import { WireFramesStackRenderer } from './internals/WireFramesStackRenderer';
 import { TrianglesStackRenderer } from './internals/TrianglesStackRenderer';
@@ -53,8 +53,8 @@ export class StackRenderers implements IStackRenderers {
 
   constructor() {
     this._shader = new ShaderProgram({
-      vertexSrc: shaders.vertex,
-      fragmentSrc: shaders.fragment,
+      vertexSrc: shaders.stackRenderer.vertex,
+      fragmentSrc: shaders.stackRenderer.fragment,
       attributes: ['a_vertex_position', 'a_vertex_color'],
       uniforms: ['u_composedMatrix']
     });
@@ -75,7 +75,8 @@ export class StackRenderers implements IStackRenderers {
             }
           ],
           stride: 7 * 4,
-          instanced: false
+          instanced: false,
+          dynamic: true,
         }
       ],
       primitiveType: GeometryWrapper.PrimitiveType.lines // is overridden later

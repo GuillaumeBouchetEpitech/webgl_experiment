@@ -1,6 +1,6 @@
 import * as configuration from '../main/configuration';
 
-import { IMarchingAlgorithm, OnVertexCallback, MarchingCube, MarchingTetrahedron } from './helpers/marching-algorithms';
+import { IMarchingAlgorithm, OnVertexCallback, MarchingCube, MarchingTetrahedron } from './marching-algorithms';
 import { ClassicalNoise } from './helpers/ClassicalNoise';
 import { DeterministicRng } from './helpers/DeterministicRng';
 

@@ -1,6 +1,6 @@
 import { ShaderProgram, GeometryWrapper } from '../../../wrappers';
 
-import * as shaders from './shaders/wireFrameCubes';
+import * as shaders from './shaders';
 
 import * as glm from 'gl-matrix';
 
@@ -74,8 +74,8 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
 
   constructor() {
     this._shader = new ShaderProgram({
-      vertexSrc: shaders.vertex,
-      fragmentSrc: shaders.fragment,
+      vertexSrc: shaders.wireFrameCubes.vertex,
+      fragmentSrc: shaders.wireFrameCubes.fragment,
       attributes: [
         'a_vertex_position',
         'a_offset_center',
@@ -96,7 +96,8 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
             }
           ],
           stride: 3 * 4,
-          instanced: false
+          instanced: false,
+          dynamic: false,
         },
         {
           attrs: [
@@ -117,7 +118,8 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
             }
           ],
           stride: 7 * 4,
-          instanced: true
+          instanced: true,
+          dynamic: true,
         }
       ],
       primitiveType: GeometryWrapper.PrimitiveType.lines
@@ -126,9 +128,9 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     const vertices = generateWireFrameCubeVertices(1);
 
     this._geometry = new GeometryWrapper.Geometry(this._shader, geometryDef);
-    this._geometry.updateBuffer(0, vertices, vertices.length, false);
+    this._geometry.updateBuffer(0, vertices, vertices.length);
     this._geometry.setPrimitiveCount(vertices.length / 3);
-    this._geometry.setFloatBufferSize(1, k_bufferSize, true);
+    this._geometry.setFloatBufferSize(1, k_bufferSize);
   }
 
   pushCenteredCube(
@@ -137,8 +139,9 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     inColor: glm.ReadonlyVec3
   ) {
 
-    if (this._currentSize + 7 >= this._buffer.length)
+    if (this._currentSize + 7 >= this._buffer.length) {
       return;
+    }
 
     this._buffer[this._currentSize++] = inCenter[0];
     this._buffer[this._currentSize++] = inCenter[1];
@@ -156,8 +159,9 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     inColor: glm.ReadonlyVec3
   ) {
 
-    if (this._currentSize + 7 >= this._buffer.length)
+    if (this._currentSize + 7 >= this._buffer.length) {
       return;
+    }
 
     this._buffer[this._currentSize++] = inOrigin[0] + inScale * 0.5;
     this._buffer[this._currentSize++] = inOrigin[1] + inScale * 0.5;
@@ -170,13 +174,14 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
 
   flush(composedMatrix: glm.mat4) {
 
-    if (this._currentSize <= 0)
+    if (this._currentSize <= 0) {
       return;
+    }
 
     this._shader.bind();
     this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
 
-    this._geometry.updateBuffer(1, this._buffer, this._currentSize, true);
+    this._geometry.updateBuffer(1, this._buffer, this._currentSize);
     this._geometry.setInstancedCount(this._currentSize / 7);
     this._geometry.render();
 
