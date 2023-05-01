@@ -52,7 +52,7 @@ export class ChunkGenerator {
   private _addWorker() {
     const newWorker: IWorkerInstance = {
       instance: new Worker(this._def.workerFile),
-      float32buffer: new Float32Array(this._def.workerBufferSize),
+      float32buffer: new Float32Array(this._def.workerBufferSize)
     };
 
     const onWorkerMessage = (event: MessageEvent) => {
@@ -113,7 +113,7 @@ export class ChunkGenerator {
     this._running = false;
 
     this._chunkPositionQueue.length = 0;
-    this._chunks.forEach(chunk => this._def.releaseGeometry(chunk.geometry));
+    this._chunks.forEach((chunk) => this._def.releaseGeometry(chunk.geometry));
     this._chunks.length = 0;
   }
 
@@ -129,7 +129,6 @@ export class ChunkGenerator {
     //
 
     for (const currChunk of this._chunks) {
-
       const isVisible = this._def.chunkIsVisible(currChunk.position);
 
       currChunk.isVisible = isVisible;
@@ -143,7 +142,6 @@ export class ChunkGenerator {
   }
 
   private _updateGeneration(cameraPosition: glm.ReadonlyVec3) {
-
     //  check if moved enough to justify asking for new chunks
     //      -> if yes
     //          reset chunk queue
@@ -213,7 +211,6 @@ export class ChunkGenerator {
         curr_pos[2] < minIndex[2] ||
         curr_pos[2] > maxIndex[2]
       ) {
-
         this._def.releaseGeometry(this._chunks[ii].geometry);
         this._chunks.splice(ii, 1);
         --ii;
@@ -257,11 +254,9 @@ export class ChunkGenerator {
         }
       }
     }
-
   }
 
   private _launchWorker() {
-
     // determine the next chunk to process
 
     // is there something to process?
@@ -296,17 +291,17 @@ export class ChunkGenerator {
       };
 
       let bestIndex = 0;
-      let bestMagnitude = _getDistanceToCamera(this._chunkPositionQueue[bestIndex]);
+      let bestMagnitude = _getDistanceToCamera(
+        this._chunkPositionQueue[bestIndex]
+      );
 
       for (let ii = 1; ii < this._chunkPositionQueue.length; ++ii) {
         const chunkPosition = this._chunkPositionQueue[ii];
 
-        if (!this._def.chunkIsVisible(chunkPosition))
-          continue;
+        if (!this._def.chunkIsVisible(chunkPosition)) continue;
 
         const magnitude = _getDistanceToCamera(chunkPosition);
-        if (bestMagnitude < magnitude)
-          continue;
+        if (bestMagnitude < magnitude) continue;
 
         bestIndex = ii;
         bestMagnitude = magnitude;

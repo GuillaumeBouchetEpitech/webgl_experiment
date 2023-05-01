@@ -56,8 +56,7 @@ class TouchManager {
         const { identifier, pageX, pageY } = event.changedTouches[ii];
 
         const currData = this._allTouchDataMap.get(`${identifier}`);
-        if (!currData)
-          continue;
+        if (!currData) continue;
 
         currData.deltaX += pageX - currData.positionX;
         currData.deltaY += pageY - currData.positionY;
@@ -86,7 +85,9 @@ class TouchManager {
     document.addEventListener('touchstart', this._handleTouchStart);
     document.addEventListener('touchend', this._handleTouchEnd);
     document.addEventListener('touchcancel', this._handleTouchEnd);
-    document.addEventListener('touchmove', this._handleTouchMove, { passive:false });
+    document.addEventListener('touchmove', this._handleTouchMove, {
+      passive: false
+    });
 
     this._activated = true;
   }

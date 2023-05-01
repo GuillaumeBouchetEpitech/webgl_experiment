@@ -1,5 +1,13 @@
-
-import { Vec2, Vec3, Vec4, utilities, a2fVertexOffset, OnVertexCallback, IMarchingAlgorithm, AbstractMarchingAlgorithm} from "./internals/MarchingAlgorithm"
+import {
+  Vec2,
+  Vec3,
+  Vec4,
+  utilities,
+  a2fVertexOffset,
+  OnVertexCallback,
+  IMarchingAlgorithm,
+  AbstractMarchingAlgorithm
+} from './internals/MarchingAlgorithm';
 
 type Vec7 = [number, number, number, number, number, number, number];
 
@@ -52,8 +60,10 @@ const a2iTetrahedronTriangles: Vec7[] = [
   [-1, -1, -1, -1, -1, -1, -1]
 ];
 
-export class MarchingTetrahedron extends AbstractMarchingAlgorithm implements IMarchingAlgorithm {
-
+export class MarchingTetrahedron
+  extends AbstractMarchingAlgorithm
+  implements IMarchingAlgorithm
+{
   private _asEdgeVertex: Vec3[] = [
     [0, 0, 0],
     [0, 0, 0],
@@ -83,7 +93,6 @@ export class MarchingTetrahedron extends AbstractMarchingAlgorithm implements IM
   ];
 
   generate(pos: Vec3, onVertexCallback: OnVertexCallback): void {
-
     if (!onVertexCallback) throw new Error('no geometry callback supplied');
 
     this._onVertexCallback = onVertexCallback;
@@ -102,7 +111,6 @@ export class MarchingTetrahedron extends AbstractMarchingAlgorithm implements IM
 
     // Make a local copy of the cube's corner positions
     for (let iVertex = 0; iVertex < 8; ++iVertex) {
-
       const currPos = this._asCubePosition[iVertex];
       const currOffset = a2fVertexOffset[iVertex];
 
@@ -116,7 +124,11 @@ export class MarchingTetrahedron extends AbstractMarchingAlgorithm implements IM
     // Make a local copy of the cube's corner values
     for (let iVertex = 0; iVertex < 8; iVertex++) {
       const currPos = this._asCubePosition[iVertex];
-      afCubeValue[iVertex] = this._sampleCallback(currPos[0], currPos[1], currPos[2]);
+      afCubeValue[iVertex] = this._sampleCallback(
+        currPos[0],
+        currPos[1],
+        currPos[2]
+      );
     }
 
     const asTetrahedronPosition: Vec3[] = [
@@ -149,7 +161,6 @@ export class MarchingTetrahedron extends AbstractMarchingAlgorithm implements IM
     pasTetrahedronPosition: Vec3[],
     pafTetrahedronValue: number[]
   ): void {
-
     //Find which vertices are inside of the surface and which are outside
     let iFlagIndex = 0;
     for (let iVertex = 0; iVertex < 4; iVertex++)
@@ -193,7 +204,8 @@ export class MarchingTetrahedron extends AbstractMarchingAlgorithm implements IM
       if (a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle] < 0) break;
 
       for (let iCorner = 0; iCorner < 3; iCorner++) {
-        const iVertex = a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle + iCorner];
+        const iVertex =
+          a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle + iCorner];
 
         const vertex: Vec3 = [
           this._asEdgeVertex[iVertex][0] * this._chunkSize,
@@ -206,9 +218,7 @@ export class MarchingTetrahedron extends AbstractMarchingAlgorithm implements IM
         if (this._onVertexCallback) {
           this._onVertexCallback(vertex, normal);
         }
-
       }
     }
   }
-
 }

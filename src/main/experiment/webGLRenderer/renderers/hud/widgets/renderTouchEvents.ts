@@ -1,9 +1,7 @@
-
-
 import { GlobalTouchManager } from '../../../../inputManagers';
 
-import { IStackRenderers } from "../stackRenderers/StackRenderers"
-import { FreeFlyController } from "../../../controllers/FreeFlyController"
+import { IStackRenderers } from '../stackRenderers/StackRenderers';
+import { FreeFlyController } from '../../../controllers/FreeFlyController';
 
 import * as glm from 'gl-matrix';
 
@@ -12,9 +10,8 @@ const _touchesAngleMap = new Map<number, number>();
 export const renderTouchEvents = (
   viewportSize: glm.ReadonlyVec2,
   stackRenderers: IStackRenderers,
-  freeFlyController: FreeFlyController,
+  freeFlyController: FreeFlyController
 ) => {
-
   // touches
 
   const allTouchData = GlobalTouchManager.getTouchData();
@@ -39,8 +36,7 @@ export const renderTouchEvents = (
       }
 
       const angles = [0.0, 0.5];
-      if (freeFlyController.getTouchMoveForward())
-        angles.push(0.25, 0.75);
+      if (freeFlyController.getTouchMoveForward()) angles.push(0.25, 0.75);
 
       for (const offsetAngle of angles) {
         const finalAngle = angle + offsetAngle * Math.PI;
@@ -51,13 +47,7 @@ export const renderTouchEvents = (
           0
         ];
 
-        stackRenderers.pushRotatedLine(
-          position,
-          finalAngle,
-          150,
-          15,
-          color
-        );
+        stackRenderers.pushRotatedLine(position, finalAngle, 150, 15, color);
       }
 
       // update the angle
@@ -75,4 +65,4 @@ export const renderTouchEvents = (
       _touchesAngleMap.delete(value);
     });
   }
-} // touches
+}; // touches

@@ -72,7 +72,7 @@ export class TextRenderer implements ITextRenderer {
           ],
           stride: 4 * 4,
           instanced: false,
-          dynamic: false,
+          dynamic: false
         },
         {
           attrs: [
@@ -99,7 +99,7 @@ export class TextRenderer implements ITextRenderer {
           ],
           stride: 9 * 4,
           instanced: true,
-          dynamic: true,
+          dynamic: true
         }
       ],
       primitiveType: GeometryWrapper.PrimitiveType.triangles
@@ -379,7 +379,6 @@ export class TextRenderer implements ITextRenderer {
     inPosition: glm.ReadonlyVec2,
     inScale: number
   ) {
-
     if (this._currentSize + 9 * 10 >= this._buffer.length) {
       return;
     }
@@ -394,7 +393,6 @@ export class TextRenderer implements ITextRenderer {
 
     for (let yy = -1; yy <= 1; ++yy) {
       for (let xx = -1; xx <= 1; ++xx) {
-
         this._buffer[this._currentSize++] = inPosition[0] + 2 * xx;
         this._buffer[this._currentSize++] = inPosition[1] + 2 * yy;
         this._buffer[this._currentSize++] = -0.1;
@@ -419,7 +417,6 @@ export class TextRenderer implements ITextRenderer {
   }
 
   flush(composedMatrix: glm.ReadonlyMat4) {
-
     if (this._currentSize === 0) {
       return;
     }

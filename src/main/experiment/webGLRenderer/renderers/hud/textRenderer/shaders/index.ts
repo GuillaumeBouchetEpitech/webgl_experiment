@@ -1,2 +1,1 @@
-
-export * as textRenderer from "./textRenderer"
+export * as textRenderer from './textRenderer';

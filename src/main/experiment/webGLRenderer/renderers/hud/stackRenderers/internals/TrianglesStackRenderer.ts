@@ -29,7 +29,6 @@ export class TrianglesStackRenderer {
     thickness: number,
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
-
     if (this._currentSize + 7 * 6 >= this._buffer.length) {
       return;
     }
@@ -73,8 +72,6 @@ export class TrianglesStackRenderer {
     this._buffer[this._currentSize + 6] = alphaValue;
     this._currentSize += 7;
 
-
-
     // 0
     this._buffer[this._currentSize + 0] = inPointA[0] - stepX;
     this._buffer[this._currentSize + 1] = inPointA[1] - stepY;
@@ -104,8 +101,6 @@ export class TrianglesStackRenderer {
     this._buffer[this._currentSize + 5] = inColor[2];
     this._buffer[this._currentSize + 6] = alphaValue;
     this._currentSize += 7;
-
-
   }
 
   pushRotatedLine(
@@ -136,7 +131,6 @@ export class TrianglesStackRenderer {
     inSize: glm.ReadonlyVec2,
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
-
     if (this._currentSize + 7 * 6 >= this._buffer.length) {
       return;
     }
@@ -178,8 +172,6 @@ export class TrianglesStackRenderer {
     this._buffer[this._currentSize + 6] = alphaValue;
     this._currentSize += 7;
 
-
-
     // 0
     this._buffer[this._currentSize + 0] = inOrigin[0];
     this._buffer[this._currentSize + 1] = inOrigin[1];
@@ -209,8 +201,6 @@ export class TrianglesStackRenderer {
     this._buffer[this._currentSize + 5] = inColor[2];
     this._buffer[this._currentSize + 6] = alphaValue;
     this._currentSize += 7;
-
-
   }
 
   pushCenteredRectangle(
@@ -232,7 +222,9 @@ export class TrianglesStackRenderer {
   }
 
   flush() {
-    if (!this.canRender()) { return; }
+    if (!this.canRender()) {
+      return;
+    }
 
     this._geometry.updateBuffer(0, this._buffer, this._currentSize);
     this._geometry.setPrimitiveCount(this._currentSize / 7);

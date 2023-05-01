@@ -1,16 +1,15 @@
-
 const allRequestEvents: string[] = [
   'requestFullscreen',
   'webkitRequestFullscreen',
   'mozRequestFullScreen',
-  'msRequestFullscreen',
+  'msRequestFullscreen'
 ];
 
 const allChangeEvents: string[] = [
   'fullscreenchange',
   'webkitfullscreenchange',
   'mozfullscreenchange',
-  'msfullscreenchange',
+  'msfullscreenchange'
 ];
 
 type OnChangeCallback = () => void;
@@ -61,7 +60,6 @@ class FullScreenManager {
 
     for (const currEvent of allRequestEvents)
       if (currEvent in inTargetElement) {
-
         (inTargetElement as any)[currEvent]();
 
         return { success: true, message: 'request for full screen done' };
@@ -80,10 +78,8 @@ class FullScreenManager {
     if (index < 0) return;
     this._onFullScreenChangeCallbacks.splice(index, 1);
   }
-
 }
 
 const GlobalFullScreenManager = new FullScreenManager();
 
 export { GlobalFullScreenManager };
-

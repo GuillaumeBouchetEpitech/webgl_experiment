@@ -40,7 +40,7 @@ export namespace GeometryWrapper {
   export class Geometry {
     private _def: GeometryDefinition;
     private _vao: WebGLVertexArrayObjectOES;
-    private _vbos: { object: WebGLBuffer, maxSize: number, dynamic: boolean }[];
+    private _vbos: { object: WebGLBuffer; maxSize: number; dynamic: boolean }[];
     private _primitiveType: number;
     private _primitiveStart: number = 0;
     private _primitiveCount: number = 0;
@@ -99,7 +99,11 @@ export namespace GeometryWrapper {
           throw new Error('fail o create a vbo unit');
         }
 
-        this._vbos.push({ object: newVbo, maxSize: 0, dynamic: vboDef.dynamic || false });
+        this._vbos.push({
+          object: newVbo,
+          maxSize: 0,
+          dynamic: vboDef.dynamic || false
+        });
 
         gl.bindBuffer(gl.ARRAY_BUFFER, newVbo);
 
@@ -201,10 +205,7 @@ export namespace GeometryWrapper {
       gl.deleteVertexArray(this._vao);
     }
 
-    setBufferSize(
-      index: number,
-      inSize: number
-    ) {
+    setBufferSize(index: number, inSize: number) {
       if (index < 0 || index >= this._vbos.length) {
         throw new Error('no buffer available to that index');
       }
@@ -230,10 +231,7 @@ export namespace GeometryWrapper {
       gl.bindBuffer(gl.ARRAY_BUFFER, null);
     }
 
-    setFloatBufferSize(
-      index: number,
-      inSize: number
-    ) {
+    setFloatBufferSize(index: number, inSize: number) {
       this.setBufferSize(index, inSize * 4);
     }
 
@@ -273,7 +271,6 @@ export namespace GeometryWrapper {
     }
 
     render() {
-
       if (this._primitiveCount == 0) {
         return;
       }

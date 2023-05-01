@@ -5,7 +5,7 @@ import {
   GlobalKeyboardManager,
   GlobalMouseManager,
   GlobalTouchManager,
-  GlobalFullScreenManager,
+  GlobalFullScreenManager
 } from './inputManagers';
 
 import { ChunkGenerator } from './generation/ChunkGenerator';
@@ -43,15 +43,13 @@ export class WebGLExperiment {
     });
 
     // put the camera outside the known chunk
-    this._renderer
-      .freeFlyController
-      .setPosition(
-        glm.vec3.fromValues(
-          (configuration.chunkSize / 4) * 3,
-          (configuration.chunkSize / 4) * 3,
-          0
-        )
-      );
+    this._renderer.freeFlyController.setPosition(
+      glm.vec3.fromValues(
+        (configuration.chunkSize / 4) * 3,
+        (configuration.chunkSize / 4) * 3,
+        0
+      )
+    );
 
     this._chunkGenerator = new ChunkGenerator({
       chunkSize: configuration.chunkSize,
@@ -62,7 +60,6 @@ export class WebGLExperiment {
       workerBufferSize: configuration.workerBufferSize,
 
       chunkIsVisible: (pos: glm.ReadonlyVec3) => {
-
         const hSize = configuration.chunkSize * 0.5;
 
         return this._renderer.frustumCulling.cubeInFrustum(
@@ -73,7 +70,9 @@ export class WebGLExperiment {
         );
       },
       acquireGeometry: () => {
-        return this._renderer.chunksRenderer.acquireGeometry(configuration.workerBufferSize);
+        return this._renderer.chunksRenderer.acquireGeometry(
+          configuration.workerBufferSize
+        );
       },
       releaseGeometry: (inGeom: ILiveGeometry) => {
         this._renderer.chunksRenderer.releaseGeometry(inGeom);
@@ -128,22 +127,18 @@ export class WebGLExperiment {
     if (!guiFullscreen) throw new Error('guiFullscreen not found');
 
     guiFullscreen.addEventListener('click', () => {
-
       GlobalFullScreenManager.requestFullScreen(canvasElement);
     });
 
     GlobalFullScreenManager.addOnFullScreenChange(() => {
-
       let currentWidth = 800;
       let currentHeight = 600;
 
       if (GlobalFullScreenManager.isFullScreen(canvasElement)) {
-
         canvasElement.style.position = 'absolute';
 
         currentWidth = window.innerWidth;
         currentHeight = window.innerHeight;
-
       } else {
         canvasElement.style.position = 'relative';
       }
@@ -243,7 +238,6 @@ export class WebGLExperiment {
     this._renderer.wireFrameCubesRenderer.clear();
 
     this._chunkGenerator.getChunks().forEach((chunk) => {
-
       if (!chunk.isVisible) return;
 
       ++visibleChunks;
@@ -253,7 +247,6 @@ export class WebGLExperiment {
         15,
         [1, 1, 1]
       );
-
     });
 
     this._renderer.renderScene();
@@ -269,7 +262,7 @@ export class WebGLExperiment {
       // top right text
 
       const textsOrigin: glm.ReadonlyVec2 = [
-        this._canvasElement.width / 4 * 3 - 10,
+        (this._canvasElement.width / 4) * 3 - 10,
         this._canvasElement.height - 10
       ];
 
@@ -302,30 +295,35 @@ export class WebGLExperiment {
         `Z: ${chunkCoord[2]}`
       ];
 
-      const textsOrigin: glm.ReadonlyVec2 = [14, this._canvasElement.height - 100];
+      const textsOrigin: glm.ReadonlyVec2 = [
+        14,
+        this._canvasElement.height - 100
+      ];
 
-      this._renderer.textRenderer.pushText(allLines.join('\n'), textsOrigin, 14);
+      this._renderer.textRenderer.pushText(
+        allLines.join('\n'),
+        textsOrigin,
+        14
+      );
     } // bottom left text
-
-
 
     renderControls(
       this._canvasElement,
       this._renderer.stackRenderers,
-      this._renderer.textRenderer,
+      this._renderer.textRenderer
     );
 
     renderFpsMeter(
-      [ 10, this._canvasElement.height - 60, 0 ],
-      [ 100, 50 ],
+      [10, this._canvasElement.height - 60, 0],
+      [100, 50],
       this._framesDuration,
       this._renderer.stackRenderers,
-      this._renderer.textRenderer,
+      this._renderer.textRenderer
     );
 
     this._renderer.renderHUD(
       this._chunkGenerator.getChunks(),
-      this._chunkGenerator.getProcessingPositions(),
+      this._chunkGenerator.getProcessingPositions()
     );
 
     if (this._framesDuration.length > 100)

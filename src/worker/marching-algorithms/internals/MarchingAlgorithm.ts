@@ -1,4 +1,3 @@
-
 export type Vec2 = [number, number];
 export type Vec3 = [number, number, number];
 export type Vec4 = [number, number, number, number];
@@ -46,7 +45,6 @@ export type SampleCallback = (x: number, y: number, z: number) => number;
 export type OnVertexCallback = (vertex: Vec3, normal: Vec3) => void;
 
 export interface IMarchingAlgorithm {
-
   generate(pos: Vec3, onVertexCallback: OnVertexCallback): void;
 }
 
@@ -57,8 +55,11 @@ export class AbstractMarchingAlgorithm {
   protected _stepSize: number;
   protected _onVertexCallback: OnVertexCallback | undefined;
 
-  constructor(chunkSize: number, limit: number, sampleCallback: SampleCallback) {
-
+  constructor(
+    chunkSize: number,
+    limit: number,
+    sampleCallback: SampleCallback
+  ) {
     this._chunkSize = chunkSize;
     this._limit = limit;
     this._sampleCallback = sampleCallback;
@@ -66,14 +67,16 @@ export class AbstractMarchingAlgorithm {
     this._stepSize = 1.0 / this._chunkSize;
   }
 
-
   getNormal(fX: number, fY: number, fZ: number): Vec3 {
     const offset = this._stepSize * 0.1;
 
     return utilities.normalizeVector([
-      this._sampleCallback(fX - offset, fY, fZ) - this._sampleCallback(fX + offset, fY, fZ),
-      this._sampleCallback(fX, fY - offset, fZ) - this._sampleCallback(fX, fY + offset, fZ),
-      this._sampleCallback(fX, fY, fZ - offset) - this._sampleCallback(fX, fY, fZ + offset)
+      this._sampleCallback(fX - offset, fY, fZ) -
+        this._sampleCallback(fX + offset, fY, fZ),
+      this._sampleCallback(fX, fY - offset, fZ) -
+        this._sampleCallback(fX, fY + offset, fZ),
+      this._sampleCallback(fX, fY, fZ - offset) -
+        this._sampleCallback(fX, fY, fZ + offset)
     ]);
   }
 
@@ -87,5 +90,4 @@ export class AbstractMarchingAlgorithm {
 
     return [Uy * Vz - Uz * Vy, Uz * Vx - Ux * Vz, Ux * Vy - Uy * Vx];
   }
-
 }

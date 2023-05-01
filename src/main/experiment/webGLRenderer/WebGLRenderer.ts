@@ -1,4 +1,3 @@
-
 import { WebGLContext, ShaderProgram } from './wrappers';
 
 import { FreeFlyController } from './controllers/FreeFlyController';
@@ -29,8 +28,6 @@ interface IDefinition {
   keyboardSensibility: number;
   touchSensibility: number;
 }
-
-
 
 interface ICommon {
   wireFrameCubesRenderer: common.WireFrameCubesRenderer;
@@ -128,16 +125,16 @@ export class WebGLRenderer {
     this._aspectRatio = (this._viewportSize[0] * 0.75) / this._viewportSize[1];
 
     this._common = {
-      wireFrameCubesRenderer: new common.WireFrameCubesRenderer(),
+      wireFrameCubesRenderer: new common.WireFrameCubesRenderer()
     };
 
     this._scene = {
-      chunksRenderer: new scene.ChunksRenderer(),
+      chunksRenderer: new scene.ChunksRenderer()
     };
 
     this._hud = {
       textRenderer: new hud.TextRenderer(),
-      stackRenderers: new hud.StackRenderers(),
+      stackRenderers: new hud.StackRenderers()
     };
   }
 
@@ -242,7 +239,6 @@ export class WebGLRenderer {
       this._projectionMatrix,
       this._viewMatrix
     );
-
   }
 
   renderScene() {
@@ -261,7 +257,7 @@ export class WebGLRenderer {
     this._scene.chunksRenderer.render(
       this._viewMatrix,
       this._projectionMatrix,
-      cameraPos,
+      cameraPos
     );
 
     //
@@ -271,10 +267,7 @@ export class WebGLRenderer {
     this._common.wireFrameCubesRenderer.flush(this._composedMatrix);
   }
 
-  renderHUD(
-    chunks: Chunks,
-    processingPos: glm.ReadonlyVec3[],
-  ) {
+  renderHUD(chunks: Chunks, processingPos: glm.ReadonlyVec3[]) {
     const gl = WebGLContext.getContext();
 
     // rendered 3 times with a different viewport and point of view
@@ -312,10 +305,7 @@ export class WebGLRenderer {
     ShaderProgram.unbind();
   }
 
-  private _renderMainHud(
-    chunks: Chunks,
-    processingPos: glm.ReadonlyVec3[]
-  ) {
+  private _renderMainHud(chunks: Chunks, processingPos: glm.ReadonlyVec3[]) {
     const gl = WebGLContext.getContext();
 
     gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -361,30 +351,21 @@ export class WebGLRenderer {
       // //
       // //
       // // not mature as it is
-
       // for (let ii = 0; ii < chunks.length; ++ii) {
-
       //     if (!chunks[ii].visible)
       //         continue;
-
       //     const coord2d = chunks[ii].coord2d;
-
       //     if (!coord2d)
       //         continue;
-
       //     const cross_hsize = 20;
-
       //     vertices.push(coord2d[0]-cross_hsize,coord2d[1]-cross_hsize,0, 1,1,1);
       //     vertices.push(coord2d[0]+cross_hsize,coord2d[1]+cross_hsize,0, 1,1,1);
-
       //     vertices.push(coord2d[0]+cross_hsize,coord2d[1]-cross_hsize,0, 1,1,1);
       //     vertices.push(coord2d[0]-cross_hsize,coord2d[1]+cross_hsize,0, 1,1,1);
       // }
-
       // // not mature as it is
       // //
       // //
-
       // this._stackRenderers.flush(hudComposedMatrix);
     } // wireFrame
 
@@ -695,14 +676,25 @@ export class WebGLRenderer {
     }
   }
 
-  get freeFlyController() { return this._freeFlyController; }
+  get freeFlyController() {
+    return this._freeFlyController;
+  }
 
-  get wireFrameCubesRenderer(): common.IWireFrameCubesRenderer { return this._common.wireFrameCubesRenderer; }
-  get stackRenderers(): IStackRenderers { return this._hud.stackRenderers; }
-  get textRenderer(): ITextRenderer { return this._hud.textRenderer; }
-  get frustumCulling(): IFrustumCulling { return this._frustumCulling; }
-  get chunksRenderer(): IChunksRenderer { return this._scene.chunksRenderer; }
-
+  get wireFrameCubesRenderer(): common.IWireFrameCubesRenderer {
+    return this._common.wireFrameCubesRenderer;
+  }
+  get stackRenderers(): IStackRenderers {
+    return this._hud.stackRenderers;
+  }
+  get textRenderer(): ITextRenderer {
+    return this._hud.textRenderer;
+  }
+  get frustumCulling(): IFrustumCulling {
+    return this._frustumCulling;
+  }
+  get chunksRenderer(): IChunksRenderer {
+    return this._scene.chunksRenderer;
+  }
 }
 
-export { ILiveGeometry } from "./renderers/scene/chunksRenderer/ChunksRenderer";
+export { ILiveGeometry } from './renderers/scene/chunksRenderer/ChunksRenderer';

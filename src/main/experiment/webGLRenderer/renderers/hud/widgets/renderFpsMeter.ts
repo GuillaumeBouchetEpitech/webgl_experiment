@@ -1,7 +1,5 @@
-
-
-import { IStackRenderers } from "../stackRenderers/StackRenderers"
-import { ITextRenderer } from "../textRenderer/TextRenderer"
+import { IStackRenderers } from '../stackRenderers/StackRenderers';
+import { ITextRenderer } from '../textRenderer/TextRenderer';
 
 import * as glm from 'gl-matrix';
 
@@ -10,7 +8,7 @@ export const renderFpsMeter = (
   inSize: glm.ReadonlyVec2,
   framesDuration: number[],
   stackRenderers: IStackRenderers,
-  textRenderer: ITextRenderer,
+  textRenderer: ITextRenderer
 ) => {
   // fps meter
 
@@ -19,11 +17,7 @@ export const renderFpsMeter = (
   {
     // border
 
-    stackRenderers.pushOriginBoundRectangle(
-      inPos,
-      inSize,
-      [0, 0, 0, 0.5]
-    );
+    stackRenderers.pushOriginBoundRectangle(inPos, inSize, [0, 0, 0, 0.5]);
 
     const allVertices: [
       glm.ReadonlyVec3,
@@ -31,48 +25,16 @@ export const renderFpsMeter = (
       glm.ReadonlyVec3,
       glm.ReadonlyVec3
     ] = [
-      [
-        inPos[0] + inSize[0] * 0,
-        inPos[1] + inSize[1] * 0,
-        0
-      ],
-      [
-        inPos[0] + inSize[0] * 1,
-        inPos[1] + inSize[1] * 0,
-        0
-      ],
-      [
-        inPos[0] + inSize[0] * 1,
-        inPos[1] + inSize[1] * 1,
-        0
-      ],
-      [
-        inPos[0] + inSize[0] * 0,
-        inPos[1] + inSize[1] * 1,
-        0
-      ]
+      [inPos[0] + inSize[0] * 0, inPos[1] + inSize[1] * 0, 0],
+      [inPos[0] + inSize[0] * 1, inPos[1] + inSize[1] * 0, 0],
+      [inPos[0] + inSize[0] * 1, inPos[1] + inSize[1] * 1, 0],
+      [inPos[0] + inSize[0] * 0, inPos[1] + inSize[1] * 1, 0]
     ];
 
-    stackRenderers.pushLine(
-      allVertices[0],
-      allVertices[1],
-      [1, 1, 1]
-    );
-    stackRenderers.pushLine(
-      allVertices[1],
-      allVertices[2],
-      [1, 1, 1]
-    );
-    stackRenderers.pushLine(
-      allVertices[2],
-      allVertices[3],
-      [1, 1, 1]
-    );
-    stackRenderers.pushLine(
-      allVertices[3],
-      allVertices[0],
-      [1, 1, 1]
-    );
+    stackRenderers.pushLine(allVertices[0], allVertices[1], [1, 1, 1]);
+    stackRenderers.pushLine(allVertices[1], allVertices[2], [1, 1, 1]);
+    stackRenderers.pushLine(allVertices[2], allVertices[3], [1, 1, 1]);
+    stackRenderers.pushLine(allVertices[3], allVertices[0], [1, 1, 1]);
   } // border
 
   {
@@ -81,8 +43,7 @@ export const renderFpsMeter = (
     for (let ii = 1; ii < framesDuration.length; ++ii) {
       const prevCoefficient = (ii - 1) / framesDuration.length;
       const currCoefficient = ii / framesDuration.length;
-      const prevValue =
-        Math.min(framesDuration[ii - 1], maxValue) / maxValue;
+      const prevValue = Math.min(framesDuration[ii - 1], maxValue) / maxValue;
       const currValue = Math.min(framesDuration[ii], maxValue) / maxValue;
 
       const pointA: glm.ReadonlyVec3 = [
@@ -112,11 +73,6 @@ export const renderFpsMeter = (
     let str = '999';
     if (latestValue < 999) str = latestValue.toFixed(0).padStart(3, ' ');
 
-    textRenderer.pushText(
-      `${str}fps`,
-      [inPos[0] + 7, inPos[1] - 8],
-      14
-    );
+    textRenderer.pushText(`${str}fps`, [inPos[0] + 7, inPos[1] - 8], 14);
   } // counter
-
 };

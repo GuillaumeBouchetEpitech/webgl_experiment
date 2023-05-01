@@ -28,7 +28,6 @@ export class FrameBuffer {
   private _colorsTex: WebGLTexture[] = [];
 
   constructor(inDef: IFrameBufferDef) {
-
     this._def = { ...inDef };
 
     const gl = WebGLContext.getContext();
@@ -163,14 +162,12 @@ export class FrameBuffer {
   }
 
   resize(inWidth: number, inHeight: number) {
-
     this._def.width = inWidth;
     this._def.height = inHeight;
 
     const gl = WebGLContext.getContext();
 
     {
-
       const level = 0;
       const border = 0;
       const format = gl.DEPTH_COMPONENT;
@@ -189,21 +186,20 @@ export class FrameBuffer {
         type,
         null
       );
-
     }
 
     {
-
       const level = 0;
       const border = 0;
       const format = gl.RGBA;
 
       this._colorsTex.forEach((texObj, index) => {
-
         let internalFormat = gl.RGBA32F;
         let type = gl.FLOAT;
 
-        if (this._def.colorTextures[index].type === ColorTextureType.RBGA_UBYTES) {
+        if (
+          this._def.colorTextures[index].type === ColorTextureType.RBGA_UBYTES
+        ) {
           internalFormat = gl.RGBA;
           type = gl.UNSIGNED_BYTE;
         }
@@ -220,10 +216,7 @@ export class FrameBuffer {
           type,
           null
         );
-
       });
-
-
     }
   }
 

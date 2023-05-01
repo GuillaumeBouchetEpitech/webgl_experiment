@@ -1,2 +1,1 @@
-
-export * as wireFrameCubes from "./wireFrameCubes"
+export * as wireFrameCubes from './wireFrameCubes';

@@ -47,7 +47,6 @@ const generateWireFrameCubeVertices = (inSize: number): number[] => {
 //
 
 export interface IWireFrameCubesRenderer {
-
   pushCenteredCube(
     inCenter: glm.ReadonlyVec3,
     inScale: number,
@@ -97,7 +96,7 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
           ],
           stride: 3 * 4,
           instanced: false,
-          dynamic: false,
+          dynamic: false
         },
         {
           attrs: [
@@ -119,7 +118,7 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
           ],
           stride: 7 * 4,
           instanced: true,
-          dynamic: true,
+          dynamic: true
         }
       ],
       primitiveType: GeometryWrapper.PrimitiveType.lines
@@ -138,7 +137,6 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     inScale: number,
     inColor: glm.ReadonlyVec3
   ) {
-
     if (this._currentSize + 7 >= this._buffer.length) {
       return;
     }
@@ -150,7 +148,6 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     this._buffer[this._currentSize++] = inColor[0];
     this._buffer[this._currentSize++] = inColor[1];
     this._buffer[this._currentSize++] = inColor[2];
-
   }
 
   pushOriginBoundCube(
@@ -158,7 +155,6 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     inScale: number,
     inColor: glm.ReadonlyVec3
   ) {
-
     if (this._currentSize + 7 >= this._buffer.length) {
       return;
     }
@@ -173,7 +169,6 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
   }
 
   flush(composedMatrix: glm.mat4) {
-
     if (this._currentSize <= 0) {
       return;
     }

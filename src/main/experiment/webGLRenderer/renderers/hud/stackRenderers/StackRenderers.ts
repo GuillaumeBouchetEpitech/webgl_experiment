@@ -42,7 +42,7 @@ export interface IStackRenderers {
   ): void;
 
   flush(composedMatrix: glm.ReadonlyMat4): void;
-  clear(): void
+  clear(): void;
 }
 
 export class StackRenderers implements IStackRenderers {
@@ -76,7 +76,7 @@ export class StackRenderers implements IStackRenderers {
           ],
           stride: 7 * 4,
           instanced: false,
-          dynamic: true,
+          dynamic: true
         }
       ],
       primitiveType: GeometryWrapper.PrimitiveType.lines // is overridden later
@@ -173,5 +173,4 @@ export class StackRenderers implements IStackRenderers {
     this._wireFramesStackRenderer.clear();
     this._trianglesStackRenderer.clear();
   }
-
 }

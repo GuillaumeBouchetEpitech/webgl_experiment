@@ -28,9 +28,7 @@ export class WireFramesStackRenderer {
     inPointB: glm.ReadonlyVec3,
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
-
-    if (this._currentSize + 7 * 2 >=  this._buffer.length)
-      return;
+    if (this._currentSize + 7 * 2 >= this._buffer.length) return;
 
     const alphaValue = inColor[3] ?? 1;
 

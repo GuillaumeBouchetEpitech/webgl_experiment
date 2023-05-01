@@ -1,5 +1,12 @@
-
-import { Vec2, Vec3, utilities, a2fVertexOffset, OnVertexCallback, IMarchingAlgorithm, AbstractMarchingAlgorithm} from "./internals/MarchingAlgorithm"
+import {
+  Vec2,
+  Vec3,
+  utilities,
+  a2fVertexOffset,
+  OnVertexCallback,
+  IMarchingAlgorithm,
+  AbstractMarchingAlgorithm
+} from './internals/MarchingAlgorithm';
 
 type Vec16 = [
   number,
@@ -340,7 +347,10 @@ const aiCubeEdgeFlags = [
   0x203, 0x109, 0x000
 ];
 
-export class MarchingCube extends AbstractMarchingAlgorithm implements IMarchingAlgorithm {
+export class MarchingCube
+  extends AbstractMarchingAlgorithm
+  implements IMarchingAlgorithm
+{
   private _afCubeValue = [0, 0, 0, 0, 0, 0, 0, 0];
   private _asEdgeVertex: Vec3[] = [
     [0, 0, 0],
@@ -372,7 +382,6 @@ export class MarchingCube extends AbstractMarchingAlgorithm implements IMarching
   ];
 
   generate(pos: Vec3, onVertexCallback: OnVertexCallback): void {
-
     if (!onVertexCallback) throw new Error('no vertex callback supplied');
 
     this._onVertexCallback = onVertexCallback;
@@ -384,7 +393,6 @@ export class MarchingCube extends AbstractMarchingAlgorithm implements IMarching
   }
 
   private _marchCubeSingle(iX: number, iY: number, iZ: number): void {
-
     /// add chunk pos here
     const fX = iX * this._stepSize;
     const fY = iY * this._stepSize;
@@ -417,7 +425,6 @@ export class MarchingCube extends AbstractMarchingAlgorithm implements IMarching
     for (let iEdge = 0; iEdge < 12; ++iEdge) {
       //if there is an intersection on this edge
       if (iEdgeFlags & (1 << iEdge)) {
-
         const currEdge = a2iEdgeConnection[iEdge];
 
         const fOffset = utilities.getOffset(
@@ -429,9 +436,12 @@ export class MarchingCube extends AbstractMarchingAlgorithm implements IMarching
         const currOffset = a2fVertexOffset[currEdge[0]];
         const currEdgeDir = a2fEdgeDirection[iEdge];
 
-        this._asEdgeVertex[iEdge][0] = fX + (currOffset[0] + fOffset * currEdgeDir[0]) * this._stepSize;
-        this._asEdgeVertex[iEdge][1] = fY + (currOffset[1] + fOffset * currEdgeDir[1]) * this._stepSize;
-        this._asEdgeVertex[iEdge][2] = fZ + (currOffset[2] + fOffset * currEdgeDir[2]) * this._stepSize;
+        this._asEdgeVertex[iEdge][0] =
+          fX + (currOffset[0] + fOffset * currEdgeDir[0]) * this._stepSize;
+        this._asEdgeVertex[iEdge][1] =
+          fY + (currOffset[1] + fOffset * currEdgeDir[1]) * this._stepSize;
+        this._asEdgeVertex[iEdge][2] =
+          fZ + (currOffset[2] + fOffset * currEdgeDir[2]) * this._stepSize;
 
         this._asEdgeNorm[iEdge] = this.getNormal(
           this._asEdgeVertex[iEdge][0],
@@ -443,7 +453,6 @@ export class MarchingCube extends AbstractMarchingAlgorithm implements IMarching
 
     //Draw the triangles that were found.  There can be up to five per cube
     for (let iTriangle = 0; iTriangle < 5; ++iTriangle) {
-
       const currTable = a2iTriangleConnectionTable[iFlagIndex];
 
       if (currTable[3 * iTriangle] < 0) break;
@@ -466,9 +475,7 @@ export class MarchingCube extends AbstractMarchingAlgorithm implements IMarching
         if (this._onVertexCallback) {
           this._onVertexCallback(vertex, normal);
         }
-
       } // for (iCorner = [...]
     } // for (iTriangle = [...]
   }
-
 }

@@ -1,6 +1,11 @@
 import * as configuration from '../main/configuration';
 
-import { IMarchingAlgorithm, OnVertexCallback, MarchingCube, MarchingTetrahedron } from './marching-algorithms';
+import {
+  IMarchingAlgorithm,
+  OnVertexCallback,
+  MarchingCube,
+  MarchingTetrahedron
+} from './marching-algorithms';
 import { ClassicalNoise } from './helpers/ClassicalNoise';
 import { DeterministicRng } from './helpers/DeterministicRng';
 
@@ -20,7 +25,11 @@ const on_sample_callback = (x: number, y: number, z: number) => {
 };
 
 // const marchingCubeInstance: IMarchingAlgorithm = new MarchingCube(configuration.chunkSize, configuration.chunkLimit, on_sample_callback);
-const marchingCubeInstance: IMarchingAlgorithm = new MarchingTetrahedron(configuration.chunkSize, configuration.chunkLimit, on_sample_callback);
+const marchingCubeInstance: IMarchingAlgorithm = new MarchingTetrahedron(
+  configuration.chunkSize,
+  configuration.chunkLimit,
+  on_sample_callback
+);
 
 const myself = self as unknown as Worker; // well, that's apparently needed...
 
@@ -55,7 +64,7 @@ const onMainScriptMessage = (event: MessageEvent) => {
     {
       position: position,
       float32buffer: float32buffer,
-      sizeUsed: bufIndex,
+      sizeUsed: bufIndex
     },
     [
       // we now transfer the ownership of the vertices buffer

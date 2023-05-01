@@ -14,16 +14,14 @@ export interface ILiveGeometry {
 }
 
 class LiveGeometry implements ILiveGeometry {
-
   private _geometry: GeometryWrapper.Geometry;
   private _isVisible: boolean = false;
 
   constructor(
     inShader: ShaderProgram,
     inGeometryDefinition: GeometryWrapper.GeometryDefinition,
-    preAllocatedSize: number,
+    preAllocatedSize: number
   ) {
-
     this._geometry = new GeometryWrapper.Geometry(
       inShader,
       inGeometryDefinition
@@ -70,10 +68,7 @@ export class ChunksRenderer implements IChunksRenderer {
     this._shader = new ShaderProgram({
       vertexSrc: shaders.chunksRenderer.vertex,
       fragmentSrc: shaders.chunksRenderer.fragment,
-      attributes: [
-        'a_vertex_position',
-        'a_vertex_normal',
-      ],
+      attributes: ['a_vertex_position', 'a_vertex_normal'],
       uniforms: ['u_viewMatrix', 'u_projMatrix', 'u_eyePosition', 'u_texture']
     });
 
@@ -90,7 +85,7 @@ export class ChunksRenderer implements IChunksRenderer {
               name: 'a_vertex_normal',
               type: GeometryWrapper.AttributeType.vec3f,
               index: 3
-            },
+            }
           ],
           stride: 6 * 4,
           instanced: false
@@ -105,7 +100,6 @@ export class ChunksRenderer implements IChunksRenderer {
   }
 
   acquireGeometry(inSize: number): ILiveGeometry {
-
     if (this._unusedGeometries.length > 0) {
       const reusedGeom = this._unusedGeometries.pop()!;
       this._inUseGeometries.push(reusedGeom);
@@ -115,27 +109,24 @@ export class ChunksRenderer implements IChunksRenderer {
     const newGeom = new LiveGeometry(
       this._shader,
       this._geometryDefinition,
-      inSize,
+      inSize
     );
     this._inUseGeometries.push(newGeom);
     return newGeom;
   }
 
   releaseGeometry(geom: ILiveGeometry): void {
-
     const index = this._inUseGeometries.indexOf(geom as LiveGeometry);
-    if (index < 0)
-      return;
+    if (index < 0) return;
 
     this._unusedGeometries.push(geom as LiveGeometry);
     this._inUseGeometries.splice(index, 1);
   }
 
-
   render(
     viewMatrix: glm.mat4,
     projectionMatrix: glm.mat4,
-    eyePosition: glm.ReadonlyVec3,
+    eyePosition: glm.ReadonlyVec3
   ) {
     const gl = WebGLContext.getContext();
     gl.disable(gl.BLEND);

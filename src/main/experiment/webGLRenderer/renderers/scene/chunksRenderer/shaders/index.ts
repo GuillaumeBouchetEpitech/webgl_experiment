@@ -1,2 +1,1 @@
-
-export * as chunksRenderer from "./chunksRenderer"
+export * as chunksRenderer from './chunksRenderer';

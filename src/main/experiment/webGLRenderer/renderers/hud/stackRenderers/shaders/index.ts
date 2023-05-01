@@ -1,2 +1,1 @@
-
-export * as stackRenderer from "./stackRenderer"
+export * as stackRenderer from './stackRenderer';

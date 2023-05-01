@@ -1,15 +1,18 @@
+import {
+  GlobalKeyboardManager,
+  GlobalTouchManager,
+  GlobalPointerLockManager
+} from '../../../../inputManagers';
 
-import { GlobalKeyboardManager, GlobalTouchManager, GlobalPointerLockManager } from '../../../../inputManagers';
-
-import { IStackRenderers } from "../stackRenderers/StackRenderers"
-import { ITextRenderer } from "../textRenderer/TextRenderer"
+import { IStackRenderers } from '../stackRenderers/StackRenderers';
+import { ITextRenderer } from '../textRenderer/TextRenderer';
 
 import * as glm from 'gl-matrix';
 
 export const renderControls = (
   canvasElement: HTMLCanvasElement,
   stackRenderers: IStackRenderers,
-  textRenderer: ITextRenderer,
+  textRenderer: ITextRenderer
 ) => {
   // help text
 
@@ -47,9 +50,7 @@ export const renderControls = (
     center: [indicator1[0] + 45 * 1, indicator1[1]],
     size: [40, 40],
     text: 'S',
-    color: GlobalKeyboardManager.isPressed('S')
-      ? activatedColor
-      : defaultColor
+    color: GlobalKeyboardManager.isPressed('S') ? activatedColor : defaultColor
   });
 
   allIndicator.push({
@@ -65,9 +66,7 @@ export const renderControls = (
     center: [indicator1[0] + 45 * 2, indicator1[1]],
     size: [40, 40],
     text: 'D',
-    color: GlobalKeyboardManager.isPressed('D')
-      ? activatedColor
-      : defaultColor
+    color: GlobalKeyboardManager.isPressed('D') ? activatedColor : defaultColor
   });
 
   // left
@@ -174,11 +173,7 @@ export const renderControls = (
     );
 
     if (currIndicator.text) {
-      textRenderer.pushCenteredText(
-        currIndicator.text,
-        center,
-        16
-      );
+      textRenderer.pushCenteredText(currIndicator.text, center, 16);
     }
 
     if (currIndicator.lines) {
@@ -192,4 +187,4 @@ export const renderControls = (
       });
     }
   });
-} // help text
+}; // help text

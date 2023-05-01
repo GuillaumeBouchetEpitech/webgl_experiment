@@ -19,7 +19,12 @@ export interface IFrustumCulling {
 export class FrustumCulling implements IFrustumCulling {
   private _frustum = new Float32Array(24); // 6 * 4 values
 
-  private _setPlane(side: FrustumSide, left: glm.ReadonlyVec4, right: glm.ReadonlyVec4, coef: number) {
+  private _setPlane(
+    side: FrustumSide,
+    left: glm.ReadonlyVec4,
+    right: glm.ReadonlyVec4,
+    coef: number
+  ) {
     const index = side * 4;
 
     this._frustum[index + 0] = left[0] + right[0] * coef;
@@ -29,12 +34,11 @@ export class FrustumCulling implements IFrustumCulling {
 
     const magnitude = Math.sqrt(
       this._frustum[index + 0] * this._frustum[index + 0] +
-      this._frustum[index + 1] * this._frustum[index + 1] +
-      this._frustum[index + 2] * this._frustum[index + 2]
+        this._frustum[index + 1] * this._frustum[index + 1] +
+        this._frustum[index + 2] * this._frustum[index + 2]
     );
 
-    if (magnitude === 0)
-      return;
+    if (magnitude === 0) return;
 
     this._frustum[index + 0] /= magnitude;
     this._frustum[index + 1] /= magnitude;
@@ -43,22 +47,21 @@ export class FrustumCulling implements IFrustumCulling {
   }
 
   calculateFrustum(proj: glm.ReadonlyMat4, view: glm.ReadonlyMat4) {
-
     const clip = glm.mat4.multiply(glm.mat4.create(), proj, view);
 
     ///
 
-    const row0 = glm.vec4.fromValues(clip[ 0], clip[ 4], clip[ 8], clip[12]);
-    const row1 = glm.vec4.fromValues(clip[ 1], clip[ 5], clip[ 9], clip[13]);
-    const row2 = glm.vec4.fromValues(clip[ 2], clip[ 6], clip[10], clip[14]);
-    const row3 = glm.vec4.fromValues(clip[ 3], clip[ 7], clip[11], clip[15]);
+    const row0 = glm.vec4.fromValues(clip[0], clip[4], clip[8], clip[12]);
+    const row1 = glm.vec4.fromValues(clip[1], clip[5], clip[9], clip[13]);
+    const row2 = glm.vec4.fromValues(clip[2], clip[6], clip[10], clip[14]);
+    const row3 = glm.vec4.fromValues(clip[3], clip[7], clip[11], clip[15]);
 
-    this._setPlane(FrustumSide.Right,  row3, row0, -1);
-    this._setPlane(FrustumSide.Left,   row3, row0, +1);
+    this._setPlane(FrustumSide.Right, row3, row0, -1);
+    this._setPlane(FrustumSide.Left, row3, row0, +1);
     this._setPlane(FrustumSide.Bottom, row3, row1, +1);
-    this._setPlane(FrustumSide.Top,    row3, row1, -1);
-    this._setPlane(FrustumSide.Back,   row3, row2, -1);
-    this._setPlane(FrustumSide.Front,  row3, row2, +1);
+    this._setPlane(FrustumSide.Top, row3, row1, -1);
+    this._setPlane(FrustumSide.Back, row3, row2, -1);
+    this._setPlane(FrustumSide.Front, row3, row2, +1);
   }
 
   sphereInFrustum(x: number, y: number, z: number, radius: number) {
@@ -66,9 +69,10 @@ export class FrustumCulling implements IFrustumCulling {
       const index = ii * 4;
       if (
         this._frustum[index + 0] * x +
-        this._frustum[index + 1] * y +
-        this._frustum[index + 2] * z +
-        this._frustum[index + 3] <= -radius
+          this._frustum[index + 1] * y +
+          this._frustum[index + 2] * z +
+          this._frustum[index + 3] <=
+        -radius
       ) {
         return false;
       }
