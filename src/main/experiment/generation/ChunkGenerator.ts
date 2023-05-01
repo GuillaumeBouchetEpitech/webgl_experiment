@@ -23,15 +23,9 @@ interface IChunk {
 
 export type Chunks = IChunk[];
 
-enum WorkerStatus {
-  available = 1,
-  working = 2
-}
-
 interface IWorkerInstance {
   instance: Worker;
   float32buffer: Float32Array;
-  status: WorkerStatus;
 }
 
 export class ChunkGenerator {
@@ -42,7 +36,8 @@ export class ChunkGenerator {
   private _chunkPositionQueue: glm.ReadonlyVec3[] = []; // position to be processed
   private _savedIndex: glm.vec3 = [999, 999, 999]; // any other value than 0/0/0 will work
 
-  private _workers: IWorkerInstance[] = [];
+  private _unusedWorkers: IWorkerInstance[] = [];
+  private _inUseWorkers: IWorkerInstance[] = [];
 
   private _cameraPosition: glm.vec3 = glm.vec3.fromValues(0, 0, 0);
 
@@ -58,13 +53,17 @@ export class ChunkGenerator {
     const newWorker: IWorkerInstance = {
       instance: new Worker(this._def.workerFile),
       float32buffer: new Float32Array(this._def.workerBufferSize),
-      status: WorkerStatus.available
     };
 
     const onWorkerMessage = (event: MessageEvent) => {
       const position = event.data.position;
       newWorker.float32buffer = event.data.float32buffer; // we now own the vertices buffer
-      newWorker.status = WorkerStatus.available;
+
+      const index = this._inUseWorkers.indexOf(newWorker);
+      if (index >= 0) {
+        this._unusedWorkers.push(newWorker);
+        this._inUseWorkers.splice(index, 1);
+      }
 
       const sizeUsed = event.data.sizeUsed;
 
@@ -101,7 +100,7 @@ export class ChunkGenerator {
 
     newWorker.instance.addEventListener('message', onWorkerMessage, false);
 
-    this._workers.push(newWorker);
+    this._unusedWorkers.push(newWorker);
   }
 
   start() {
@@ -262,15 +261,16 @@ export class ChunkGenerator {
   }
 
   private _launchWorker() {
-    const currentWorker = this._workers.find(
-      (item) => item.status == WorkerStatus.available
-    );
-    if (currentWorker === undefined) return;
 
     // determine the next chunk to process
 
     // is there something to process?
     if (this._chunkPositionQueue.length == 0) return; // no
+
+    // is there an unused worker?
+    if (this._unusedWorkers.length === 0) return;
+    const currentWorker = this._unusedWorkers.pop()!;
+    this._inUseWorkers.push(currentWorker);
 
     let nextPosition: glm.ReadonlyVec3 | undefined = undefined;
 
@@ -322,7 +322,6 @@ export class ChunkGenerator {
 
     this._processingPositions.push(nextPosition);
 
-    currentWorker.status = WorkerStatus.working;
     currentWorker.instance.postMessage(
       {
         position: nextPosition,
