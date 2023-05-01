@@ -81,7 +81,7 @@ export class WebGLExperiment {
       },
       updateGeometry: (geom, buffer, inSize) => {
         geom.updateBuffer(0, buffer, inSize);
-        geom.setPrimitiveCount(inSize / 12);
+        geom.setPrimitiveCount(inSize / 6);
       },
       onChunkCreated: () => {
         ++this._chunksCreated;

@@ -451,8 +451,6 @@ export class MarchingCube extends AbstractMarchingAlgorithm implements IMarching
       for (let iCorner = 0; iCorner < 3; ++iCorner) {
         const iVertex = currTable[3 * iTriangle + iCorner];
 
-        const color = utilities.getColor(this._asEdgeNorm[iVertex]);
-
         //
 
         const vertex: Vec3 = [
@@ -465,8 +463,10 @@ export class MarchingCube extends AbstractMarchingAlgorithm implements IMarching
 
         //
 
-        if (this._onVertexCallback)
-          this._onVertexCallback(vertex, color, normal);
+        if (this._onVertexCallback) {
+          this._onVertexCallback(vertex, normal);
+        }
+
       } // for (iCorner = [...]
     } // for (iTriangle = [...]
   }

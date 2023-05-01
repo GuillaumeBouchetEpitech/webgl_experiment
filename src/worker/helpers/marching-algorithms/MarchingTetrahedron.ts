@@ -192,21 +192,8 @@ export class MarchingTetrahedron extends AbstractMarchingAlgorithm implements IM
     for (let iTriangle = 0; iTriangle < 2; iTriangle++) {
       if (a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle] < 0) break;
 
-      // const iVertexA = a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle + 0];
-      // const iVertexB = a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle + 1];
-      // const iVertexC = a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle + 2];
-
-      // const normal = this.getNormal2(
-      //   this._asEdgeVertex[iVertexC],
-      //   this._asEdgeVertex[iVertexA],
-      //   this._asEdgeVertex[iVertexB],
-      // );
-
       for (let iCorner = 0; iCorner < 3; iCorner++) {
         const iVertex = a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle + iCorner];
-
-        const color = utilities.getColor(this._asEdgeNorm[iVertex]);
-        // const color = utilities.getColor(normal);
 
         const vertex: Vec3 = [
           this._asEdgeVertex[iVertex][0] * this._chunkSize,
@@ -216,8 +203,10 @@ export class MarchingTetrahedron extends AbstractMarchingAlgorithm implements IM
 
         const normal = this._asEdgeNorm[iVertex];
 
-        if (this._onVertexCallback)
-          this._onVertexCallback(vertex, color, normal);
+        if (this._onVertexCallback) {
+          this._onVertexCallback(vertex, normal);
+        }
+
       }
     }
   }

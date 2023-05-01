@@ -9,7 +9,7 @@ export const controllerTouchSensibility = 0.3;
 
 export const workerFile = './dist/worker.js';
 export const workerTotal = 2;
-export const workerBufferSize = 500000;
+export const workerBufferSize = 200000;
 
 export const noiseOctaves = 1;
 export const noiseFrequency = 1;

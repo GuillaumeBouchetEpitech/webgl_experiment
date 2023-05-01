@@ -23,9 +23,7 @@ export class ChunksRenderer implements IChunksRenderer {
       fragmentSrc: chunksRenderer.fragment,
       attributes: [
         'a_vertex_position',
-        'a_vertex_color',
         'a_vertex_normal',
-        'a_vertex_baryCenter'
       ],
       uniforms: ['u_viewMatrix', 'u_projMatrix', 'u_eyePosition', 'u_texture']
     });
@@ -40,22 +38,12 @@ export class ChunksRenderer implements IChunksRenderer {
               index: 0
             },
             {
-              name: 'a_vertex_color',
+              name: 'a_vertex_normal',
               type: GeometryWrapper.AttributeType.vec3f,
               index: 3
             },
-            {
-              name: 'a_vertex_normal',
-              type: GeometryWrapper.AttributeType.vec3f,
-              index: 6
-            },
-            {
-              name: 'a_vertex_baryCenter',
-              type: GeometryWrapper.AttributeType.vec3f,
-              index: 9
-            }
           ],
-          stride: 12 * 4,
+          stride: 6 * 4,
           instanced: false
         }
       ],

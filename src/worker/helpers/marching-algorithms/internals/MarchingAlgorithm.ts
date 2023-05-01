@@ -28,19 +28,6 @@ export namespace utilities {
     return (fValueDesired - fValue1) / fDelta;
   };
 
-  //getColor generates a color from a given position and normal of a point
-  export const getColor = (rfNormal: Vec3): Vec3 => {
-    const fX = rfNormal[0];
-    const fY = rfNormal[1];
-    const fZ = rfNormal[2];
-
-    return [
-      (fX > 0 ? fX : 0) + (fY < 0 ? -0.5 * fY : 0.0) + (fZ < 0 ? -0.5 * fZ : 0),
-      (fY > 0 ? fY : 0) + (fZ < 0 ? -0.5 * fZ : 0.0) + (fX < 0 ? -0.5 * fX : 0),
-      (fZ > 0 ? fZ : 0) + (fX < 0 ? -0.5 * fX : 0.0) + (fY < 0 ? -0.5 * fY : 0)
-    ];
-  };
-
   export const normalizeVector = (vec: Vec3): Vec3 => {
     const length = Math.sqrt(
       vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]
@@ -56,7 +43,7 @@ export namespace utilities {
 
 export type SampleCallback = (x: number, y: number, z: number) => number;
 
-export type OnVertexCallback = (vertex: Vec3, color: Vec3, normal: Vec3) => void;
+export type OnVertexCallback = (vertex: Vec3, normal: Vec3) => void;
 
 export interface IMarchingAlgorithm {
 

@@ -24,12 +24,6 @@ const marchingCubeInstance: IMarchingAlgorithm = new MarchingTetrahedron(configu
 
 const myself = self as unknown as Worker; // well, that's apparently needed...
 
-const k_baryCenterValues: Vec3[] = [
-  [1, 0, 0],
-  [0, 1, 0],
-  [0, 0, 1]
-];
-
 const onMainScriptMessage = (event: MessageEvent) => {
   const position = event.data.position as Vec3;
   const float32buffer = event.data.float32buffer as Float32Array; // we now own the vertices buffer
@@ -37,30 +31,20 @@ const onMainScriptMessage = (event: MessageEvent) => {
   //
   // generate
 
-  let nextIndex = 0;
   let bufIndex = 0;
 
-  const onVertexCallback: OnVertexCallback = (vertex: Vec3, color: Vec3, normal: Vec3) => {
+  const onVertexCallback: OnVertexCallback = (vertex: Vec3, normal: Vec3) => {
     // should never happen, but just in case
     if (bufIndex + 12 > configuration.workerBufferSize) return;
-
-    const currBaryCenterValue = k_baryCenterValues[nextIndex];
-    nextIndex = (nextIndex + 1) % 3;
 
     // conveniently setting up the buffer to work with the receiving geometry
 
     float32buffer[bufIndex++] = vertex[0];
     float32buffer[bufIndex++] = vertex[1];
     float32buffer[bufIndex++] = vertex[2];
-    float32buffer[bufIndex++] = color[0];
-    float32buffer[bufIndex++] = color[1];
-    float32buffer[bufIndex++] = color[2];
     float32buffer[bufIndex++] = normal[0];
     float32buffer[bufIndex++] = normal[1];
     float32buffer[bufIndex++] = normal[2];
-    float32buffer[bufIndex++] = currBaryCenterValue[0];
-    float32buffer[bufIndex++] = currBaryCenterValue[1];
-    float32buffer[bufIndex++] = currBaryCenterValue[2];
   };
 
   marchingCubeInstance.generate(position, onVertexCallback);
