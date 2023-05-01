@@ -39,7 +39,7 @@ export namespace GeometryWrapper {
   export class Geometry {
     private _def: GeometryDefinition;
     private _vao: WebGLVertexArrayObjectOES;
-    private _vbos: WebGLBuffer[];
+    private _vbos: { object: WebGLBuffer, maxSize: number }[];
     private _primitiveType: number;
     private _primitiveStart: number = 0;
     private _primitiveCount: number = 0;
@@ -76,22 +76,22 @@ export namespace GeometryWrapper {
           throw new Error('primitive type not found');
       }
 
-      const vao = gl.createVertexArray();
-      if (!vao) throw new Error('fail o create a vao unit');
+      const newVao = gl.createVertexArray();
+      if (!newVao) throw new Error('fail o create a vao unit');
 
-      this._vao = vao;
+      this._vao = newVao;
       gl.bindVertexArray(this._vao);
 
       //
 
       this._vbos = [];
       for (const vboDef of this._def.vbos) {
-        const vbo = gl.createBuffer();
-        if (!vbo) throw new Error('fail o create a vbo unit');
+        const newVbo = gl.createBuffer();
+        if (!newVbo) throw new Error('fail o create a vbo unit');
 
-        this._vbos.push(vbo);
+        this._vbos.push({ object: newVbo, maxSize: 0 });
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+        gl.bindBuffer(gl.ARRAY_BUFFER, newVbo);
 
         let stride = vboDef.stride || 0;
         if (!stride) {
@@ -185,18 +185,52 @@ export namespace GeometryWrapper {
     dispose() {
       const gl = WebGLContext.getContext();
 
-      for (const vbo of this._vbos) gl.deleteBuffer(vbo);
+      for (const vbo of this._vbos) gl.deleteBuffer(vbo.object);
+      this._vbos.length = 0;
 
       gl.deleteVertexArray(this._vao);
+    }
+
+    setBufferSize(
+      index: number,
+      inSize: number,
+      dynamic: boolean = false
+    ) {
+      if (index < 0 || index >= this._vbos.length)
+        throw new Error('no buffer available to that index');
+
+      const vbo = this._vbos[index];
+
+      if (inSize <= 0 || inSize < vbo.maxSize)
+        return;
+
+      vbo.maxSize = inSize;
+
+      const gl = WebGLContext.getContext();
+
+      const usage = dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW;
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, vbo.object);
+      gl.bufferData(gl.ARRAY_BUFFER, inSize, usage);
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    }
+
+    setFloatBufferSize(
+      index: number,
+      inSize: number,
+      dynamic: boolean = false
+    ) {
+      this.setBufferSize(index, inSize * 4, dynamic);
     }
 
     updateBuffer(
       index: number,
       vertices: number[] | Float32Array,
+      inSize: number,
       dynamic: boolean = false
     ) {
       if (index < 0 || index >= this._vbos.length)
-        throw new Error('no buffer avaialble to tha index');
+        throw new Error('no buffer available to that index');
 
       const gl = WebGLContext.getContext();
 
@@ -207,8 +241,17 @@ export namespace GeometryWrapper {
           : new Float32Array(vertices);
       const usage = dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW;
 
-      gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-      gl.bufferData(gl.ARRAY_BUFFER, buffer, usage);
+      gl.bindBuffer(gl.ARRAY_BUFFER, vbo.object);
+
+      // gl.bufferData(gl.ARRAY_BUFFER, buffer, usage);
+
+      if (inSize > vbo.maxSize) {
+        vbo.maxSize = inSize;
+        gl.bufferData(gl.ARRAY_BUFFER, buffer, usage, 0, inSize);
+      } else {
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, buffer, 0, inSize);
+      }
+
       gl.bindBuffer(gl.ARRAY_BUFFER, null);
     }
 
@@ -216,14 +259,18 @@ export namespace GeometryWrapper {
       if (
         this._primitiveCount == 0 ||
         (this._isInstanced && this._instanceCount == 0)
-      )
+      ) {
         return;
+      }
 
       const gl = WebGLContext.getContext();
 
       gl.bindVertexArray(this._vao);
 
       if (this._isInstanced === true) {
+
+        // console.log("drawArraysInstanced. this._primitiveStart", this._primitiveStart, "this._primitiveCount", this._primitiveCount, "this._instanceCount", this._instanceCount);
+
         gl.drawArraysInstanced(
           this._primitiveType,
           this._primitiveStart,

@@ -9,7 +9,7 @@ import {
 import * as glm from 'gl-matrix';
 
 export interface IChunksRenderer {
-  buildGeometry(buffer: Float32Array): GeometryWrapper.Geometry;
+  buildGeometry(size: number): GeometryWrapper.Geometry;
 }
 
 export class ChunksRenderer implements IChunksRenderer {
@@ -67,13 +67,12 @@ export class ChunksRenderer implements IChunksRenderer {
     await this._texture.load('assets/texture.png');
   }
 
-  buildGeometry(buffer: Float32Array): GeometryWrapper.Geometry {
+  buildGeometry(inSize: number): GeometryWrapper.Geometry {
     const geom = new GeometryWrapper.Geometry(
       this._shader,
       this._geometryDefinition
     );
-    geom.updateBuffer(0, buffer);
-    geom.setPrimitiveCount(buffer.length / 12);
+    geom.setFloatBufferSize(0, inSize, false)
     return geom;
   }
 

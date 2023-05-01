@@ -1,6 +1,6 @@
 import * as configuration from '../main/configuration';
 
-import { MarchingCube } from './helpers/MarchingCube';
+import { IMarchingAlgorithm, OnVertexCallback, MarchingCube, MarchingTetrahedron } from './helpers/marching-algorithms';
 import { ClassicalNoise } from './helpers/ClassicalNoise';
 import { DeterministicRng } from './helpers/DeterministicRng';
 
@@ -19,13 +19,16 @@ const on_sample_callback = (x: number, y: number, z: number) => {
   return simplexNoiseInstance.noise(x, y, z);
 };
 
-const marchingCubeInstance = new MarchingCube(
-  configuration.chunkSize,
-  configuration.chunkLimit,
-  on_sample_callback
-);
+// const marchingCubeInstance: IMarchingAlgorithm = new MarchingCube(configuration.chunkSize, configuration.chunkLimit, on_sample_callback);
+const marchingCubeInstance: IMarchingAlgorithm = new MarchingTetrahedron(configuration.chunkSize, configuration.chunkLimit, on_sample_callback);
 
 const myself = self as unknown as Worker; // well, that's apparently needed...
+
+const k_baryCenterValues: Vec3[] = [
+  [1, 0, 0],
+  [0, 1, 0],
+  [0, 0, 1]
+];
 
 const onMainScriptMessage = (event: MessageEvent) => {
   const position = event.data.position as Vec3;
@@ -34,18 +37,15 @@ const onMainScriptMessage = (event: MessageEvent) => {
   //
   // generate
 
-  let currIndex = 0;
-  const indexes: Vec3[] = [
-    [1, 0, 0],
-    [0, 1, 0],
-    [0, 0, 1]
-  ];
-
+  let nextIndex = 0;
   let bufIndex = 0;
 
-  const on_vertex_callback = (vertex: Vec3, color: Vec3, normal: Vec3) => {
+  const onVertexCallback: OnVertexCallback = (vertex: Vec3, color: Vec3, normal: Vec3) => {
     // should never happen, but just in case
     if (bufIndex + 12 > configuration.workerBufferSize) return;
+
+    const currBaryCenterValue = k_baryCenterValues[nextIndex];
+    nextIndex = (nextIndex + 1) % 3;
 
     // conveniently setting up the buffer to work with the receiving geometry
 
@@ -58,23 +58,20 @@ const onMainScriptMessage = (event: MessageEvent) => {
     float32buffer[bufIndex++] = normal[0];
     float32buffer[bufIndex++] = normal[1];
     float32buffer[bufIndex++] = normal[2];
-
-    const index = indexes[currIndex];
-    currIndex = (currIndex + 1) % 3;
-
-    float32buffer[bufIndex++] = index[0];
-    float32buffer[bufIndex++] = index[1];
-    float32buffer[bufIndex++] = index[2];
+    float32buffer[bufIndex++] = currBaryCenterValue[0];
+    float32buffer[bufIndex++] = currBaryCenterValue[1];
+    float32buffer[bufIndex++] = currBaryCenterValue[2];
   };
 
-  marchingCubeInstance.generate(position, on_vertex_callback, true);
+  marchingCubeInstance.generate(position, onVertexCallback);
 
   //
 
   myself.postMessage(
     {
       position: position,
-      float32buffer: float32buffer
+      float32buffer: float32buffer,
+      sizeUsed: bufIndex,
     },
     [
       // we now transfer the ownership of the vertices buffer

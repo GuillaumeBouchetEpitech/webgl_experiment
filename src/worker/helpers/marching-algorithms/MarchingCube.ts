@@ -1,7 +1,6 @@
-type Vec2 = [number, number];
-type Vec3 = [number, number, number];
-type Vec4 = [number, number, number, number];
-type Vec7 = [number, number, number, number, number, number, number];
+
+import { Vec2, Vec3, utilities, a2fVertexOffset, OnVertexCallback, IMarchingAlgorithm, AbstractMarchingAlgorithm} from "./internals/MarchingAlgorithm"
+
 type Vec16 = [
   number,
   number,
@@ -21,19 +20,7 @@ type Vec16 = [
   number
 ];
 
-type GeomCallback = (vertex: Vec3, color: Vec3, normal: Vec3) => void;
-
-const a2fVertexOffset: Vec3[] = [
-  [0, 0, 0],
-  [1, 0, 0],
-  [1, 1, 0],
-  [0, 1, 0],
-  [0, 0, 1],
-  [1, 0, 1],
-  [1, 1, 1],
-  [0, 1, 1]
-];
-
+// cube
 const a2iEdgeConnection: Vec2[] = [
   [0, 1],
   [1, 2],
@@ -49,6 +36,7 @@ const a2iEdgeConnection: Vec2[] = [
   [3, 7]
 ];
 
+// cube
 const a2fEdgeDirection: Vec3[] = [
   [1, 0, 0],
   [0, 1, 0],
@@ -64,78 +52,7 @@ const a2fEdgeDirection: Vec3[] = [
   [0, 0, 1]
 ];
 
-const a2iTetrahedronEdgeConnection: Vec2[] = [
-  [0, 1],
-  [1, 2],
-  [2, 0],
-  [0, 3],
-  [1, 3],
-  [2, 3]
-];
-
-const a2iTetrahedronsInACube: Vec4[] = [
-  [0, 5, 1, 6],
-  [0, 1, 2, 6],
-  [0, 2, 3, 6],
-  [0, 3, 7, 6],
-  [0, 7, 4, 6],
-  [0, 4, 5, 6]
-];
-
-const aiTetrahedronEdgeFlags = [
-  0x00, 0x0d, 0x13, 0x1e, 0x26, 0x2b, 0x35, 0x38, 0x38, 0x35, 0x2b, 0x26, 0x1e,
-  0x13, 0x0d, 0x00
-];
-
-const a2iTetrahedronTriangles: Vec7[] = [
-  [-1, -1, -1, -1, -1, -1, -1],
-  [0, 3, 2, -1, -1, -1, -1],
-  [0, 1, 4, -1, -1, -1, -1],
-  [1, 4, 2, 2, 4, 3, -1],
-
-  [1, 2, 5, -1, -1, -1, -1],
-  [0, 3, 5, 0, 5, 1, -1],
-  [0, 2, 5, 0, 5, 4, -1],
-  [5, 4, 3, -1, -1, -1, -1],
-
-  [3, 4, 5, -1, -1, -1, -1],
-  [4, 5, 0, 5, 2, 0, -1],
-  [1, 5, 0, 5, 3, 0, -1],
-  [5, 2, 1, -1, -1, -1, -1],
-
-  [3, 4, 2, 2, 4, 1, -1],
-  [4, 1, 0, -1, -1, -1, -1],
-  [2, 3, 0, -1, -1, -1, -1],
-  [-1, -1, -1, -1, -1, -1, -1]
-];
-
-const aiCubeEdgeFlags = [
-  0x000, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f,
-  0xb06, 0xc0a, 0xd03, 0xe09, 0xf00, 0x190, 0x099, 0x393, 0x29a, 0x596, 0x49f,
-  0x795, 0x69c, 0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90, 0x230,
-  0x339, 0x033, 0x13a, 0x636, 0x73f, 0x435, 0x53c, 0xa3c, 0xb35, 0x83f, 0x936,
-  0xe3a, 0xf33, 0xc39, 0xd30, 0x3a0, 0x2a9, 0x1a3, 0x0aa, 0x7a6, 0x6af, 0x5a5,
-  0x4ac, 0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0, 0x460, 0x569,
-  0x663, 0x76a, 0x066, 0x16f, 0x265, 0x36c, 0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a,
-  0x963, 0xa69, 0xb60, 0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0x0ff, 0x3f5, 0x2fc,
-  0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0, 0x650, 0x759, 0x453,
-  0x55a, 0x256, 0x35f, 0x055, 0x15c, 0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53,
-  0x859, 0x950, 0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0x0cc, 0xfcc,
-  0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0, 0x8c0, 0x9c9, 0xac3, 0xbca,
-  0xcc6, 0xdcf, 0xec5, 0xfcc, 0x0cc, 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9,
-  0x7c0, 0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c, 0x15c, 0x055,
-  0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650, 0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6,
-  0xfff, 0xcf5, 0xdfc, 0x2fc, 0x3f5, 0x0ff, 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0,
-  0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c, 0x36c, 0x265, 0x16f,
-  0x066, 0x76a, 0x663, 0x569, 0x460, 0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af,
-  0xaa5, 0xbac, 0x4ac, 0x5a5, 0x6af, 0x7a6, 0x0aa, 0x1a3, 0x2a9, 0x3a0, 0xd30,
-  0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c, 0x53c, 0x435, 0x73f, 0x636,
-  0x13a, 0x033, 0x339, 0x230, 0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895,
-  0x99c, 0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x099, 0x190, 0xf00, 0xe09,
-  0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c, 0x70c, 0x605, 0x50f, 0x406, 0x30a,
-  0x203, 0x109, 0x000
-];
-
+// cube
 const a2iTriangleConnectionTable: Vec16[] = [
   [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
   [0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
@@ -395,139 +312,78 @@ const a2iTriangleConnectionTable: Vec16[] = [
   [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
 ];
 
-namespace utilities {
-  export const getOffset = (
-    fValue1: number,
-    fValue2: number,
-    fValueDesired: number
-  ): number => {
-    const fDelta = fValue2 - fValue1;
+// cube
+const aiCubeEdgeFlags = [
+  0x000, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f,
+  0xb06, 0xc0a, 0xd03, 0xe09, 0xf00, 0x190, 0x099, 0x393, 0x29a, 0x596, 0x49f,
+  0x795, 0x69c, 0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90, 0x230,
+  0x339, 0x033, 0x13a, 0x636, 0x73f, 0x435, 0x53c, 0xa3c, 0xb35, 0x83f, 0x936,
+  0xe3a, 0xf33, 0xc39, 0xd30, 0x3a0, 0x2a9, 0x1a3, 0x0aa, 0x7a6, 0x6af, 0x5a5,
+  0x4ac, 0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0, 0x460, 0x569,
+  0x663, 0x76a, 0x066, 0x16f, 0x265, 0x36c, 0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a,
+  0x963, 0xa69, 0xb60, 0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0x0ff, 0x3f5, 0x2fc,
+  0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0, 0x650, 0x759, 0x453,
+  0x55a, 0x256, 0x35f, 0x055, 0x15c, 0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53,
+  0x859, 0x950, 0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0x0cc, 0xfcc,
+  0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0, 0x8c0, 0x9c9, 0xac3, 0xbca,
+  0xcc6, 0xdcf, 0xec5, 0xfcc, 0x0cc, 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9,
+  0x7c0, 0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c, 0x15c, 0x055,
+  0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650, 0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6,
+  0xfff, 0xcf5, 0xdfc, 0x2fc, 0x3f5, 0x0ff, 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0,
+  0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c, 0x36c, 0x265, 0x16f,
+  0x066, 0x76a, 0x663, 0x569, 0x460, 0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af,
+  0xaa5, 0xbac, 0x4ac, 0x5a5, 0x6af, 0x7a6, 0x0aa, 0x1a3, 0x2a9, 0x3a0, 0xd30,
+  0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c, 0x53c, 0x435, 0x73f, 0x636,
+  0x13a, 0x033, 0x339, 0x230, 0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895,
+  0x99c, 0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x099, 0x190, 0xf00, 0xe09,
+  0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c, 0x70c, 0x605, 0x50f, 0x406, 0x30a,
+  0x203, 0x109, 0x000
+];
 
-    if (fDelta == 0) return 0.5;
+export class MarchingCube extends AbstractMarchingAlgorithm implements IMarchingAlgorithm {
+  private _afCubeValue = [0, 0, 0, 0, 0, 0, 0, 0];
+  private _asEdgeVertex: Vec3[] = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0]
+  ];
+  private _asEdgeNorm: Vec3[] = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0]
+  ];
 
-    return (fValueDesired - fValue1) / fDelta;
-  };
+  generate(pos: Vec3, onVertexCallback: OnVertexCallback): void {
 
-  //getColor generates a color from a given position and normal of a point
-  export const getColor = (rfNormal: Vec3): Vec3 => {
-    const fX = rfNormal[0];
-    const fY = rfNormal[1];
-    const fZ = rfNormal[2];
+    if (!onVertexCallback) throw new Error('no vertex callback supplied');
 
-    return [
-      (fX > 0 ? fX : 0) + (fY < 0 ? -0.5 * fY : 0.0) + (fZ < 0 ? -0.5 * fZ : 0),
-      (fY > 0 ? fY : 0) + (fZ < 0 ? -0.5 * fZ : 0.0) + (fX < 0 ? -0.5 * fX : 0),
-      (fZ > 0 ? fZ : 0) + (fX < 0 ? -0.5 * fX : 0.0) + (fY < 0 ? -0.5 * fY : 0)
-    ];
-  };
-
-  export const normalizeVector = (vec: Vec3): Vec3 => {
-    const length = Math.sqrt(
-      vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]
-    );
-
-    if (length == 0) return vec;
-
-    const tmp_scale = 1 / length;
-
-    return [vec[0] * tmp_scale, vec[1] * tmp_scale, vec[2] * tmp_scale];
-  };
-}
-
-export class MarchingCube {
-  private _chunkSize: number;
-  private _limit: number;
-  private _sampleCallback: (x: number, y: number, z: number) => number;
-  private _stepSize: number;
-  private _currentGeometryCallback: GeomCallback | undefined;
-
-  constructor(
-    chunkSize: number,
-    limit: number,
-    sampleCallback: (x: number, y: number, z: number) => number
-  ) {
-    this._chunkSize = chunkSize;
-    this._limit = limit;
-    this._sampleCallback = sampleCallback;
-
-    this._stepSize = 1.0 / this._chunkSize;
-  }
-
-  getNormal(fX: number, fY: number, fZ: number): Vec3 {
-    const offset = this._stepSize * 0.1;
-
-    const normal: Vec3 = [
-      this._sampleCallback(fX - offset, fY, fZ) -
-        this._sampleCallback(fX + offset, fY, fZ),
-      this._sampleCallback(fX, fY - offset, fZ) -
-        this._sampleCallback(fX, fY + offset, fZ),
-      this._sampleCallback(fX, fY, fZ - offset) -
-        this._sampleCallback(fX, fY, fZ + offset)
-    ];
-
-    return utilities.normalizeVector(normal);
-  }
-
-  getNormal2(t1: Vec3, t2: Vec3, t3: Vec3): Vec3 {
-    const Ux = t2[0] - t1[0];
-    const Uy = t2[1] - t1[1];
-    const Uz = t2[2] - t1[2];
-    const Vx = t3[0] - t1[0];
-    const Vy = t3[1] - t1[1];
-    const Vz = t3[2] - t1[2];
-
-    return [Uy * Vz - Uz * Vy, Uz * Vx - Ux * Vz, Ux * Vy - Uy * Vx];
-  }
-
-  generate(
-    pos: number[],
-    geomCallback: GeomCallback,
-    marchTetrahedron: boolean = false
-  ): void {
-    if (!geomCallback) throw new Error('no geometry callback supplied');
-
-    this._currentGeometryCallback = geomCallback;
-
-    const generateCallback = marchTetrahedron
-      ? this._marchTetrahedron.bind(this)
-      : this._marchCubeSingle.bind(this);
+    this._onVertexCallback = onVertexCallback;
 
     for (let iX = 0; iX <= this._chunkSize; ++iX)
       for (let iY = 0; iY <= this._chunkSize; ++iY)
         for (let iZ = 0; iZ <= this._chunkSize; ++iZ)
-          generateCallback(pos[0] + iX, pos[1] + iY, pos[2] + iZ);
+          this._marchCubeSingle(pos[0] + iX, pos[1] + iY, pos[2] + iZ);
   }
 
   private _marchCubeSingle(iX: number, iY: number, iZ: number): void {
-    const afCubeValue = [0, 0, 0, 0, 0, 0, 0, 0];
-    const asEdgeVertex: Vec3[] = [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0]
-    ];
-    const asEdgeNorm: Vec3[] = [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0]
-    ];
 
     /// add chunk pos here
     const fX = iX * this._stepSize;
@@ -535,17 +391,19 @@ export class MarchingCube {
     const fZ = iZ * this._stepSize;
 
     /// Make a local copy of the values at the cube's corners
-    for (let iVertex = 0; iVertex < 8; ++iVertex)
-      afCubeValue[iVertex] = this._sampleCallback(
-        fX + a2fVertexOffset[iVertex][0] * this._stepSize,
-        fY + a2fVertexOffset[iVertex][1] * this._stepSize,
-        fZ + a2fVertexOffset[iVertex][2] * this._stepSize
+    for (let iVertex = 0; iVertex < 8; ++iVertex) {
+      const currOffset = a2fVertexOffset[iVertex];
+      this._afCubeValue[iVertex] = this._sampleCallback(
+        fX + currOffset[0] * this._stepSize,
+        fY + currOffset[1] * this._stepSize,
+        fZ + currOffset[2] * this._stepSize
       );
+    }
 
     //Find which vertices are inside of the surface and which are outside
     let iFlagIndex = 0 | 0;
     for (let iVertexTest = 0 | 0; iVertexTest < 8; ++iVertexTest)
-      if (afCubeValue[iVertexTest] <= this._limit)
+      if (this._afCubeValue[iVertexTest] <= this._limit)
         iFlagIndex |= 1 << iVertexTest;
 
     //Find which edges are intersected by the surface
@@ -559,206 +417,58 @@ export class MarchingCube {
     for (let iEdge = 0; iEdge < 12; ++iEdge) {
       //if there is an intersection on this edge
       if (iEdgeFlags & (1 << iEdge)) {
+
+        const currEdge = a2iEdgeConnection[iEdge];
+
         const fOffset = utilities.getOffset(
-          afCubeValue[a2iEdgeConnection[iEdge][0]],
-          afCubeValue[a2iEdgeConnection[iEdge][1]],
+          this._afCubeValue[currEdge[0]],
+          this._afCubeValue[currEdge[1]],
           this._limit
         );
 
-        asEdgeVertex[iEdge][0] =
-          fX +
-          (a2fVertexOffset[a2iEdgeConnection[iEdge][0]][0] +
-            fOffset * a2fEdgeDirection[iEdge][0]) *
-            this._stepSize;
-        asEdgeVertex[iEdge][1] =
-          fY +
-          (a2fVertexOffset[a2iEdgeConnection[iEdge][0]][1] +
-            fOffset * a2fEdgeDirection[iEdge][1]) *
-            this._stepSize;
-        asEdgeVertex[iEdge][2] =
-          fZ +
-          (a2fVertexOffset[a2iEdgeConnection[iEdge][0]][2] +
-            fOffset * a2fEdgeDirection[iEdge][2]) *
-            this._stepSize;
+        const currOffset = a2fVertexOffset[currEdge[0]];
+        const currEdgeDir = a2fEdgeDirection[iEdge];
 
-        asEdgeNorm[iEdge] = this.getNormal(
-          asEdgeVertex[iEdge][0],
-          asEdgeVertex[iEdge][1],
-          asEdgeVertex[iEdge][2]
+        this._asEdgeVertex[iEdge][0] = fX + (currOffset[0] + fOffset * currEdgeDir[0]) * this._stepSize;
+        this._asEdgeVertex[iEdge][1] = fY + (currOffset[1] + fOffset * currEdgeDir[1]) * this._stepSize;
+        this._asEdgeVertex[iEdge][2] = fZ + (currOffset[2] + fOffset * currEdgeDir[2]) * this._stepSize;
+
+        this._asEdgeNorm[iEdge] = this.getNormal(
+          this._asEdgeVertex[iEdge][0],
+          this._asEdgeVertex[iEdge][1],
+          this._asEdgeVertex[iEdge][2]
         );
       }
     }
 
     //Draw the triangles that were found.  There can be up to five per cube
     for (let iTriangle = 0; iTriangle < 5; ++iTriangle) {
-      if (a2iTriangleConnectionTable[iFlagIndex][3 * iTriangle] < 0) break;
+
+      const currTable = a2iTriangleConnectionTable[iFlagIndex];
+
+      if (currTable[3 * iTriangle] < 0) break;
 
       for (let iCorner = 0; iCorner < 3; ++iCorner) {
-        const iVertex =
-          a2iTriangleConnectionTable[iFlagIndex][3 * iTriangle + iCorner];
+        const iVertex = currTable[3 * iTriangle + iCorner];
 
-        const color = utilities.getColor(asEdgeNorm[iVertex]);
+        const color = utilities.getColor(this._asEdgeNorm[iVertex]);
 
         //
 
         const vertex: Vec3 = [
-          asEdgeVertex[iVertex][0] * this._chunkSize,
-          asEdgeVertex[iVertex][1] * this._chunkSize,
-          asEdgeVertex[iVertex][2] * this._chunkSize
+          this._asEdgeVertex[iVertex][0] * this._chunkSize,
+          this._asEdgeVertex[iVertex][1] * this._chunkSize,
+          this._asEdgeVertex[iVertex][2] * this._chunkSize
         ];
 
-        const normal = asEdgeNorm[iVertex];
+        const normal = this._asEdgeNorm[iVertex];
 
         //
 
-        if (this._currentGeometryCallback)
-          this._currentGeometryCallback(vertex, color, normal);
+        if (this._onVertexCallback)
+          this._onVertexCallback(vertex, color, normal);
       } // for (iCorner = [...]
     } // for (iTriangle = [...]
   }
 
-  private _marchTetrahedron(iX: number, iY: number, iZ: number): void {
-    /// add chunk pos here
-    const fX = iX * this._stepSize;
-    const fY = iY * this._stepSize;
-    const fZ = iZ * this._stepSize;
-
-    const asCubePosition: Vec3[] = [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0]
-    ];
-
-    // Make a local copy of the cube's corner positions
-    for (let iVertex = 0; iVertex < 8; ++iVertex) {
-      asCubePosition[iVertex][0] =
-        fX + a2fVertexOffset[iVertex][0] * this._stepSize;
-      asCubePosition[iVertex][1] =
-        fY + a2fVertexOffset[iVertex][1] * this._stepSize;
-      asCubePosition[iVertex][2] =
-        fZ + a2fVertexOffset[iVertex][2] * this._stepSize;
-    }
-
-    const afCubeValue = [0, 0, 0, 0, 0, 0, 0, 0];
-
-    // Make a local copy of the cube's corner values
-    for (let iVertex = 0; iVertex < 8; iVertex++)
-      afCubeValue[iVertex] = this._sampleCallback(
-        asCubePosition[iVertex][0],
-        asCubePosition[iVertex][1],
-        asCubePosition[iVertex][2]
-      );
-
-    const asTetrahedronPosition: Vec3[] = [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0]
-    ];
-    const afTetrahedronValue = [0, 0, 0, 0];
-
-    for (let iTetrahedron = 0; iTetrahedron < 6; iTetrahedron++) {
-      for (let iVertex = 0; iVertex < 4; iVertex++) {
-        const iVertexInACube = a2iTetrahedronsInACube[iTetrahedron][iVertex];
-
-        asTetrahedronPosition[iVertex][0] = asCubePosition[iVertexInACube][0];
-        asTetrahedronPosition[iVertex][1] = asCubePosition[iVertexInACube][1];
-        asTetrahedronPosition[iVertex][2] = asCubePosition[iVertexInACube][2];
-
-        afTetrahedronValue[iVertex] = afCubeValue[iVertexInACube];
-      }
-
-      this._marchTetrahedronSingle(asTetrahedronPosition, afTetrahedronValue);
-    }
-  }
-
-  private _marchTetrahedronSingle(
-    pasTetrahedronPosition: Vec3[],
-    pafTetrahedronValue: number[]
-  ): void {
-    const asEdgeVertex: Vec3[] = [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0]
-    ];
-    const asEdgeNorm: Vec3[] = [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0]
-    ];
-
-    //Find which vertices are inside of the surface and which are outside
-    let iFlagIndex = 0;
-    for (let iVertex = 0; iVertex < 4; iVertex++)
-      if (pafTetrahedronValue[iVertex] <= this._limit)
-        iFlagIndex |= 1 << iVertex;
-
-    //Find which edges are intersected by the surface
-    const iEdgeFlags = aiTetrahedronEdgeFlags[iFlagIndex];
-
-    //If the tetrahedron is entirely inside or outside of the surface, then there will be no intersections
-    if (iEdgeFlags == 0) return;
-
-    for (let iEdge = 0; iEdge < 6; iEdge++) {
-      if (iEdgeFlags & (1 << iEdge)) {
-        const iVert0 = a2iTetrahedronEdgeConnection[iEdge][0];
-        const iVert1 = a2iTetrahedronEdgeConnection[iEdge][1];
-        const fOffset = utilities.getOffset(
-          pafTetrahedronValue[iVert0],
-          pafTetrahedronValue[iVert1],
-          this._limit
-        );
-        const fInvOffset = 1.0 - fOffset;
-
-        asEdgeVertex[iEdge][0] =
-          fInvOffset * pasTetrahedronPosition[iVert0][0] +
-          fOffset * pasTetrahedronPosition[iVert1][0];
-        asEdgeVertex[iEdge][1] =
-          fInvOffset * pasTetrahedronPosition[iVert0][1] +
-          fOffset * pasTetrahedronPosition[iVert1][1];
-        asEdgeVertex[iEdge][2] =
-          fInvOffset * pasTetrahedronPosition[iVert0][2] +
-          fOffset * pasTetrahedronPosition[iVert1][2];
-
-        asEdgeNorm[iEdge] = this.getNormal(
-          asEdgeVertex[iEdge][0],
-          asEdgeVertex[iEdge][1],
-          asEdgeVertex[iEdge][2]
-        );
-      }
-    }
-
-    for (let iTriangle = 0; iTriangle < 2; iTriangle++) {
-      if (a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle] < 0) break;
-
-      for (let iCorner = 0; iCorner < 3; iCorner++) {
-        const iVertex =
-          a2iTetrahedronTriangles[iFlagIndex][3 * iTriangle + iCorner];
-
-        const color = utilities.getColor(asEdgeNorm[iVertex]);
-
-        const vertex: Vec3 = [
-          asEdgeVertex[iVertex][0] * this._chunkSize,
-          asEdgeVertex[iVertex][1] * this._chunkSize,
-          asEdgeVertex[iVertex][2] * this._chunkSize
-        ];
-
-        const normal = asEdgeNorm[iVertex];
-
-        if (this._currentGeometryCallback)
-          this._currentGeometryCallback(vertex, color, normal);
-      }
-    }
-  }
 }

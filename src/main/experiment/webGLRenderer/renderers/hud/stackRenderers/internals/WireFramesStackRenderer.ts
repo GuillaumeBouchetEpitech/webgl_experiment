@@ -2,10 +2,12 @@ import { ShaderProgram, GeometryWrapper } from '../../../../wrappers';
 
 import * as glm from 'gl-matrix';
 
+const k_bufferSize = 7 * 1024;
+
 export class WireFramesStackRenderer {
   private _geometry: GeometryWrapper.Geometry;
 
-  private _buffer = new Float32Array(7 * 1024);
+  private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
 
   constructor(
@@ -18,6 +20,7 @@ export class WireFramesStackRenderer {
     };
 
     this._geometry = new GeometryWrapper.Geometry(inShader, geometryDef);
+    this._geometry.setFloatBufferSize(0, k_bufferSize, true);
   }
 
   pushLine(
@@ -57,7 +60,7 @@ export class WireFramesStackRenderer {
   flush() {
     if (!this.canRender()) return;
 
-    this._geometry.updateBuffer(0, this._buffer, true);
+    this._geometry.updateBuffer(0, this._buffer, this._currentSize, true);
     this._geometry.setPrimitiveCount(this._currentSize / 7);
 
     this._geometry.render();

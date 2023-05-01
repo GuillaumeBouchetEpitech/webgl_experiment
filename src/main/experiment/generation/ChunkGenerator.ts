@@ -8,8 +8,8 @@ interface IChunkGeneratorDef<GeometryType> {
   workerBufferSize: number;
   chunkIsVisible: (pos: glm.ReadonlyVec3) => boolean;
   pointIsVisible: (pos: glm.ReadonlyVec3) => boolean;
-  addGeometry: (buffer: Float32Array) => GeometryType;
-  updateGeometry: (geom: GeometryType, buffer: Float32Array) => void;
+  addGeometry: (size: number) => GeometryType;
+  updateGeometry: (geom: GeometryType, buffer: Float32Array, size: number) => void;
   onChunkCreated?: () => void;
   onChunkDiscarded?: () => void;
 }
@@ -67,6 +67,8 @@ export class ChunkGenerator<GeometryType> {
       newWorker.float32buffer = event.data.float32buffer; // we now own the vertices buffer
       newWorker.status = WorkerStatus.available;
 
+      const sizeUsed = event.data.sizeUsed;
+
       // find and remove the position
       for (let ii = 0; ii < this._processingPositions.length; ++ii) {
         if (
@@ -81,31 +83,28 @@ export class ChunkGenerator<GeometryType> {
 
       if (!this._running) return;
 
-      let geometry: GeometryType | undefined = undefined;
-      if (this._geometriesPool.length == 0) {
-        geometry = this._def.addGeometry(newWorker.float32buffer);
-      } else {
-        geometry = this._geometriesPool.pop();
-        if (geometry)
-          this._def.updateGeometry(geometry, newWorker.float32buffer);
+      const _getGeometry = () => {
+        if (this._geometriesPool.length > 0)
+          return this._geometriesPool.pop()!;
+        return this._def.addGeometry(this._def.workerBufferSize);
       }
 
-      if (!geometry) {
-        console.log('worker: processing the result -> invalid geometry');
-      } else {
-        // save
-        this._chunks.push({
-          position,
-          geometry,
-          coord2d: null,
-          visible: false
-        });
+      const geometry = _getGeometry();
 
-        if (this._def.onChunkCreated) this._def.onChunkCreated();
+      this._def.updateGeometry(geometry, newWorker.float32buffer, sizeUsed);
 
-        // launch again
-        this._launchWorker();
-      }
+      // save
+      this._chunks.push({
+        position,
+        geometry,
+        coord2d: null,
+        visible: false
+      });
+
+      if (this._def.onChunkCreated) this._def.onChunkCreated();
+
+      // launch again
+      this._launchWorker();
     };
 
     newWorker.instance.addEventListener('message', onWorkerMessage, false);

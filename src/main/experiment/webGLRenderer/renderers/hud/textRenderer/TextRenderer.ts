@@ -9,6 +9,8 @@ import * as glm from 'gl-matrix';
 const k_gridSize: glm.ReadonlyVec2 = [16, 6];
 const k_texCoord: glm.ReadonlyVec2 = [1 / k_gridSize[0], 1 / k_gridSize[1]];
 
+const k_bufferSize = 9 * 1024 * 4;
+
 export interface ITextRenderer {
   pushText(
     inMessage: string,
@@ -35,7 +37,7 @@ export class TextRenderer implements ITextRenderer {
   private _texture = new Texture();
   private _texCoordMap: Map<string, glm.ReadonlyVec2>;
 
-  private _buffer = new Float32Array(9 * 1024 * 4);
+  private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
 
   constructor() {
@@ -137,8 +139,9 @@ export class TextRenderer implements ITextRenderer {
       );
     }
 
-    this._geometry.updateBuffer(0, letterVertices);
+    this._geometry.updateBuffer(0, letterVertices, letterVertices.length, false);
     this._geometry.setPrimitiveCount(letterVertices.length / 4);
+    this._geometry.setFloatBufferSize(1, k_bufferSize, true);
 
     this._texCoordMap = new Map<string, glm.ReadonlyVec2>([
       [' ', [0 * k_texCoord[0], 0 * k_texCoord[1]]],
@@ -389,29 +392,27 @@ export class TextRenderer implements ITextRenderer {
     for (let yy = -1; yy <= 1; ++yy) {
       for (let xx = -1; xx <= 1; ++xx) {
 
-        this._buffer[this._currentSize + 0] = inPosition[0] + 2 * xx;
-        this._buffer[this._currentSize + 1] = inPosition[1] + 2 * yy;
-        this._buffer[this._currentSize + 2] = -0.1;
-        this._buffer[this._currentSize + 3] = texCoord[0];
-        this._buffer[this._currentSize + 4] = texCoord[1];
-        this._buffer[this._currentSize + 5] = blackColor[0];
-        this._buffer[this._currentSize + 6] = blackColor[1];
-        this._buffer[this._currentSize + 7] = blackColor[2];
-        this._buffer[this._currentSize + 8] = inScale;
-        this._currentSize += 9;
+        this._buffer[this._currentSize++] = inPosition[0] + 2 * xx;
+        this._buffer[this._currentSize++] = inPosition[1] + 2 * yy;
+        this._buffer[this._currentSize++] = -0.1;
+        this._buffer[this._currentSize++] = texCoord[0];
+        this._buffer[this._currentSize++] = texCoord[1];
+        this._buffer[this._currentSize++] = blackColor[0];
+        this._buffer[this._currentSize++] = blackColor[1];
+        this._buffer[this._currentSize++] = blackColor[2];
+        this._buffer[this._currentSize++] = inScale;
       }
     }
 
-    this._buffer[this._currentSize + 0] = inPosition[0];
-    this._buffer[this._currentSize + 1] = inPosition[1];
-    this._buffer[this._currentSize + 2] = 0.0;
-    this._buffer[this._currentSize + 3] = texCoord[0];
-    this._buffer[this._currentSize + 4] = texCoord[1];
-    this._buffer[this._currentSize + 5] = whiteColor[0];
-    this._buffer[this._currentSize + 6] = whiteColor[1];
-    this._buffer[this._currentSize + 7] = whiteColor[2];
-    this._buffer[this._currentSize + 8] = inScale;
-    this._currentSize += 9;
+    this._buffer[this._currentSize++] = inPosition[0];
+    this._buffer[this._currentSize++] = inPosition[1];
+    this._buffer[this._currentSize++] = 0.0;
+    this._buffer[this._currentSize++] = texCoord[0];
+    this._buffer[this._currentSize++] = texCoord[1];
+    this._buffer[this._currentSize++] = whiteColor[0];
+    this._buffer[this._currentSize++] = whiteColor[1];
+    this._buffer[this._currentSize++] = whiteColor[2];
+    this._buffer[this._currentSize++] = inScale;
   }
 
   flush(composedMatrix: glm.ReadonlyMat4) {
@@ -424,7 +425,7 @@ export class TextRenderer implements ITextRenderer {
 
     this._texture.bind();
 
-    this._geometry.updateBuffer(1, this._buffer, true);
+    this._geometry.updateBuffer(1, this._buffer, this._currentSize, true);
     this._geometry.setInstancedCount(this._currentSize / 9);
     this._geometry.render();
 

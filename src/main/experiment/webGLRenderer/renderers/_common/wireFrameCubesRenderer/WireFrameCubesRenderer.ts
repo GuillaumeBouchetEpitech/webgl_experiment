@@ -63,11 +63,13 @@ export interface IWireFrameCubesRenderer {
   clear(): void;
 }
 
+const k_bufferSize = 7 * 1024 * 4;
+
 export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
   private _shader: ShaderProgram;
   private _geometry: GeometryWrapper.Geometry;
 
-  private _buffer = new Float32Array(7 * 1024 * 4);
+  private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
 
   constructor() {
@@ -124,8 +126,9 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     const vertices = generateWireFrameCubeVertices(1);
 
     this._geometry = new GeometryWrapper.Geometry(this._shader, geometryDef);
-    this._geometry.updateBuffer(0, vertices);
+    this._geometry.updateBuffer(0, vertices, vertices.length, false);
     this._geometry.setPrimitiveCount(vertices.length / 3);
+    this._geometry.setFloatBufferSize(1, k_bufferSize, true);
   }
 
   pushCenteredCube(
@@ -137,14 +140,13 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     if (this._currentSize + 7 >= this._buffer.length)
       return;
 
-    this._buffer[this._currentSize + 0] = inCenter[0];
-    this._buffer[this._currentSize + 1] = inCenter[1];
-    this._buffer[this._currentSize + 2] = inCenter[2];
-    this._buffer[this._currentSize + 3] = inScale;
-    this._buffer[this._currentSize + 4] = inColor[0];
-    this._buffer[this._currentSize + 5] = inColor[1];
-    this._buffer[this._currentSize + 6] = inColor[2];
-    this._currentSize += 7;
+    this._buffer[this._currentSize++] = inCenter[0];
+    this._buffer[this._currentSize++] = inCenter[1];
+    this._buffer[this._currentSize++] = inCenter[2];
+    this._buffer[this._currentSize++] = inScale;
+    this._buffer[this._currentSize++] = inColor[0];
+    this._buffer[this._currentSize++] = inColor[1];
+    this._buffer[this._currentSize++] = inColor[2];
 
   }
 
@@ -157,26 +159,24 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     if (this._currentSize + 7 >= this._buffer.length)
       return;
 
-    this._buffer[this._currentSize + 0] = inOrigin[0] + inScale * 0.5;
-    this._buffer[this._currentSize + 1] = inOrigin[1] + inScale * 0.5;
-    this._buffer[this._currentSize + 2] = inOrigin[2] + inScale * 0.5;
-    this._buffer[this._currentSize + 3] = inScale;
-    this._buffer[this._currentSize + 4] = inColor[0];
-    this._buffer[this._currentSize + 5] = inColor[1];
-    this._buffer[this._currentSize + 6] = inColor[2];
-    this._currentSize += 7;
-
+    this._buffer[this._currentSize++] = inOrigin[0] + inScale * 0.5;
+    this._buffer[this._currentSize++] = inOrigin[1] + inScale * 0.5;
+    this._buffer[this._currentSize++] = inOrigin[2] + inScale * 0.5;
+    this._buffer[this._currentSize++] = inScale;
+    this._buffer[this._currentSize++] = inColor[0];
+    this._buffer[this._currentSize++] = inColor[1];
+    this._buffer[this._currentSize++] = inColor[2];
   }
 
   flush(composedMatrix: glm.mat4) {
 
-    if (this._currentSize === 0)
+    if (this._currentSize <= 0)
       return;
 
     this._shader.bind();
     this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
 
-    this._geometry.updateBuffer(1, this._buffer, true);
+    this._geometry.updateBuffer(1, this._buffer, this._currentSize, true);
     this._geometry.setInstancedCount(this._currentSize / 7);
     this._geometry.render();
 

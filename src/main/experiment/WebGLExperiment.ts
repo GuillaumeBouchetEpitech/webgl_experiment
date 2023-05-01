@@ -76,11 +76,12 @@ export class WebGLExperiment {
       pointIsVisible: (pos: glm.ReadonlyVec3) => {
         return this._renderer.frustumCulling.pointInFrustum(pos[0], pos[1], pos[2]);
       },
-      addGeometry: (buffer) => {
-        return this._renderer.chunksRenderer.buildGeometry(buffer);
+      addGeometry: (inSize: number) => {
+        return this._renderer.chunksRenderer.buildGeometry(inSize);
       },
-      updateGeometry: (geom, buffer) => {
-        geom.updateBuffer(0, buffer);
+      updateGeometry: (geom, buffer, inSize) => {
+        geom.updateBuffer(0, buffer, inSize);
+        geom.setPrimitiveCount(inSize / 12);
       },
       onChunkCreated: () => {
         ++this._chunksCreated;

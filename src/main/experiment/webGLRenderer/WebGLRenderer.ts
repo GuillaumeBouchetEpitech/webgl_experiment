@@ -5,6 +5,7 @@ import { FreeFlyController } from './controllers/FreeFlyController';
 import { IFrustumCulling, FrustumCulling } from './camera/FrustumCulling';
 import sceneToScreenCoordinates from './camera/sceneToScreenCoordinates';
 
+import * as common from './renderers/common';
 import * as scene from './renderers/scene';
 import * as hud from './renderers/hud';
 
@@ -29,15 +30,19 @@ interface IDefinition {
   touchSensibility: number;
 }
 
+
+
+interface ICommon {
+  wireFrameCubesRenderer: common.WireFrameCubesRenderer;
+}
+
 interface IScene {
-  wireFrameCubesRenderer: scene.WireFrameCubesRenderer;
   chunksRenderer: scene.ChunksRenderer;
 }
 
 interface IHud {
   textRenderer: hud.TextRenderer;
   stackRenderers: hud.StackRenderers;
-  wireFrameCubesRenderer: hud.WireFrameCubesRenderer;
 }
 
 export class WebGLRenderer {
@@ -62,6 +67,7 @@ export class WebGLRenderer {
   // private _stackRenderers: StackRenderers;
   // private _chunksRenderer: ChunksRenderer;
 
+  private _common: ICommon;
   private _scene: IScene;
   private _hud: IHud;
 
@@ -121,15 +127,17 @@ export class WebGLRenderer {
 
     this._aspectRatio = (this._viewportSize[0] * 0.75) / this._viewportSize[1];
 
+    this._common = {
+      wireFrameCubesRenderer: new common.WireFrameCubesRenderer(),
+    };
+
     this._scene = {
-      wireFrameCubesRenderer: new scene.WireFrameCubesRenderer(),
       chunksRenderer: new scene.ChunksRenderer(),
     };
 
     this._hud = {
       textRenderer: new hud.TextRenderer(),
       stackRenderers: new hud.StackRenderers(),
-      wireFrameCubesRenderer: new hud.WireFrameCubesRenderer(),
     };
   }
 
@@ -299,17 +307,19 @@ export class WebGLRenderer {
     //
     //
 
+    this._common.wireFrameCubesRenderer.clear();
+
     for (let ii = 0; ii < chunks.length; ++ii) {
       if (!chunks[ii].visible) continue;
 
-      this._scene.wireFrameCubesRenderer.pushOriginBoundCube(
+      this._common.wireFrameCubesRenderer.pushOriginBoundCube(
         chunks[ii].position,
         15,
         [1, 1, 1]
       );
     }
 
-    this._scene.wireFrameCubesRenderer.flush(this._composedMatrix);
+    this._common.wireFrameCubesRenderer.flush(this._composedMatrix);
   }
 
   renderHUD(
@@ -633,13 +643,15 @@ export class WebGLRenderer {
       this._hud.stackRenderers.flush(composedMatrix);
     }
 
+    this._common.wireFrameCubesRenderer.clear();
+
     for (const currChunk of chunks) {
       ///
 
       if (currChunk.visible) {
         // render white cubes
 
-        this._hud.wireFrameCubesRenderer.pushOriginBoundCube(
+        this._common.wireFrameCubesRenderer.pushOriginBoundCube(
           currChunk.position,
           15,
           [1, 1, 1]
@@ -653,7 +665,7 @@ export class WebGLRenderer {
           currChunk.position[2] + 15 * 0.5
         ];
 
-        this._hud.wireFrameCubesRenderer.pushCenteredCube(
+        this._common.wireFrameCubesRenderer.pushCenteredCube(
           chunkCenter,
           15 * 0.7,
           [1, 0, 0]
@@ -671,7 +683,7 @@ export class WebGLRenderer {
           currPos[2] + 15 * 0.5
         ];
 
-        this._hud.wireFrameCubesRenderer.pushCenteredCube(
+        this._common.wireFrameCubesRenderer.pushCenteredCube(
           chunkCenter,
           15 * 0.6,
           [0, 1, 0]
@@ -679,7 +691,7 @@ export class WebGLRenderer {
       }
     }
 
-    this._hud.wireFrameCubesRenderer.flush(composedMatrix);
+    this._common.wireFrameCubesRenderer.flush(composedMatrix);
 
     glm.mat4.translate(
       lookAtViewMatrix,
