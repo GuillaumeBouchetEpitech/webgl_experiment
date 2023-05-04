@@ -33,9 +33,15 @@ const marchingCubeInstance: IMarchingAlgorithm = new MarchingTetrahedron(
 
 const myself = self as unknown as Worker; // well, that's apparently needed...
 
+interface IMessage {
+  indexPosition: Vec3;
+  realPosition: Vec3;
+  float32buffer: Float32Array;
+  sizeUsed: number;
+}
+
 const onMainScriptMessage = (event: MessageEvent) => {
-  const position = event.data.position as Vec3;
-  const float32buffer = event.data.float32buffer as Float32Array; // we now own the vertices buffer
+  const { indexPosition, realPosition, float32buffer } = event.data as IMessage;
 
   //
   // generate
@@ -56,14 +62,15 @@ const onMainScriptMessage = (event: MessageEvent) => {
     float32buffer[bufIndex++] = normal[2];
   };
 
-  marchingCubeInstance.generate(position, onVertexCallback);
+  marchingCubeInstance.generate(realPosition, onVertexCallback);
 
   //
 
   myself.postMessage(
     {
-      position: position,
-      float32buffer: float32buffer,
+      indexPosition,
+      realPosition,
+      float32buffer,
       sizeUsed: bufIndex
     },
     [

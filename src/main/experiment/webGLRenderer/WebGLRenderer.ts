@@ -573,6 +573,8 @@ export class WebGLRenderer {
 
     this._common.wireFrameCubesRenderer.clear();
 
+    const hSize = this._def.chunkSize * 0.5;
+
     for (const currChunk of chunks) {
       ///
 
@@ -580,22 +582,22 @@ export class WebGLRenderer {
         // render white cubes
 
         this._common.wireFrameCubesRenderer.pushOriginBoundCube(
-          currChunk.position,
-          15,
+          currChunk.realPosition,
+          this._def.chunkSize,
           [1, 1, 1]
         );
       } else {
         // render red cubes (smaller -> scaled)
 
         const chunkCenter: glm.ReadonlyVec3 = [
-          currChunk.position[0] + 15 * 0.5,
-          currChunk.position[1] + 15 * 0.5,
-          currChunk.position[2] + 15 * 0.5
+          currChunk.realPosition[0] + hSize,
+          currChunk.realPosition[1] + hSize,
+          currChunk.realPosition[2] + hSize
         ];
 
         this._common.wireFrameCubesRenderer.pushCenteredCube(
           chunkCenter,
-          15 * 0.7,
+          this._def.chunkSize * 0.7,
           [1, 0, 0]
         );
       }
@@ -606,14 +608,14 @@ export class WebGLRenderer {
         // render green cubes (smaller -> scaled)
 
         const chunkCenter: glm.ReadonlyVec3 = [
-          currPos[0] + 15 * 0.5,
-          currPos[1] + 15 * 0.5,
-          currPos[2] + 15 * 0.5
+          currPos[0] + hSize,
+          currPos[1] + hSize,
+          currPos[2] + hSize
         ];
 
         this._common.wireFrameCubesRenderer.pushCenteredCube(
           chunkCenter,
-          15 * 0.6,
+          this._def.chunkSize * 0.6,
           [0, 1, 0]
         );
       }

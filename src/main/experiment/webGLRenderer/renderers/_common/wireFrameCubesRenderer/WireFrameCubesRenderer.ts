@@ -159,9 +159,11 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
       return;
     }
 
-    this._buffer[this._currentSize++] = inOrigin[0] + inScale * 0.5;
-    this._buffer[this._currentSize++] = inOrigin[1] + inScale * 0.5;
-    this._buffer[this._currentSize++] = inOrigin[2] + inScale * 0.5;
+    const hScale = inScale * 0.5;
+
+    this._buffer[this._currentSize++] = inOrigin[0] + hScale;
+    this._buffer[this._currentSize++] = inOrigin[1] + hScale;
+    this._buffer[this._currentSize++] = inOrigin[2] + hScale;
     this._buffer[this._currentSize++] = inScale;
     this._buffer[this._currentSize++] = inColor[0];
     this._buffer[this._currentSize++] = inColor[1];

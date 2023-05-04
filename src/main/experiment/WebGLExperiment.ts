@@ -218,7 +218,7 @@ export class WebGLExperiment {
     const currentTime = Date.now();
     const elapsedTime = Math.min(currentTime - this._currFrameTime, 30);
     this._currFrameTime = currentTime;
-    this._framesDuration.push(elapsedTime / 1000);
+    this._framesDuration.push(elapsedTime);
 
     //
     //
@@ -243,8 +243,8 @@ export class WebGLExperiment {
       ++visibleChunks;
 
       this._renderer.wireFrameCubesRenderer.pushOriginBoundCube(
-        chunk.position,
-        15,
+        chunk.realPosition,
+        configuration.chunkSize,
         [1, 1, 1]
       );
     });
@@ -323,7 +323,7 @@ export class WebGLExperiment {
 
     this._renderer.renderHUD(
       this._chunkGenerator.getChunks(),
-      this._chunkGenerator.getProcessingPositions()
+      this._chunkGenerator.getProcessingRealPositions()
     );
 
     if (this._framesDuration.length > 100)

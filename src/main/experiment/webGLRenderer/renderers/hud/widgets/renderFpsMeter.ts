@@ -6,18 +6,24 @@ import * as glm from 'gl-matrix';
 export const renderFpsMeter = (
   inPos: glm.ReadonlyVec3,
   inSize: glm.ReadonlyVec2,
-  framesDuration: number[],
-  stackRenderers: IStackRenderers,
-  textRenderer: ITextRenderer
+  inFramesDuration: number[],
+  inStackRenderers: IStackRenderers,
+  inTextRenderer: ITextRenderer
 ) => {
   // fps meter
 
-  const maxValue = 1 / 30;
+  let maxDuration = 0;
+  for (let ii = 0; ii < inFramesDuration.length; ++ii) {
+    maxDuration = Math.max(maxDuration, inFramesDuration[ii]);
+  }
+
+  const k_divider = 5;
+  const k_verticalSize = (Math.ceil(maxDuration / k_divider)) * k_divider;
 
   {
     // border
 
-    stackRenderers.pushOriginBoundRectangle(inPos, inSize, [0, 0, 0, 0.5]);
+    inStackRenderers.pushOriginBoundRectangle(inPos, inSize, [0, 0, 0, 0.5]);
 
     const allVertices: [
       glm.ReadonlyVec3,
@@ -31,48 +37,84 @@ export const renderFpsMeter = (
       [inPos[0] + inSize[0] * 0, inPos[1] + inSize[1] * 1, 0]
     ];
 
-    stackRenderers.pushLine(allVertices[0], allVertices[1], [1, 1, 1]);
-    stackRenderers.pushLine(allVertices[1], allVertices[2], [1, 1, 1]);
-    stackRenderers.pushLine(allVertices[2], allVertices[3], [1, 1, 1]);
-    stackRenderers.pushLine(allVertices[3], allVertices[0], [1, 1, 1]);
+    inStackRenderers.pushLine(allVertices[0], allVertices[1], [1, 1, 1]);
+    inStackRenderers.pushLine(allVertices[1], allVertices[2], [1, 1, 1]);
+    inStackRenderers.pushLine(allVertices[2], allVertices[3], [1, 1, 1]);
+    inStackRenderers.pushLine(allVertices[3], allVertices[0], [1, 1, 1]);
   } // border
+
+  { // dividers
+
+    for (let currDivider = k_divider; currDivider < k_verticalSize; currDivider += k_divider) {
+      const ratio = currDivider / k_verticalSize;
+
+      const pointA: glm.ReadonlyVec3 = [
+        inPos[0] + 0,
+        inPos[1] + inSize[1] * ratio,
+        0
+      ];
+      const pointB: glm.ReadonlyVec3 = [
+        inPos[0] + inSize[0],
+        inPos[1] + inSize[1] * ratio,
+        0
+      ];
+
+      inStackRenderers.pushLine(pointA, pointB, [0.5, 0.5, 0.5]);
+
+    }
+
+  } // dividers
 
   {
     // curve
 
-    for (let ii = 1; ii < framesDuration.length; ++ii) {
-      const prevCoefficient = (ii - 1) / framesDuration.length;
-      const currCoefficient = ii / framesDuration.length;
-      const prevValue = Math.min(framesDuration[ii - 1], maxValue) / maxValue;
-      const currValue = Math.min(framesDuration[ii], maxValue) / maxValue;
+    if (inFramesDuration.length >= 2) {
 
-      const pointA: glm.ReadonlyVec3 = [
-        inPos[0] + inSize[0] * prevCoefficient,
-        inPos[1] + inSize[1] * prevValue,
-        0
-      ];
-      const pointB: glm.ReadonlyVec3 = [
-        inPos[0] + inSize[0] * currCoefficient,
-        inPos[1] + inSize[1] * currValue,
-        0
-      ];
+      const widthStep = inSize[0] / inFramesDuration.length;
 
-      stackRenderers.pushLine(pointA, pointB, [1, 1, 1]);
+      let prevDelta = inFramesDuration[0];
+      let prevCoordX = 0;
+      let prevCoordY = inSize[1] * prevDelta / k_verticalSize;
+
+      for (let ii = 1; ii < inFramesDuration.length; ++ii) {
+
+        const currDelta = inFramesDuration[ii];
+        const currCoordX = ii * widthStep;
+        const currCoordY = inSize[1] * currDelta / k_verticalSize;
+
+        const pointA: glm.ReadonlyVec3 = [
+          inPos[0] + prevCoordX,
+          inPos[1] + prevCoordY,
+          0
+        ];
+        const pointB: glm.ReadonlyVec3 = [
+          inPos[0] + currCoordX,
+          inPos[1] + currCoordY,
+          0
+        ];
+
+        inStackRenderers.pushLine(pointA, pointB, [1, 1, 1]);
+
+        prevDelta = currDelta;
+        prevCoordX = currCoordX;
+        prevCoordY = currCoordY;
+      }
     }
+
   } // curve
 
   {
     // counter
 
     let average = 0;
-    for (const curr of framesDuration) average += curr;
-    average /= framesDuration.length;
+    for (const curr of inFramesDuration) average += curr;
+    average /= inFramesDuration.length;
 
-    const latestValue = 1 / average;
+    const latestValue = 1000 / average;
 
     let str = '999';
     if (latestValue < 999) str = latestValue.toFixed(0).padStart(3, ' ');
 
-    textRenderer.pushText(`${str}fps`, [inPos[0] + 7, inPos[1] - 8], 14);
+    inTextRenderer.pushText(`~${str}fps`, [inPos[0] + 7, inPos[1] - 8], 14);
   } // counter
 };
