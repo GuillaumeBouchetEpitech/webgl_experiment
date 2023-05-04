@@ -18,7 +18,7 @@ export const renderFpsMeter = (
   }
 
   const k_divider = 5;
-  const k_verticalSize = (Math.ceil(maxDuration / k_divider)) * k_divider;
+  const k_verticalSize = Math.ceil(maxDuration / k_divider) * k_divider;
 
   {
     // border
@@ -43,9 +43,14 @@ export const renderFpsMeter = (
     inStackRenderers.pushLine(allVertices[3], allVertices[0], [1, 1, 1]);
   } // border
 
-  { // dividers
+  {
+    // dividers
 
-    for (let currDivider = k_divider; currDivider < k_verticalSize; currDivider += k_divider) {
+    for (
+      let currDivider = k_divider;
+      currDivider < k_verticalSize;
+      currDivider += k_divider
+    ) {
       const ratio = currDivider / k_verticalSize;
 
       const pointA: glm.ReadonlyVec3 = [
@@ -60,27 +65,23 @@ export const renderFpsMeter = (
       ];
 
       inStackRenderers.pushLine(pointA, pointB, [0.5, 0.5, 0.5]);
-
     }
-
   } // dividers
 
   {
     // curve
 
     if (inFramesDuration.length >= 2) {
-
       const widthStep = inSize[0] / inFramesDuration.length;
 
       let prevDelta = inFramesDuration[0];
       let prevCoordX = 0;
-      let prevCoordY = inSize[1] * prevDelta / k_verticalSize;
+      let prevCoordY = (inSize[1] * prevDelta) / k_verticalSize;
 
       for (let ii = 1; ii < inFramesDuration.length; ++ii) {
-
         const currDelta = inFramesDuration[ii];
         const currCoordX = ii * widthStep;
-        const currCoordY = inSize[1] * currDelta / k_verticalSize;
+        const currCoordY = (inSize[1] * currDelta) / k_verticalSize;
 
         const pointA: glm.ReadonlyVec3 = [
           inPos[0] + prevCoordX,
@@ -100,7 +101,6 @@ export const renderFpsMeter = (
         prevCoordY = currCoordY;
       }
     }
-
   } // curve
 
   {
