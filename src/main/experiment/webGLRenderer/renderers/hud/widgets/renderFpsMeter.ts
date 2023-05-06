@@ -112,9 +112,9 @@ export const renderFpsMeter = (
 
     const latestValue = 1000 / average;
 
-    let str = '999';
-    if (latestValue < 999) str = latestValue.toFixed(0).padStart(3, ' ');
+    let str = '>999';
+    if (latestValue < 999) str = `~${latestValue.toFixed(0)}`.padStart(4, ' ');
 
-    inTextRenderer.pushText(`~${str}fps`, [inPos[0] + 7, inPos[1] - 8], 14);
+    inTextRenderer.pushText(`${str}fps`, [inPos[0] + 7, inPos[1] - 8], 14);
   } // counter
 };
