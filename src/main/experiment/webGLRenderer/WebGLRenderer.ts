@@ -26,7 +26,7 @@ import { renderTouchEvents } from './renderers/hud/widgets/renderTouchEvents';
 interface ISideHudData {
   eyeOffset: glm.ReadonlyVec3;
   upAxis: glm.ReadonlyVec3;
-};
+}
 
 interface IDefinition {
   canvasDomElement: HTMLCanvasElement;
@@ -72,12 +72,15 @@ export class WebGLRenderer {
   private _fpsMeterAngle: number = 0;
   private _fpsMeterSpeed: number = 0;
 
-  private _allSideHudData: [ISideHudData,ISideHudData,ISideHudData];
+  private _allSideHudData: [ISideHudData, ISideHudData, ISideHudData];
 
   constructor(def: IDefinition) {
     this._def = def;
 
-    this.resize(this._def.canvasDomElement.width, this._def.canvasDomElement.height);
+    this.resize(
+      this._def.canvasDomElement.width,
+      this._def.canvasDomElement.height
+    );
 
     WebGLContext.initialize(this._def.canvasDomElement);
 
@@ -117,7 +120,10 @@ export class WebGLRenderer {
 
     this._frustumCulling = new FrustumCulling();
 
-    this._mainCamera.setViewportSize(this._viewportSize[0] * 0.75, this._viewportSize[1]);
+    this._mainCamera.setViewportSize(
+      this._viewportSize[0] * 0.75,
+      this._viewportSize[1]
+    );
 
     this._common = {
       wireFrameCubesRenderer: new common.WireFrameCubesRenderer()
@@ -135,27 +141,35 @@ export class WebGLRenderer {
     this._allSideHudData = [
       {
         eyeOffset: [1.0, 1.2, 1.0],
-        upAxis: [0, 0, 1],
+        upAxis: [0, 0, 1]
       },
       {
         eyeOffset: [0.0, 1.0, 0.0],
-        upAxis: [0, 0, 1],
+        upAxis: [0, 0, 1]
       },
       {
         eyeOffset: [0.0, 0.0, 1.0],
-        upAxis: [0, 1, 0],
-      },
+        upAxis: [0, 1, 0]
+      }
     ];
-
   }
 
   resize(width: number, height: number) {
     this._viewportSize[0] = width;
     this._viewportSize[1] = height;
 
-    this._mainCamera.setViewportSize(this._viewportSize[0] * 0.75, this._viewportSize[1]);
-    this._mainHudCamera.setViewportSize(this._viewportSize[0] * 0.75, this._viewportSize[1]);
-    this._reusedSideHudCamera.setViewportSize(this._viewportSize[0] * 0.25, this._viewportSize[1] * 0.33);
+    this._mainCamera.setViewportSize(
+      this._viewportSize[0] * 0.75,
+      this._viewportSize[1]
+    );
+    this._mainHudCamera.setViewportSize(
+      this._viewportSize[0] * 0.75,
+      this._viewportSize[1]
+    );
+    this._reusedSideHudCamera.setViewportSize(
+      this._viewportSize[0] * 0.25,
+      this._viewportSize[1] * 0.33
+    );
   }
 
   //
@@ -224,7 +238,7 @@ export class WebGLRenderer {
     GlobalMouseManager.resetDelta();
     GlobalTouchManager.resetDeltas();
 
-    this._mainCamera.setAsPerspective({ fovy: 70, near: 0.1, far: 70});
+    this._mainCamera.setAsPerspective({ fovy: 70, near: 0.1, far: 70 });
     this._mainCamera.setEye(this._freeFlyController.getPosition());
     this._mainCamera.setTarget(this._freeFlyController.getTarget());
     this._mainCamera.setUpAxis(this._freeFlyController.getUpAxis());
@@ -232,7 +246,7 @@ export class WebGLRenderer {
 
     this._frustumCulling.calculateFrustum(
       this._mainCamera.getProjectionMatrix(),
-      this._mainCamera.getViewMatrix(),
+      this._mainCamera.getViewMatrix()
     );
   }
 
@@ -261,7 +275,9 @@ export class WebGLRenderer {
     //
     //
 
-    this._common.wireFrameCubesRenderer.flush(this._mainCamera.getComposedMatrix());
+    this._common.wireFrameCubesRenderer.flush(
+      this._mainCamera.getComposedMatrix()
+    );
   }
 
   renderHUD(chunks: Chunks, processingPos: glm.ReadonlyVec3[]) {
@@ -294,7 +310,6 @@ export class WebGLRenderer {
     });
 
     this._allSideHudData.forEach(({ eyeOffset, upAxis }, index) => {
-
       glm.vec3.add(tmpPos, cameraPos, eyeOffset);
 
       const posY = this._viewportSize[1] * 0.33 * index;
@@ -306,11 +321,7 @@ export class WebGLRenderer {
       this._reusedSideHudCamera.setUpAxis(upAxis);
       this._reusedSideHudCamera.computeMatrices();
 
-      this._renderSideHud(
-        chunks,
-        processingPos,
-        this._reusedSideHudCamera
-      );
+      this._renderSideHud(chunks, processingPos, this._reusedSideHudCamera);
     });
 
     ShaderProgram.unbind();
@@ -341,7 +352,10 @@ export class WebGLRenderer {
     gl.clear(gl.DEPTH_BUFFER_BIT);
 
     const widgetSize = glm.vec2.fromValues(100, 50);
-    const widgetPos = glm.vec2.fromValues(10, this._viewportSize[1] - 10 - widgetSize[1]);
+    const widgetPos = glm.vec2.fromValues(
+      10,
+      this._viewportSize[1] - 10 - widgetSize[1]
+    );
 
     {
       // wireFrame
@@ -428,14 +442,11 @@ export class WebGLRenderer {
         });
       } // rotating wheels
 
-
-
       renderTouchEvents(
         this._viewportSize,
         this._hud.stackRenderers,
-        this._freeFlyController,
+        this._freeFlyController
       );
-
     } // thick lines
 
     gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -535,7 +546,10 @@ export class WebGLRenderer {
 
     this._common.wireFrameCubesRenderer.flush(inCamera.getComposedMatrix());
 
-    const tmpMatrix = glm.mat4.copy(glm.mat4.create(), inCamera.getViewMatrix());
+    const tmpMatrix = glm.mat4.copy(
+      glm.mat4.create(),
+      inCamera.getViewMatrix()
+    );
 
     glm.mat4.translate(
       tmpMatrix,
@@ -578,7 +592,7 @@ export class WebGLRenderer {
 
       const projData = this._mainCamera.getPerspectiveData()!;
 
-      const color: glm.ReadonlyVec3 = [1,1,0];
+      const color: glm.ReadonlyVec3 = [1, 1, 0];
 
       const tmpVertices = generateWireFrameFrustumVertices(
         projData.fovy,

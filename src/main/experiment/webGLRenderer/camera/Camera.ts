@@ -1,9 +1,8 @@
-
 import * as glm from 'gl-matrix';
 
 enum ProjectionType {
   perspective = 0,
-  orthogonal = 1,
+  orthogonal = 1
 }
 
 interface IPerspectiveDataOpts {
@@ -25,7 +24,6 @@ interface IOrthogonalData {
 }
 
 export class Camera {
-
   private _projectionType = ProjectionType.perspective;
   private _perspectiveData?: IPerspectiveData;
   private _orthogonalData?: IOrthogonalData;
@@ -37,9 +35,9 @@ export class Camera {
   private _viewMatrix = glm.mat4.create();
   private _composedMatrix = glm.mat4.create();
 
-  private _eye = glm.vec3.fromValues(0,0,0);
-  private _target = glm.vec3.fromValues(0,0,0);
-  private _upAxis = glm.vec3.fromValues(0,0,0);
+  private _eye = glm.vec3.fromValues(0, 0, 0);
+  private _target = glm.vec3.fromValues(0, 0, 0);
+  private _upAxis = glm.vec3.fromValues(0, 0, 0);
 
   //
 
@@ -55,7 +53,7 @@ export class Camera {
       fovy: inData.fovy,
       aspectRatio,
       near: inData.near,
-      far: inData.far,
+      far: inData.far
     };
   }
 
@@ -81,8 +79,12 @@ export class Camera {
     this._viewportSize[0] = width;
     this._viewportSize[1] = height;
 
-    if (this._projectionType !== ProjectionType.perspective && this._perspectiveData) {
-      this._perspectiveData.aspectRatio = this._viewportSize[0] / this._viewportSize[1];
+    if (
+      this._projectionType !== ProjectionType.perspective &&
+      this._perspectiveData
+    ) {
+      this._perspectiveData.aspectRatio =
+        this._viewportSize[0] / this._viewportSize[1];
     }
   }
 
@@ -95,7 +97,7 @@ export class Camera {
   lookAt(
     inEye: glm.ReadonlyVec3,
     inTarget: glm.ReadonlyVec3,
-    inUpAxis: glm.ReadonlyVec3,
+    inUpAxis: glm.ReadonlyVec3
   ) {
     glm.vec3.copy(this._eye, inEye);
     glm.vec3.copy(this._target, inTarget);
@@ -104,18 +106,29 @@ export class Camera {
 
   //
 
-  setEye(inEye: glm.ReadonlyVec3) { glm.vec3.copy(this._eye, inEye); }
-  setTarget(inTarget: glm.ReadonlyVec3) { glm.vec3.copy(this._target, inTarget); }
-  setUpAxis(inUpAxis: glm.ReadonlyVec3) { glm.vec3.copy(this._upAxis, inUpAxis); }
+  setEye(inEye: glm.ReadonlyVec3) {
+    glm.vec3.copy(this._eye, inEye);
+  }
+  setTarget(inTarget: glm.ReadonlyVec3) {
+    glm.vec3.copy(this._target, inTarget);
+  }
+  setUpAxis(inUpAxis: glm.ReadonlyVec3) {
+    glm.vec3.copy(this._upAxis, inUpAxis);
+  }
 
-  getEye(): glm.ReadonlyVec3 { return this._eye; }
-  getTarget(): glm.ReadonlyVec3 { return this._target; }
-  getUpAxis(): glm.ReadonlyVec3 { return this._upAxis; }
+  getEye(): glm.ReadonlyVec3 {
+    return this._eye;
+  }
+  getTarget(): glm.ReadonlyVec3 {
+    return this._target;
+  }
+  getUpAxis(): glm.ReadonlyVec3 {
+    return this._upAxis;
+  }
 
   //
 
   computeMatrices() {
-
     if (this._projectionType === ProjectionType.perspective) {
       const { fovy, aspectRatio, near, far } = this._perspectiveData!;
       glm.mat4.perspective(
@@ -125,23 +138,20 @@ export class Camera {
         near,
         far
       );
-    }
-    else if (this._projectionType === ProjectionType.orthogonal) {
+    } else if (this._projectionType === ProjectionType.orthogonal) {
       const { left, right, top, bottom, near, far } = this._orthogonalData!;
       glm.mat4.ortho(
         this._projectionMatrix,
-        left, right,
-        top, bottom,
-        near, far
+        left,
+        right,
+        top,
+        bottom,
+        near,
+        far
       );
     }
 
-    glm.mat4.lookAt(
-      this._viewMatrix,
-      this._eye,
-      this._target,
-      this._upAxis
-    );
+    glm.mat4.lookAt(this._viewMatrix, this._eye, this._target, this._upAxis);
 
     glm.mat4.multiply(
       this._composedMatrix,
@@ -150,25 +160,28 @@ export class Camera {
     );
   }
 
-  getProjectionMatrix(): glm.ReadonlyMat4 { return this._projectionMatrix; }
-  getViewMatrix(): glm.ReadonlyMat4 { return this._viewMatrix; }
-  getComposedMatrix(): glm.ReadonlyMat4 { return this._composedMatrix; }
+  getProjectionMatrix(): glm.ReadonlyMat4 {
+    return this._projectionMatrix;
+  }
+  getViewMatrix(): glm.ReadonlyMat4 {
+    return this._viewMatrix;
+  }
+  getComposedMatrix(): glm.ReadonlyMat4 {
+    return this._composedMatrix;
+  }
 
   //
 
   getPerspectiveData(): Readonly<IPerspectiveData | undefined> {
     if (this._projectionType !== ProjectionType.perspective) {
-      throw new Error("not a perspective projection");
+      throw new Error('not a perspective projection');
     }
     return this._perspectiveData;
   }
   getOrthogonalData(): Readonly<IOrthogonalData | undefined> {
     if (this._projectionType !== ProjectionType.orthogonal) {
-      throw new Error("not an orthogonal projection");
+      throw new Error('not an orthogonal projection');
     }
     return this._orthogonalData;
   }
-
-
-};
-
+}
