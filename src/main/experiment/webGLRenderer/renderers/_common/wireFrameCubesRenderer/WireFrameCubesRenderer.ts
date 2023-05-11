@@ -170,7 +170,7 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     this._buffer[this._currentSize++] = inColor[2];
   }
 
-  flush(composedMatrix: glm.mat4) {
+  flush(composedMatrix: glm.ReadonlyMat4) {
     if (this._currentSize <= 0) {
       return;
     }

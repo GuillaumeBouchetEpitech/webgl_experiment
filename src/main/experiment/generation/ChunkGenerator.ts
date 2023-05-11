@@ -1,7 +1,6 @@
 import * as glm from 'gl-matrix';
 
 import { ILiveGeometry } from '../webGLRenderer/WebGLRenderer';
-import { worker } from 'cluster';
 
 interface IChunkGeneratorDef {
   chunkSize: number;

@@ -124,8 +124,8 @@ export class ChunksRenderer implements IChunksRenderer {
   }
 
   render(
-    viewMatrix: glm.mat4,
-    projectionMatrix: glm.mat4,
+    viewMatrix: glm.ReadonlyMat4,
+    projectionMatrix: glm.ReadonlyMat4,
     eyePosition: glm.ReadonlyVec3
   ) {
     const gl = WebGLContext.getContext();
