@@ -43,13 +43,13 @@ export class WebGLExperiment {
     });
 
     // put the camera outside the known chunk
-    this._renderer.freeFlyController.setPosition(
-      glm.vec3.fromValues(
-        (configuration.chunkSize / 4) * 3,
-        (configuration.chunkSize / 4) * 3,
-        0
-      )
+    const camera_pos = glm.vec3.fromValues(
+      (configuration.chunkSize / 4) * 3,
+      (configuration.chunkSize / 4) * 3,
+      0
     );
+
+    this._renderer.freeFlyController.setPosition(camera_pos);
 
     this._chunkGenerator = new ChunkGenerator({
       chunkSize: configuration.chunkSize,
@@ -262,7 +262,7 @@ export class WebGLExperiment {
       // top right text
 
       const textsOrigin: glm.ReadonlyVec2 = [
-        (this._canvasElement.width / 4) * 3 - 10,
+        this._canvasElement.width - 10,
         this._canvasElement.height - 10
       ];
 

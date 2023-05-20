@@ -3,33 +3,21 @@ export const vertex = `
 
 precision highp float;
 
+uniform mat4 u_composedMatrix;
+uniform vec3 u_sceneOrigin;
+
 in vec3 a_vertex_position;
 in vec3 a_vertex_normal;
 
-uniform mat4 u_viewMatrix;
-uniform mat4 u_projMatrix;
-
-// lighting
-out vec3 v_worldSpaceNormal;
 out vec3 v_worldSpacePosition;
-// lighting
-
-// texturing
-out vec3 v_rawPosition;
-out vec3 v_rawNormal;
-// texturing
+out vec3 v_worldSpaceNormal;
 
 void main(void)
 {
-  vec4 transformedPosition = u_viewMatrix * vec4(a_vertex_position, 1.0);
-
-  v_worldSpacePosition = a_vertex_position;
+  v_worldSpacePosition = a_vertex_position - u_sceneOrigin;
   v_worldSpaceNormal = a_vertex_normal;
 
-  v_rawPosition = a_vertex_position;
-  v_rawNormal = a_vertex_normal;
-
-  gl_Position = u_projMatrix * u_viewMatrix * vec4(a_vertex_position, 1.0);
+  gl_Position = u_composedMatrix * vec4(v_worldSpacePosition, 1.0);
 }
 `.trim();
 
@@ -41,15 +29,8 @@ precision lowp float;
 uniform sampler2D u_texture;
 uniform vec3 u_eyePosition;
 
-// lighting
-in vec3 v_worldSpaceNormal;
 in vec3 v_worldSpacePosition;
-// lighting
-
-// texturing
-in vec3 v_rawPosition;
-in vec3 v_rawNormal;
-// texturing
+in vec3 v_worldSpaceNormal;
 
 out vec4 o_color;
 
@@ -64,12 +45,13 @@ void main(void)
 
     // current 3d texture coordinate
     vec3 flooredPos = vec3(
-      v_rawPosition.x - floor(v_rawPosition.x),
-      v_rawPosition.y - floor(v_rawPosition.y),
-      v_rawPosition.z - floor(v_rawPosition.z)
+      v_worldSpacePosition.x - floor(v_worldSpacePosition.x),
+      v_worldSpacePosition.y - floor(v_worldSpacePosition.y),
+      v_worldSpacePosition.z - floor(v_worldSpacePosition.z)
     );
+    flooredPos *= 0.5;
 
-    vec3 blendWeights = abs( normalize( v_rawNormal.xyz ) );
+    vec3 blendWeights = abs( normalize( v_worldSpaceNormal.xyz ) );
     blendWeights = max( ( blendWeights - 0.2 ) * 7.0, 0.0 );
     blendWeights /= ( blendWeights.x + blendWeights.y + blendWeights.z );
 
@@ -80,7 +62,7 @@ void main(void)
     // vertical texture coord -> should be green grass
     vec2 texCoordZ = vec2(flooredPos.x * 0.5, flooredPos.y * 0.5 + 0.5);
 
-    if (v_rawNormal.z < 0.0)
+    if (v_worldSpaceNormal.z < 0.0)
     {
       // switch the texture Y -> dirt on the ceiling instead of grass
       texCoordZ.y -= 0.5;
@@ -107,7 +89,8 @@ void main(void)
     float diffuseCoef = max(dot(lightDir,v_worldSpaceNormal.xyz), 0.0);
     float specularCoef = 0.0;
 
-    if (diffuseCoef > 0.0) {
+    if (diffuseCoef > 0.0)
+    {
       // specular
 
       vec3 reflectDir = reflect(-lightDir, normal);

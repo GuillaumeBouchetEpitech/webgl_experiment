@@ -5,7 +5,7 @@ export const generateWireFrameFrustumVertices = (
   aspect: number,
   zNear: number,
   zFar: number
-): glm.ReadonlyVec3[] => {
+): glm.vec3[] => {
   const fH = Math.tan((fovY / 360.0) * Math.PI) * zNear;
   const fW = fH * aspect;
 
@@ -18,7 +18,7 @@ export const generateWireFrameFrustumVertices = (
   const half_z = zFar * Math.sin((fovY * Math.PI) / 180.0);
   const half_y = half_z * aspect;
 
-  const tmpVertices: glm.ReadonlyVec3[] = [];
+  const tmpVertices: glm.vec3[] = [];
 
   tmpVertices.push([zNear, left, top]);
   tmpVertices.push([zNear, right, top]);
@@ -45,7 +45,7 @@ export const generateWireFrameFrustumVertices = (
 
   //
 
-  const vertices: glm.ReadonlyVec3[] = [];
+  const vertices: glm.vec3[] = [];
 
   for (let ii = 0; ii < indices.length; ++ii) {
     vertices.push(tmpVertices[indices[ii]]);

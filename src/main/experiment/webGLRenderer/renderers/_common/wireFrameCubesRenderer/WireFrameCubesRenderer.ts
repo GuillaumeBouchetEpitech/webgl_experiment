@@ -1,4 +1,5 @@
 import { ShaderProgram, GeometryWrapper } from '../../../wrappers';
+import { ICamera } from '../../../camera/Camera';
 
 import * as shaders from './shaders';
 
@@ -170,13 +171,13 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     this._buffer[this._currentSize++] = inColor[2];
   }
 
-  flush(composedMatrix: glm.ReadonlyMat4) {
+  flush(inCamera: ICamera) {
     if (this._currentSize <= 0) {
       return;
     }
 
     this._shader.bind();
-    this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
+    this._shader.setMatrix4Uniform('u_composedMatrix', inCamera.getComposedMatrix());
 
     this._geometry.updateBuffer(1, this._buffer, this._currentSize);
     this._geometry.setInstancedCount(this._currentSize / 7);

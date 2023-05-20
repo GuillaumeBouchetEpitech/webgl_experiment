@@ -1,4 +1,5 @@
 import { ShaderProgram, GeometryWrapper } from '../../../wrappers';
+import { ICamera } from '../../../camera/Camera';
 
 import * as shaders from './shaders';
 
@@ -41,7 +42,7 @@ export interface IStackRenderers {
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ): void;
 
-  flush(composedMatrix: glm.ReadonlyMat4): void;
+  flush(inCamera: ICamera): void;
   clear(): void;
 }
 
@@ -154,7 +155,7 @@ export class StackRenderers implements IStackRenderers {
     );
   }
 
-  flush(composedMatrix: glm.ReadonlyMat4) {
+  flush(inCamera: ICamera) {
     if (
       !this._wireFramesStackRenderer.canRender() &&
       !this._trianglesStackRenderer.canRender()
@@ -163,7 +164,7 @@ export class StackRenderers implements IStackRenderers {
     }
 
     this._shader.bind();
-    this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
+    this._shader.setMatrix4Uniform('u_composedMatrix', inCamera.getComposedMatrix());
 
     this._wireFramesStackRenderer.flush();
     this._trianglesStackRenderer.flush();

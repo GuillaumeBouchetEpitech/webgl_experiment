@@ -58,8 +58,19 @@ class TouchManager {
         const currData = this._allTouchDataMap.get(`${identifier}`);
         if (!currData) continue;
 
-        currData.deltaX += pageX - currData.positionX;
-        currData.deltaY += pageY - currData.positionY;
+        const deltaX = pageX - currData.positionX;
+        const deltaY = pageY - currData.positionY;
+
+        const threshold = 2.5;
+        if (
+          deltaX > -threshold && deltaX < +threshold &&
+          deltaY > -threshold && deltaY < +threshold
+        ) {
+          continue;
+        }
+
+        currData.deltaX += deltaX;
+        currData.deltaY += deltaY;
         currData.positionX = pageX;
         currData.positionY = pageY;
       }

@@ -23,7 +23,21 @@ interface IOrthogonalData {
   far: number;
 }
 
-export class Camera {
+export interface ICamera {
+
+  getEye(): glm.ReadonlyVec3;
+  getTarget(): glm.ReadonlyVec3;
+  getUpAxis(): glm.ReadonlyVec3;
+
+  getProjectionMatrix(): glm.ReadonlyMat4;
+  getViewMatrix(): glm.ReadonlyMat4;
+  getComposedMatrix(): glm.ReadonlyMat4;
+
+  getPerspectiveData(): Readonly<IPerspectiveData | undefined>;
+  getOrthogonalData(): Readonly<IOrthogonalData | undefined>;
+};
+
+export class Camera implements ICamera {
   private _projectionType = ProjectionType.perspective;
   private _perspectiveData?: IPerspectiveData;
   private _orthogonalData?: IOrthogonalData;
@@ -128,6 +142,17 @@ export class Camera {
 
   //
 
+  addOffset(inOffset: glm.ReadonlyVec3) {
+    glm.vec3.add(this._eye, this._eye, inOffset);
+    glm.vec3.add(this._target, this._target, inOffset);
+  }
+  subOffset(inOffset: glm.ReadonlyVec3) {
+    glm.vec3.subtract(this._eye, this._eye, inOffset);
+    glm.vec3.subtract(this._target, this._target, inOffset);
+  }
+
+  //
+
   computeMatrices() {
     if (this._projectionType === ProjectionType.perspective) {
       const { fovy, aspectRatio, near, far } = this._perspectiveData!;
@@ -153,11 +178,25 @@ export class Camera {
 
     glm.mat4.lookAt(this._viewMatrix, this._eye, this._target, this._upAxis);
 
+    this.computeComposedMatrix();
+  }
+
+  computeComposedMatrix() {
     glm.mat4.multiply(
       this._composedMatrix,
       this._projectionMatrix,
       this._viewMatrix
     );
+  }
+
+  setProjectionMatrix(inMat4: glm.ReadonlyMat4) {
+    glm.mat4.copy(this._projectionMatrix, inMat4);
+  }
+  setViewMatrix(inMat4: glm.ReadonlyMat4) {
+    glm.mat4.copy(this._viewMatrix, inMat4);
+  }
+  setComposedMatrix(inMat4: glm.ReadonlyMat4) {
+    glm.mat4.copy(this._composedMatrix, inMat4);
   }
 
   getProjectionMatrix(): glm.ReadonlyMat4 {
