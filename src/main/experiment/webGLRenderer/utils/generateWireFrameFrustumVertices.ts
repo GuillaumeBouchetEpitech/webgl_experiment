@@ -30,18 +30,12 @@ export const generateWireFrameFrustumVertices = (
   tmpVertices.push([zFar, -half_y, -half_z]);
   tmpVertices.push([zFar, +half_y, -half_z]);
 
-  tmpVertices.push([zFar, -half_y * 1.66, -half_z]);
-  tmpVertices.push([zFar, -half_y * 1.66, +half_z]);
-
   //
 
   const indices = [];
   indices.push(0, 1, 1, 3, 3, 2, 2, 0);
   indices.push(0, 4, 1, 5, 2, 6, 3, 7);
   indices.push(4, 5, 5, 7, 7, 6, 6, 4);
-  indices.push(8, 9);
-  indices.push(7, 8);
-  indices.push(5, 9);
 
   //
 

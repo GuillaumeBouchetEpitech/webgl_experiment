@@ -101,6 +101,28 @@ export class StackRenderers implements IStackRenderers {
     this._wireFramesStackRenderer.pushLine(inPointA, inPointB, inColor);
   }
 
+  pushCross(
+    inCenter: glm.ReadonlyVec3,
+    inSize: number,
+    inColor: glm.ReadonlyVec3
+  ) {
+    const crossVertices: glm.ReadonlyVec3[] = [
+      [inCenter[0] - inSize, inCenter[1], inCenter[2]],
+      [inCenter[0] + inSize, inCenter[1], inCenter[2]],
+      [inCenter[0], inCenter[1] - inSize, inCenter[2]],
+      [inCenter[0], inCenter[1] + inSize, inCenter[2]],
+      [inCenter[0], inCenter[1], inCenter[2] - inSize],
+      [inCenter[0], inCenter[1], inCenter[2] + inSize]
+    ];
+    const crossIndices: number[] = [0, 1, 2, 3, 4, 5];
+
+    for (let ii = 0; ii < crossIndices.length; ii += 2) {
+      const vertexA = crossVertices[ii + 0];
+      const vertexB = crossVertices[ii + 1];
+      this._wireFramesStackRenderer.pushLine(vertexA, vertexB, inColor);
+    }
+  }
+
   pushThickLine(
     inPointA: glm.ReadonlyVec3,
     inPointB: glm.ReadonlyVec3,

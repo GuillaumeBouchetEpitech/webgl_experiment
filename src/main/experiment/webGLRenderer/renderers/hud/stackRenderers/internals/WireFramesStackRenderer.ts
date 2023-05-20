@@ -2,7 +2,7 @@ import { ShaderProgram, GeometryWrapper } from '../../../../wrappers';
 
 import * as glm from 'gl-matrix';
 
-const k_bufferSize = 7 * 1024;
+const k_bufferSize = 14 * 1024;
 
 export class WireFramesStackRenderer {
   private _geometry: GeometryWrapper.Geometry;

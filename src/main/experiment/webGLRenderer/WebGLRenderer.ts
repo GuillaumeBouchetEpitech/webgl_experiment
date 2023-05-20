@@ -139,7 +139,7 @@ export class WebGLRenderer {
       this._viewportSize[0],
       this._viewportSize[1]
     );
-    this._mainCamera.setAsPerspective({ fovy: 70, near: 0.1, far: 70 });
+    this._mainCamera.setAsPerspective({ fovy: 70, near: 0.1, far: 55 });
 
     this._mainHudCamera.setViewportSize(
       this._viewportSize[0],
@@ -166,7 +166,7 @@ export class WebGLRenderer {
     );
     const sizeCamSize = this._miniMapHudCamera.getViewportSize();
     const aspectRatio = sizeCamSize[0] / sizeCamSize[1];
-    const orthoSizeH = 65;
+    const orthoSizeH = 85;
     const orthoSizeW = orthoSizeH * aspectRatio;
     this._miniMapHudCamera.setAsOrthogonal({
       left: -orthoSizeW,
@@ -488,7 +488,7 @@ export class WebGLRenderer {
           [1, 1, 1]
         );
       } else {
-        // render red cubes (smaller -> scaled)
+        // render red crosses
 
         const chunkCenter: glm.ReadonlyVec3 = [
           currChunk.realPosition[0] + hSize,
@@ -496,9 +496,9 @@ export class WebGLRenderer {
           currChunk.realPosition[2] + hSize
         ];
 
-        this._common.wireFrameCubesRenderer.pushCenteredCube(
+        this._hud.stackRenderers.pushCross(
           chunkCenter,
-          this._def.chunkSize * 0.4,
+          this._def.chunkSize * 0.25,
           [1, 0, 0]
         );
       }
@@ -516,13 +516,14 @@ export class WebGLRenderer {
 
         this._common.wireFrameCubesRenderer.pushCenteredCube(
           chunkCenter,
-          this._def.chunkSize * 0.6,
+          this._def.chunkSize * 1.2,
           [0, 1, 0]
         );
       }
     }
 
     this._common.wireFrameCubesRenderer.flush(this._miniMapHudCamera);
+    this._hud.stackRenderers.flush(this._miniMapHudCamera);
 
     const tmpViewMatrix = glm.mat4.copy(
       glm.mat4.create(),
