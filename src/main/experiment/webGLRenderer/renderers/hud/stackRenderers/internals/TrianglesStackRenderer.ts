@@ -23,6 +23,49 @@ export class TrianglesStackRenderer {
     this._geometry.setFloatBufferSize(0, k_bufferSize);
   }
 
+  pushTriangle(
+    inPointA: glm.ReadonlyVec3,
+    inPointB: glm.ReadonlyVec3,
+    inPointC: glm.ReadonlyVec3,
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  ) {
+    if (this._currentSize + 7 * 6 >= this._buffer.length) {
+      return;
+    }
+
+    const alphaValue = inColor[3] ?? 1;
+
+    // 0
+    this._buffer[this._currentSize + 0] = inPointA[0];
+    this._buffer[this._currentSize + 1] = inPointA[1];
+    this._buffer[this._currentSize + 2] = inPointA[2];
+    this._buffer[this._currentSize + 3] = inColor[0];
+    this._buffer[this._currentSize + 4] = inColor[1];
+    this._buffer[this._currentSize + 5] = inColor[2];
+    this._buffer[this._currentSize + 6] = alphaValue;
+    this._currentSize += 7;
+
+    // 2
+    this._buffer[this._currentSize + 0] = inPointB[0];
+    this._buffer[this._currentSize + 1] = inPointB[1];
+    this._buffer[this._currentSize + 2] = inPointB[2];
+    this._buffer[this._currentSize + 3] = inColor[0];
+    this._buffer[this._currentSize + 4] = inColor[1];
+    this._buffer[this._currentSize + 5] = inColor[2];
+    this._buffer[this._currentSize + 6] = alphaValue;
+    this._currentSize += 7;
+
+    // 3
+    this._buffer[this._currentSize + 0] = inPointC[0];
+    this._buffer[this._currentSize + 1] = inPointC[1];
+    this._buffer[this._currentSize + 2] = inPointC[2];
+    this._buffer[this._currentSize + 3] = inColor[0];
+    this._buffer[this._currentSize + 4] = inColor[1];
+    this._buffer[this._currentSize + 5] = inColor[2];
+    this._buffer[this._currentSize + 6] = alphaValue;
+    this._currentSize += 7;
+  }
+
   pushLine(
     inPointA: glm.ReadonlyVec3,
     inPointB: glm.ReadonlyVec3,
@@ -40,67 +83,18 @@ export class TrianglesStackRenderer {
     const stepX = Math.cos(angle) * thickness * 0.5;
     const stepY = Math.sin(angle) * thickness * 0.5;
 
-    const alphaValue = inColor[3] ?? 1;
-
-    // 0
-    this._buffer[this._currentSize + 0] = inPointA[0] - stepX;
-    this._buffer[this._currentSize + 1] = inPointA[1] - stepY;
-    this._buffer[this._currentSize + 2] = inPointA[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 2
-    this._buffer[this._currentSize + 0] = inPointB[0] - stepX;
-    this._buffer[this._currentSize + 1] = inPointB[1] - stepY;
-    this._buffer[this._currentSize + 2] = inPointB[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 3
-    this._buffer[this._currentSize + 0] = inPointB[0] + stepX;
-    this._buffer[this._currentSize + 1] = inPointB[1] + stepY;
-    this._buffer[this._currentSize + 2] = inPointB[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 0
-    this._buffer[this._currentSize + 0] = inPointA[0] - stepX;
-    this._buffer[this._currentSize + 1] = inPointA[1] - stepY;
-    this._buffer[this._currentSize + 2] = inPointA[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 3
-    this._buffer[this._currentSize + 0] = inPointB[0] + stepX;
-    this._buffer[this._currentSize + 1] = inPointB[1] + stepY;
-    this._buffer[this._currentSize + 2] = inPointB[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 1
-    this._buffer[this._currentSize + 0] = inPointA[0] + stepX;
-    this._buffer[this._currentSize + 1] = inPointA[1] + stepY;
-    this._buffer[this._currentSize + 2] = inPointA[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
+    this.pushTriangle(
+      [ inPointA[0] - stepX, inPointA[1] - stepY, inPointA[2] ],
+      [ inPointB[0] - stepX, inPointB[1] - stepY, inPointB[2] ],
+      [ inPointB[0] + stepX, inPointB[1] + stepY, inPointB[2] ],
+      inColor
+    );
+    this.pushTriangle(
+      [ inPointA[0] - stepX, inPointA[1] - stepY, inPointA[2] ],
+      [ inPointB[0] + stepX, inPointB[1] + stepY, inPointB[2] ],
+      [ inPointA[0] + stepX, inPointA[1] + stepY, inPointA[2] ],
+      inColor
+    );
   }
 
   pushRotatedLine(
@@ -140,67 +134,19 @@ export class TrianglesStackRenderer {
       inOrigin[1] + inSize[1]
     ];
 
-    const alphaValue = inColor[3] ?? 1;
+    this.pushTriangle(
+      [ inOrigin[0], inOrigin[1], inOrigin[2] ],
+      [ maxCoord[0], maxCoord[1], inOrigin[2] ],
+      [ inOrigin[0], maxCoord[1], inOrigin[2] ],
+      inColor
+    );
 
-    // 0
-    this._buffer[this._currentSize + 0] = inOrigin[0];
-    this._buffer[this._currentSize + 1] = inOrigin[1];
-    this._buffer[this._currentSize + 2] = inOrigin[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 2
-    this._buffer[this._currentSize + 0] = maxCoord[0];
-    this._buffer[this._currentSize + 1] = maxCoord[1];
-    this._buffer[this._currentSize + 2] = inOrigin[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 3
-    this._buffer[this._currentSize + 0] = inOrigin[0];
-    this._buffer[this._currentSize + 1] = maxCoord[1];
-    this._buffer[this._currentSize + 2] = inOrigin[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 0
-    this._buffer[this._currentSize + 0] = inOrigin[0];
-    this._buffer[this._currentSize + 1] = inOrigin[1];
-    this._buffer[this._currentSize + 2] = inOrigin[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 1
-    this._buffer[this._currentSize + 0] = maxCoord[0];
-    this._buffer[this._currentSize + 1] = inOrigin[1];
-    this._buffer[this._currentSize + 2] = inOrigin[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 2
-    this._buffer[this._currentSize + 0] = maxCoord[0];
-    this._buffer[this._currentSize + 1] = maxCoord[1];
-    this._buffer[this._currentSize + 2] = inOrigin[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
+    this.pushTriangle(
+      [ inOrigin[0], inOrigin[1], inOrigin[2] ],
+      [ maxCoord[0], inOrigin[1], inOrigin[2] ],
+      [ maxCoord[0], maxCoord[1], inOrigin[2] ],
+      inColor
+    );
   }
 
   pushCenteredRectangle(

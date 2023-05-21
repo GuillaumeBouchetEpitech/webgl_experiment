@@ -34,8 +34,8 @@ export const renderControls = (
   const defaultColor: glm.ReadonlyVec3 = [0.2, 0.2, 0.2];
   const activatedColor: glm.ReadonlyVec3 = [0.2, 0.6, 0.2];
 
-  const indicator1: glm.ReadonlyVec2 = [30, 30];
-  const indicator2: glm.ReadonlyVec2 = [30, 130];
+  const indicator1: glm.ReadonlyVec2 = [30, 100];
+  const indicator2: glm.ReadonlyVec2 = [30, 200];
 
   allIndicator.push({
     center: [indicator1[0], indicator1[1]],
@@ -127,14 +127,14 @@ export const renderControls = (
 
   if (GlobalTouchManager.isSupported()) {
     allIndicator.push({
-      center: [120 + 140 * 1, 35],
+      center: [120 + 7 * 1, 35],
       size: [230, 60],
       text: 'Touch Events\nSupported\n(double tap)',
       color: [0, 0.5, 0]
     });
   } else {
     allIndicator.push({
-      center: [120 + 140 * 1, 35],
+      center: [120 + 7 * 1, 35],
       size: [230, 60],
       text: 'Touch Events\nNot Supported',
       color: [0.5, 0, 0]
@@ -143,14 +143,14 @@ export const renderControls = (
 
   if (GlobalPointerLockManager.canBePointerLocked(canvasElement)) {
     allIndicator.push({
-      center: [350 + 140 * 1, 35],
+      center: [350 + 7 * 1, 35],
       size: [210, 60],
       text: 'Mouse\nSupported',
       color: [0, 0.5, 0]
     });
   } else {
     allIndicator.push({
-      center: [350 + 140 * 1, 35],
+      center: [350 + 7 * 1, 35],
       size: [210, 60],
       text: 'Mouse Events\nNot Supported',
       color: [0.5, 0, 0]

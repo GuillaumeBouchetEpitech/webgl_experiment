@@ -9,6 +9,14 @@ import { TrianglesStackRenderer } from './internals/TrianglesStackRenderer';
 import * as glm from 'gl-matrix';
 
 export interface IStackRenderers {
+
+  pushTriangle(
+    inPosA: glm.ReadonlyVec3,
+    inPosB: glm.ReadonlyVec3,
+    inPosC: glm.ReadonlyVec3,
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  ): void;
+
   pushLine(
     inPointA: glm.ReadonlyVec3,
     inPointB: glm.ReadonlyVec3,
@@ -173,6 +181,20 @@ export class StackRenderers implements IStackRenderers {
     this._trianglesStackRenderer.pushCenteredRectangle(
       inCenter,
       inSize,
+      inColor
+    );
+  }
+
+  pushTriangle(
+    inPosA: glm.ReadonlyVec3,
+    inPosB: glm.ReadonlyVec3,
+    inPosC: glm.ReadonlyVec3,
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  ) {
+    this._trianglesStackRenderer.pushTriangle(
+      inPosA,
+      inPosB,
+      inPosC,
       inColor
     );
   }

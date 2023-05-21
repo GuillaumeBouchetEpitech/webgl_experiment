@@ -34,10 +34,7 @@ const generateWireFrameCubeVertices = (inSize: number): number[] => {
 
   for (let ii = 0; ii < indices.length; ++ii) {
     const vertex = vertices[indices[ii]];
-
-    finalVertices.push(vertex[0]);
-    finalVertices.push(vertex[1]);
-    finalVertices.push(vertex[2]);
+    finalVertices.push(vertex[0], vertex[1], vertex[2]);
   }
 
   return finalVertices;
@@ -63,7 +60,7 @@ export interface IWireFrameCubesRenderer {
   clear(): void;
 }
 
-const k_bufferSize = 7 * 1024 * 4;
+const k_bufferSize = 8 * 1024 * 4;
 
 export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
   private _shader: ShaderProgram;
@@ -113,11 +110,11 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
             },
             {
               name: 'a_offset_color',
-              type: GeometryWrapper.AttributeType.vec3f,
+              type: GeometryWrapper.AttributeType.vec4f,
               index: 4
             }
           ],
-          stride: 7 * 4,
+          stride: 8 * 4,
           instanced: true,
           dynamic: true
         }
@@ -136,9 +133,9 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
   pushCenteredCube(
     inCenter: glm.ReadonlyVec3,
     inScale: number,
-    inColor: glm.ReadonlyVec3
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
-    if (this._currentSize + 7 >= this._buffer.length) {
+    if (this._currentSize + 8 >= this._buffer.length) {
       return;
     }
 
@@ -149,14 +146,15 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     this._buffer[this._currentSize++] = inColor[0];
     this._buffer[this._currentSize++] = inColor[1];
     this._buffer[this._currentSize++] = inColor[2];
+    this._buffer[this._currentSize++] = inColor[3] || 1;
   }
 
   pushOriginBoundCube(
     inOrigin: glm.ReadonlyVec3,
     inScale: number,
-    inColor: glm.ReadonlyVec3
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
-    if (this._currentSize + 7 >= this._buffer.length) {
+    if (this._currentSize + 8 >= this._buffer.length) {
       return;
     }
 
@@ -169,6 +167,7 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     this._buffer[this._currentSize++] = inColor[0];
     this._buffer[this._currentSize++] = inColor[1];
     this._buffer[this._currentSize++] = inColor[2];
+    this._buffer[this._currentSize++] = inColor[3] || 1;
   }
 
   flush(inCamera: ICamera) {
@@ -180,7 +179,7 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     this._shader.setMatrix4Uniform('u_composedMatrix', inCamera.getComposedMatrix());
 
     this._geometry.updateBuffer(1, this._buffer, this._currentSize);
-    this._geometry.setInstancedCount(this._currentSize / 7);
+    this._geometry.setInstancedCount(this._currentSize / 8);
     this._geometry.render();
 
     this.clear();

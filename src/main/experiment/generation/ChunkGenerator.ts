@@ -287,17 +287,20 @@ export class ChunkGenerator {
       this._unusedWorkers.length > 0
     ) {
       //
+      // find the "best" chunk to generate
+      //
+
+      const nextPositionData = this._getBestNextChunkPosition();
+      if (!nextPositionData) {
+        break;
+      }
+
+      //
       // set worker as "in use"
       //
 
       const currentWorker = this._unusedWorkers.pop()!;
       this._inUseWorkers.push(currentWorker);
-
-      //
-      // find the "best" chunk to generate
-      //
-
-      const nextPositionData = this._getBestNextChunkPosition();
 
       currentWorker.processing = nextPositionData;
 
@@ -315,15 +318,9 @@ export class ChunkGenerator {
     }
   }
 
-  private _getBestNextChunkPosition(): IPositionData {
+  private _getBestNextChunkPosition(): IPositionData | undefined {
     if (this._chunkPositionQueue.length === 0) {
-      throw new Error('empty chunk position queue');
-    }
-
-    // if just 1 chunk left to process (or no priority callback)
-    // -> just pop and process the next/last chunk in the queue
-    if (this._chunkPositionQueue.length == 1) {
-      return this._chunkPositionQueue.pop()!;
+      return undefined;
     }
 
     // from here, we determine the next best chunk to process
@@ -340,21 +337,23 @@ export class ChunkGenerator {
       return glm.vec3.length(chunkCenter);
     };
 
-    let bestIndex = 0;
-    let bestMagnitude = _getDistanceToCamera(
-      this._chunkPositionQueue[0].realPosition
-    );
+    let bestIndex = -1;
+    let bestMagnitude = -1;
 
-    for (let ii = 1; ii < this._chunkPositionQueue.length; ++ii) {
+    for (let ii = 0; ii < this._chunkPositionQueue.length; ++ii) {
       const { realPosition } = this._chunkPositionQueue[ii];
 
       if (!this._def.chunkIsVisible(realPosition)) continue;
 
       const magnitude = _getDistanceToCamera(realPosition);
-      if (bestMagnitude < magnitude) continue;
+      if (bestMagnitude >= 0 && bestMagnitude < magnitude) continue;
 
       bestIndex = ii;
       bestMagnitude = magnitude;
+    }
+
+    if (bestIndex < 0) {
+      return undefined;
     }
 
     // removal

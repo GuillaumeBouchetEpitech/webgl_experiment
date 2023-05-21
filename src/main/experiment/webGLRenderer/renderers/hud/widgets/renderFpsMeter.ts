@@ -1,3 +1,4 @@
+import { IFrameProfiler } from '../../../../utils/FrameProfiler';
 import { IStackRenderers } from '../stackRenderers/StackRenderers';
 import { ITextRenderer } from '../textRenderer/TextRenderer';
 
@@ -6,19 +7,14 @@ import * as glm from 'gl-matrix';
 export const renderFpsMeter = (
   inPos: glm.ReadonlyVec3,
   inSize: glm.ReadonlyVec2,
-  inFramesDuration: number[],
+  inFrameProfiler: IFrameProfiler,
   inStackRenderers: IStackRenderers,
   inTextRenderer: ITextRenderer
 ) => {
   // fps meter
 
-  let maxDuration = 0;
-  for (let ii = 0; ii < inFramesDuration.length; ++ii) {
-    maxDuration = Math.max(maxDuration, inFramesDuration[ii]);
-  }
-
   const k_divider = 5;
-  const k_verticalSize = Math.ceil(maxDuration / k_divider) * k_divider;
+  const k_verticalSize = Math.ceil(inFrameProfiler.maxDelta / k_divider) * k_divider;
 
   {
     // border
@@ -71,15 +67,15 @@ export const renderFpsMeter = (
   {
     // curve
 
-    if (inFramesDuration.length >= 2) {
-      const widthStep = inSize[0] / inFramesDuration.length;
+    if (inFrameProfiler.framesDelta.length >= 2) {
+      const widthStep = inSize[0] / inFrameProfiler.framesDelta.length;
 
-      let prevDelta = inFramesDuration[0];
+      let prevDelta = inFrameProfiler.framesDelta[0];
       let prevCoordX = 0;
       let prevCoordY = (inSize[1] * prevDelta) / k_verticalSize;
 
-      for (let ii = 1; ii < inFramesDuration.length; ++ii) {
-        const currDelta = inFramesDuration[ii];
+      for (let ii = 1; ii < inFrameProfiler.framesDelta.length; ++ii) {
+        const currDelta = inFrameProfiler.framesDelta[ii];
         const currCoordX = ii * widthStep;
         const currCoordY = (inSize[1] * currDelta) / k_verticalSize;
 
@@ -106,15 +102,22 @@ export const renderFpsMeter = (
   {
     // counter
 
-    let average = 0;
-    for (const curr of inFramesDuration) average += curr;
-    average /= inFramesDuration.length;
+    const latestValue = 1000 / inFrameProfiler.averageDelta;
+    const minFps = 1000 / inFrameProfiler.maxDelta;
+    const maxFps = 1000 / inFrameProfiler.minDelta;
 
-    const latestValue = 1000 / average;
+    const _getFpsStr = (inVal: number) => {
+      if (inVal < 999) {
+        return `${inVal.toFixed(0)}`.padStart(3, ' ');
+      }
+      return '???';
+    }
 
-    let str = '>999';
-    if (latestValue < 999) str = `~${latestValue.toFixed(0)}`.padStart(4, ' ');
+    const text = [
+      `~${_getFpsStr(latestValue)}fps`,
+      `${_getFpsStr(minFps)}..${_getFpsStr(maxFps)}`,
+    ].join("\n");
 
-    inTextRenderer.pushText(`${str}fps`, [inPos[0] + 7, inPos[1] - 8], 14);
+    inTextRenderer.pushText(text, [inPos[0] + 7, inPos[1] - 8], 14);
   } // counter
 };

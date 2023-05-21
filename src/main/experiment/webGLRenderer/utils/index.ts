@@ -1,1 +1,1 @@
-export * from './generateWireFrameFrustumVertices';
+export * from './renderPerspectiveFrustum';

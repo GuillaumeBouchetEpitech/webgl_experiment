@@ -9,7 +9,7 @@ import * as common from './renderers/common';
 import * as scene from './renderers/scene';
 import * as hud from './renderers/hud';
 
-import { generateWireFrameFrustumVertices } from './utils';
+import { renderPerspectiveFrustum } from './utils';
 
 import * as glm from 'gl-matrix';
 
@@ -63,9 +63,6 @@ export class WebGLRenderer {
   private _common: ICommon;
   private _scene: IScene;
   private _hud: IHud;
-
-  private _fpsMeterAngle: number = 0;
-  private _fpsMeterSpeed: number = 0;
 
   private _offsetSceneOrigin: glm.vec3;
 
@@ -161,16 +158,16 @@ export class WebGLRenderer {
     const posX = this._viewportSize[0] * 0.75;
     this._miniMapHudCamera.setViewportPos(posX, 0);
     this._miniMapHudCamera.setViewportSize(
-      this._viewportSize[0] * 0.25,
-      this._viewportSize[1] * 0.33
+      this._viewportSize[0] * 0.33,
+      this._viewportSize[1] * 0.45
     );
     const sizeCamSize = this._miniMapHudCamera.getViewportSize();
     const aspectRatio = sizeCamSize[0] / sizeCamSize[1];
-    const orthoSizeH = 85;
+    const orthoSizeH = 125;
     const orthoSizeW = orthoSizeH * aspectRatio;
     this._miniMapHudCamera.setAsOrthogonal({
-      left: -orthoSizeW,
-      right: +orthoSizeW,
+      left: -orthoSizeW + 20,
+      right: +orthoSizeW + 20,
       top: -orthoSizeH,
       bottom: +orthoSizeH,
       near: -200,
@@ -223,10 +220,8 @@ export class WebGLRenderer {
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
 
-    gl.enable(gl.BLEND);
+    gl.disable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_COLOR);
-
-    gl.disable(gl.CULL_FACE);
 
     gl.activeTexture(gl.TEXTURE0);
 
@@ -270,6 +265,7 @@ export class WebGLRenderer {
     const viewSize = this._mainCamera.getViewportSize();
     gl.viewport(viewPos[0], viewPos[1], viewSize[0], viewSize[1]);
 
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     //
@@ -297,8 +293,6 @@ export class WebGLRenderer {
   renderHUD(chunks: Chunks, processingPos: glm.ReadonlyVec3[]) {
     const gl = WebGLContext.getContext();
 
-    // rendered 3 times with a different viewport and point of view
-
     gl.clear(gl.DEPTH_BUFFER_BIT);
 
     this._renderMainHud(chunks, processingPos);
@@ -311,19 +305,9 @@ export class WebGLRenderer {
   private _renderMainHud(chunks: Chunks, processingPos: glm.ReadonlyVec3[]) {
     const gl = WebGLContext.getContext();
 
-    gl.clear(gl.DEPTH_BUFFER_BIT);
-
     const viewPos = this._mainHudCamera.getViewportPos();
     const viewSize = this._mainHudCamera.getViewportSize();
     gl.viewport(viewPos[0], viewPos[1], viewSize[0], viewSize[1]);
-
-    gl.clear(gl.DEPTH_BUFFER_BIT);
-
-    const widgetSize = glm.vec2.fromValues(100, 50);
-    const widgetPos = glm.vec2.fromValues(
-      10,
-      this._viewportSize[1] - 10 - widgetSize[1]
-    );
 
     {
       // wireFrame
@@ -351,65 +335,6 @@ export class WebGLRenderer {
     {
       // thick lines
 
-      {
-        // rotating wheels
-
-        if (processingPos.length > 0) {
-          this._fpsMeterSpeed += 0.0005;
-          if (this._fpsMeterSpeed > 0.02) this._fpsMeterSpeed = 0.02;
-        } else {
-          this._fpsMeterSpeed -= 0.0005;
-          if (this._fpsMeterSpeed < 0) this._fpsMeterSpeed = 0;
-        }
-
-        this._fpsMeterAngle += this._fpsMeterSpeed;
-
-        const positionA: glm.ReadonlyVec3 = [
-          widgetPos[0] + widgetSize[0] + widgetSize[1] * 0.6,
-          widgetPos[1] + widgetSize[1] * 0.5,
-          0
-        ];
-        const positionB: glm.ReadonlyVec3 = [
-          widgetPos[0] + widgetSize[0] + widgetSize[1] * 1.3,
-          widgetPos[1] + widgetSize[1] * 0.5,
-          0
-        ];
-
-        const allRotatedLines: { position: glm.ReadonlyVec3; angle: number }[] =
-          [
-            {
-              position: positionA,
-              angle: this._fpsMeterAngle
-            },
-            {
-              position: positionA,
-              angle: this._fpsMeterAngle + 0.5 * Math.PI
-            },
-            {
-              position: positionB,
-              angle: -this._fpsMeterAngle + 0.25 * Math.PI
-            },
-            {
-              position: positionB,
-              angle: -this._fpsMeterAngle + 0.75 * Math.PI
-            }
-          ];
-
-        const length = widgetSize[1] * 0.45;
-        const thickness = 10;
-        const color: glm.ReadonlyVec3 = [1, 1, 1];
-
-        allRotatedLines.forEach((rotatedLine) => {
-          this._hud.stackRenderers.pushRotatedLine(
-            rotatedLine.position,
-            rotatedLine.angle,
-            length,
-            thickness,
-            color
-          );
-        });
-      } // rotating wheels
-
       renderTouchEvents(
         this._viewportSize,
         this._hud.stackRenderers,
@@ -418,13 +343,9 @@ export class WebGLRenderer {
     } // thick lines
 
     gl.clear(gl.DEPTH_BUFFER_BIT);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_DST_ALPHA);
 
     this._hud.stackRenderers.flush(this._mainHudCamera);
     this._hud.textRenderer.flush(this._mainHudCamera.getComposedMatrix());
-
-    gl.disable(gl.BLEND);
   }
 
   private _renderMiniMapHud(
@@ -435,12 +356,32 @@ export class WebGLRenderer {
 
     const cameraPos = this._freeFlyController.getPosition();
 
-    const eyeOffset = glm.vec3.fromValues(1.0, 1.2, 1.0);
+    const forwardPhi = this._freeFlyController.getPhi();
+    const upPhi = forwardPhi + Math.PI * 0.5;
+    const forwardTheta = this._freeFlyController.getTheta();
+    const rightTheta = forwardTheta - Math.PI * 0.20;
 
-    const tmpPos = glm.vec3.create();
-    glm.vec3.add(tmpPos, cameraPos, eyeOffset);
+    const rightCosTheta = Math.cos(rightTheta);
+    const rightSinTheta = Math.sin(rightTheta);
+    const forwardCosTheta = Math.cos(forwardTheta);
+    const forwardSinTheta = Math.sin(forwardTheta);
 
-    this._miniMapHudCamera.setEye(tmpPos);
+    const upRadius = Math.cos(upPhi);
+    const upAxisX = upRadius * forwardCosTheta;
+    const upAxisY = upRadius * forwardSinTheta;
+    const upAxisZ = Math.sin(upPhi);
+
+    const forwardRadius = Math.cos(forwardPhi);
+    const forwardAxisX = forwardRadius * rightCosTheta;
+    const forwardAxisY = forwardRadius * rightSinTheta;
+    const forwardAxisZ = Math.sin(forwardPhi);
+
+    const tmpEyePos = glm.vec3.fromValues(0, 0, 0);
+    tmpEyePos[0] = cameraPos[0] - forwardAxisX * 20.0 + upAxisX * 0.0;
+    tmpEyePos[1] = cameraPos[1] - forwardAxisY * 20.0 + upAxisY * 0.0;
+    tmpEyePos[2] = cameraPos[2] - forwardAxisZ * 0.0 + upAxisZ * 10.0;
+
+    this._miniMapHudCamera.setEye(tmpEyePos);
     this._miniMapHudCamera.setTarget(cameraPos);
     this._miniMapHudCamera.computeMatrices();
 
@@ -448,29 +389,10 @@ export class WebGLRenderer {
     const viewSize = this._miniMapHudCamera.getViewportSize();
     gl.viewport(viewPos[0], viewPos[1], viewSize[0], viewSize[1]);
 
-    {
-      const axis_size = 20;
+    gl.clear(gl.DEPTH_BUFFER_BIT);
 
-      this._hud.stackRenderers.pushLine(
-        [0, 0, 0],
-        [0 + axis_size, 0, 0],
-        [1, 0, 0]
-      );
-
-      this._hud.stackRenderers.pushLine(
-        [0, 0, 0],
-        [0, 0 + axis_size, 0],
-        [0, 1, 0]
-      );
-
-      this._hud.stackRenderers.pushLine(
-        [0, 0, 0],
-        [0, 0, 0 + axis_size],
-        [0, 0, 1]
-      );
-
-      this._hud.stackRenderers.flush(this._miniMapHudCamera);
-    }
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
 
     this._common.wireFrameCubesRenderer.clear();
 
@@ -479,27 +401,28 @@ export class WebGLRenderer {
     for (const currChunk of chunks) {
       ///
 
+      const chunkCenter: glm.ReadonlyVec3 = [
+        currChunk.realPosition[0] + hSize,
+        currChunk.realPosition[1] + hSize,
+        currChunk.realPosition[2] + hSize
+      ];
+
       if (currChunk.isVisible) {
         // render white cubes
 
-        this._common.wireFrameCubesRenderer.pushOriginBoundCube(
-          currChunk.realPosition,
-          this._def.chunkSize,
+        this._common.wireFrameCubesRenderer.pushCenteredCube(
+          chunkCenter,
+          this._def.chunkSize * 0.5,
           [1, 1, 1]
         );
+
       } else {
-        // render red crosses
+        // render smaller red cubes
 
-        const chunkCenter: glm.ReadonlyVec3 = [
-          currChunk.realPosition[0] + hSize,
-          currChunk.realPosition[1] + hSize,
-          currChunk.realPosition[2] + hSize
-        ];
-
-        this._hud.stackRenderers.pushCross(
+        this._common.wireFrameCubesRenderer.pushCenteredCube(
           chunkCenter,
-          this._def.chunkSize * 0.25,
-          [1, 0, 0]
+          this._def.chunkSize * 0.5,
+          [1, 0, 0, 0.8]
         );
       }
     }
@@ -525,69 +448,24 @@ export class WebGLRenderer {
     this._common.wireFrameCubesRenderer.flush(this._miniMapHudCamera);
     this._hud.stackRenderers.flush(this._miniMapHudCamera);
 
-    const tmpViewMatrix = glm.mat4.copy(
-      glm.mat4.create(),
-      this._miniMapHudCamera.getViewMatrix()
-    );
-
-    glm.mat4.translate(
-      tmpViewMatrix,
-      tmpViewMatrix,
-      this._freeFlyController.getPosition()
-    );
-    glm.mat4.rotate(
-      tmpViewMatrix,
-      tmpViewMatrix,
-      this._freeFlyController.getTheta(),
-      [0, 0, 1]
-    );
-    glm.mat4.rotate(
-      tmpViewMatrix,
-      tmpViewMatrix,
-      this._freeFlyController.getPhi(),
-      [0, -1, 0]
-    );
-
-    this._miniMapHudCamera.setViewMatrix(tmpViewMatrix);
-    this._miniMapHudCamera.computeComposedMatrix();
-
     {
-      const cross_size = 5;
-
-      const crossVertices: glm.vec3[] = [
-        [0 - cross_size, 0, 0],
-        [0 + cross_size * 100, 0, 0],
-        [0, 0 - cross_size, 0],
-        [0, 0 + cross_size, 0],
-        [0, 0, 0 - cross_size],
-        [0, 0, 0 + cross_size]
-      ];
-      const crossIndices: number[] = [0, 1, 2, 3, 4, 5];
-
-      for (let ii = 0; ii < crossIndices.length; ii += 2) {
-        const vertexA = crossVertices[ii + 0];
-        const vertexB = crossVertices[ii + 1];
-        this._hud.stackRenderers.pushLine(vertexA, vertexB, [1, 1, 1]);
-      }
 
       const projData = this._mainCamera.getPerspectiveData()!;
 
-      const color: glm.ReadonlyVec3 = [1, 1, 0];
-
-      const tmpVertices = generateWireFrameFrustumVertices(
+      renderPerspectiveFrustum(
         projData.fovy,
         projData.aspectRatio,
         projData.near,
-        projData.far
+        projData.far,
+        this._freeFlyController,
+        this._hud.stackRenderers
       );
-      for (let ii = 0; ii < tmpVertices.length; ii += 2) {
-        const vertexA = tmpVertices[ii + 0];
-        const vertexB = tmpVertices[ii + 1];
-        this._hud.stackRenderers.pushLine(vertexA, vertexB, color);
-      }
 
       this._hud.stackRenderers.flush(this._miniMapHudCamera);
     }
+
+    gl.disable(gl.BLEND);
+    gl.enable(gl.DEPTH_TEST);
   }
 
   get freeFlyController() {

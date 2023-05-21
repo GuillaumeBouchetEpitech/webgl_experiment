@@ -12,6 +12,7 @@ import { ChunkGenerator } from './generation/ChunkGenerator';
 import { ILiveGeometry, WebGLRenderer } from './webGLRenderer/WebGLRenderer';
 import { renderControls } from './webGLRenderer/renderers/hud/widgets/renderControls';
 import { renderFpsMeter } from './webGLRenderer/renderers/hud/widgets/renderFpsMeter';
+import { FrameProfiler } from './utils/FrameProfiler';
 
 import * as glm from 'gl-matrix';
 
@@ -28,7 +29,7 @@ export class WebGLExperiment {
   private _chunksDiscarded: number = 0;
 
   private _currFrameTime: number = 0;
-  private _framesDuration: number[] = [];
+  private _frameProfiler = new FrameProfiler();
 
   constructor(canvasElement: HTMLCanvasElement) {
     this._canvasElement = canvasElement;
@@ -218,7 +219,7 @@ export class WebGLExperiment {
     const currentTime = Date.now();
     const elapsedTime = Math.min(currentTime - this._currFrameTime, 30);
     this._currFrameTime = currentTime;
-    this._framesDuration.push(elapsedTime);
+    this._frameProfiler.pushDelta(elapsedTime);
 
     //
     //
@@ -297,7 +298,7 @@ export class WebGLExperiment {
 
       const textsOrigin: glm.ReadonlyVec2 = [
         14,
-        this._canvasElement.height - 100
+        this._canvasElement.height - 150
       ];
 
       this._renderer.textRenderer.pushText(
@@ -316,7 +317,7 @@ export class WebGLExperiment {
     renderFpsMeter(
       [10, this._canvasElement.height - 60, 0],
       [100, 50],
-      this._framesDuration,
+      this._frameProfiler,
       this._renderer.stackRenderers,
       this._renderer.textRenderer
     );
@@ -325,8 +326,5 @@ export class WebGLExperiment {
       this._chunkGenerator.getChunks(),
       this._chunkGenerator.getProcessingRealPositions()
     );
-
-    if (this._framesDuration.length > 100)
-      this._framesDuration.splice(0, this._framesDuration.length - 100);
   }
 }

@@ -129,7 +129,6 @@ export class ChunksRenderer implements IChunksRenderer {
     sceneOrigin: glm.ReadonlyVec3
   ) {
     const gl = WebGLContext.getContext();
-    gl.disable(gl.BLEND);
 
     this._shader.bind();
     this._shader.setInteger1Uniform('u_texture', 0);
