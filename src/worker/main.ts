@@ -24,10 +24,14 @@ const on_sample_callback = (x: number, y: number, z: number) => {
   return simplexNoiseInstance.noise(x, y, z);
 };
 
-// const marchingCubeInstance: IMarchingAlgorithm = new MarchingCube(configuration.chunkSize, configuration.chunkLimit, on_sample_callback);
+// const marchingCubeInstance: IMarchingAlgorithm = new MarchingCube(
+//   configuration.chunkSize,
+//   configuration.chunkThreshold,
+//   on_sample_callback
+// );
 const marchingCubeInstance: IMarchingAlgorithm = new MarchingTetrahedron(
   configuration.chunkSize,
-  configuration.chunkLimit,
+  configuration.chunkThreshold,
   on_sample_callback
 );
 

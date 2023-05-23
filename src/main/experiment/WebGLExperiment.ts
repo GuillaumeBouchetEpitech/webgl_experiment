@@ -91,7 +91,7 @@ export class WebGLExperiment {
 
     {
       GlobalKeyboardManager.activate();
-      GlobalTouchManager.activate();
+      GlobalTouchManager.activate(this._canvasElement);
 
       GlobalPointerLockManager.allowPointerLockedOnClickEvent(canvasElement);
       GlobalPointerLockManager.addOnLockChange(() => {

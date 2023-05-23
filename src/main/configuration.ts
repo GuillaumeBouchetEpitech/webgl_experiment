@@ -1,5 +1,5 @@
 export const chunkSize = 15;
-export const chunkLimit = 0;
+export const chunkThreshold = 0;
 export const chunkRange = 3;
 
 export const controllerMovingSpeed = 16;

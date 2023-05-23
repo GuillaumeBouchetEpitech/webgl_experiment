@@ -50,19 +50,19 @@ export interface IMarchingAlgorithm {
 
 export class AbstractMarchingAlgorithm {
   protected _chunkSize: number;
-  protected _limit: number;
+  protected _threshold: number;
   protected _sampleCallback: SampleCallback;
   protected _stepSize: number;
   protected _onVertexCallback: OnVertexCallback | undefined;
 
   constructor(
-    chunkSize: number,
-    limit: number,
-    sampleCallback: SampleCallback
+    inChunkSize: number,
+    inThreshold: number,
+    inSampleCallback: SampleCallback
   ) {
-    this._chunkSize = chunkSize;
-    this._limit = limit;
-    this._sampleCallback = sampleCallback;
+    this._chunkSize = inChunkSize;
+    this._threshold = inThreshold;
+    this._sampleCallback = inSampleCallback;
 
     this._stepSize = 1.0 / this._chunkSize;
   }

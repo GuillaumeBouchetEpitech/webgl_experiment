@@ -1,3 +1,19 @@
+
+const k_grad3: [number, number, number][] = [
+  [1, 1, 0],
+  [-1, 1, 0],
+  [1, -1, 0],
+  [-1, -1, 0],
+  [1, 0, 1],
+  [-1, 0, 1],
+  [1, 0, -1],
+  [-1, 0, -1],
+  [0, 1, 1],
+  [0, -1, 1],
+  [0, 1, -1],
+  [0, -1, -1]
+];
+
 type GetNormalizedRandomCallback = () => number;
 
 interface IDefinition {
@@ -11,8 +27,6 @@ export class ClassicalNoise {
   private _octaves: number = 1;
   private _frequency: number = 1.0;
   private _amplitude: number = 0.5;
-  private _grad3: [number, number, number][];
-  private _p: Uint8Array;
   private _perm: Uint8Array;
 
   constructor(def: IDefinition) {
@@ -22,31 +36,16 @@ export class ClassicalNoise {
 
     const randomCallback = def.randomCallback || (() => Math.random());
 
-    this._grad3 = [
-      [1, 1, 0],
-      [-1, 1, 0],
-      [1, -1, 0],
-      [-1, -1, 0],
-      [1, 0, 1],
-      [-1, 0, 1],
-      [1, 0, -1],
-      [-1, 0, -1],
-      [0, 1, 1],
-      [0, -1, 1],
-      [0, 1, -1],
-      [0, -1, -1]
-    ];
-
     const k_sampleSize = 256;
     const k_sampleDoubleSize = k_sampleSize * 2;
-    this._p = new Uint8Array(k_sampleSize);
+    const initialP = new Uint8Array(k_sampleSize);
     for (let ii = 0; ii < k_sampleSize; ++ii)
-      this._p[ii] = Math.floor(randomCallback() * k_sampleSize) | 0;
+      initialP[ii] = Math.floor(randomCallback() * k_sampleSize) | 0;
 
     // To remove the need for index wrapping, double the permutation table length
     this._perm = new Uint8Array(k_sampleDoubleSize);
     for (let ii = 0; ii < k_sampleDoubleSize; ++ii)
-      this._perm[ii] = this._p[ii & (k_sampleSize - 1)] | 0;
+      this._perm[ii] = initialP[ii & (k_sampleSize - 1)] | 0;
   }
 
   noise(x2: number, y2: number, z2: number): number {
@@ -70,7 +69,8 @@ export class ClassicalNoise {
     return result;
   }
 
-  private _dot(g: number[], x: number, y: number, z: number): number {
+  private _dot(i: number, x: number, y: number, z: number): number {
+    const g = k_grad3[i];
     return g[0] * x + g[1] * y + g[2] * z;
   }
 
@@ -102,25 +102,21 @@ export class ClassicalNoise {
     const gi000 = this._perm[X + this._perm[Y + this._perm[Z]]] % 12 | 0;
     const gi001 = this._perm[X + this._perm[Y + this._perm[Z + 1]]] % 12 | 0;
     const gi010 = this._perm[X + this._perm[Y + 1 + this._perm[Z]]] % 12 | 0;
-    const gi011 =
-      this._perm[X + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
+    const gi011 = this._perm[X + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
     const gi100 = this._perm[X + 1 + this._perm[Y + this._perm[Z]]] % 12 | 0;
-    const gi101 =
-      this._perm[X + 1 + this._perm[Y + this._perm[Z + 1]]] % 12 | 0;
-    const gi110 =
-      this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z]]] % 12 | 0;
-    const gi111 =
-      this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
+    const gi101 = this._perm[X + 1 + this._perm[Y + this._perm[Z + 1]]] % 12 | 0;
+    const gi110 = this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z]]] % 12 | 0;
+    const gi111 = this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
 
     // Calculate noise contributions from each of the eight corners
-    const n000 = this._dot(this._grad3[gi000], x, y, z);
-    const n100 = this._dot(this._grad3[gi100], x - 1, y, z);
-    const n010 = this._dot(this._grad3[gi010], x, y - 1, z);
-    const n110 = this._dot(this._grad3[gi110], x - 1, y - 1, z);
-    const n001 = this._dot(this._grad3[gi001], x, y, z - 1);
-    const n101 = this._dot(this._grad3[gi101], x - 1, y, z - 1);
-    const n011 = this._dot(this._grad3[gi011], x, y - 1, z - 1);
-    const n111 = this._dot(this._grad3[gi111], x - 1, y - 1, z - 1);
+    const n000 = this._dot(gi000, x, y, z);
+    const n100 = this._dot(gi100, x - 1, y, z);
+    const n010 = this._dot(gi010, x, y - 1, z);
+    const n110 = this._dot(gi110, x - 1, y - 1, z);
+    const n001 = this._dot(gi001, x, y, z - 1);
+    const n101 = this._dot(gi101, x - 1, y, z - 1);
+    const n011 = this._dot(gi011, x, y - 1, z - 1);
+    const n111 = this._dot(gi111, x - 1, y - 1, z - 1);
 
     // Compute the fade curve value for each of x, y, z
     const u = this._fade(x);

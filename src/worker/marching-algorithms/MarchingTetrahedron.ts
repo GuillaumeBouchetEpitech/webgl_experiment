@@ -164,7 +164,7 @@ export class MarchingTetrahedron
     //Find which vertices are inside of the surface and which are outside
     let iFlagIndex = 0;
     for (let iVertex = 0; iVertex < 4; iVertex++)
-      if (pafTetrahedronValue[iVertex] <= this._limit)
+      if (pafTetrahedronValue[iVertex] <= this._threshold)
         iFlagIndex |= 1 << iVertex;
 
     //Find which edges are intersected by the surface
@@ -180,7 +180,7 @@ export class MarchingTetrahedron
         const fOffset = utilities.getOffset(
           pafTetrahedronValue[iVert0],
           pafTetrahedronValue[iVert1],
-          this._limit
+          this._threshold
         );
         const fInvOffset = 1.0 - fOffset;
 

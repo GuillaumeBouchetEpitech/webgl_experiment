@@ -37,8 +37,7 @@ Deterministic Procedurally Generated Cave:
 
 ---
 
-## Credits :
-
+## Credits
 
 | technology |  author | website |
 | ---- | ---- | ---- |

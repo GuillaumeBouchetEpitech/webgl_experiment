@@ -17,19 +17,6 @@ const run = async () => {
   demo.start();
 
   {
-    // GUI (touch supported indicator)
-
-    const touch_id_elem = document.getElementById('touch_id');
-    if (touch_id_elem) {
-      if (GlobalTouchManager.isSupported()) {
-        touch_id_elem.innerHTML += 'Supported';
-      } else {
-        touch_id_elem.innerHTML += 'Not Supported';
-      }
-    }
-  } // GUI (touch supported indicator)
-
-  {
     // UI
 
     const gui_toggle_start = document.getElementById('gui_toggle_start');

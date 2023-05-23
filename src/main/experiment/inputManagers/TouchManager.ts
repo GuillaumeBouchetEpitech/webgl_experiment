@@ -61,14 +61,6 @@ class TouchManager {
         const deltaX = pageX - currData.positionX;
         const deltaY = pageY - currData.positionY;
 
-        const threshold = 2.5;
-        if (
-          deltaX > -threshold && deltaX < +threshold &&
-          deltaY > -threshold && deltaY < +threshold
-        ) {
-          continue;
-        }
-
         currData.deltaX += deltaX;
         currData.deltaY += deltaY;
         currData.positionX = pageX;
@@ -82,37 +74,37 @@ class TouchManager {
     this._handleTouchMove = handleTouchMove.bind(this);
   }
 
-  isSupported() {
-    return 'ontouchstart' in window;
+  isSupported(inTargetElement: HTMLElement) {
+    return 'ontouchstart' in inTargetElement;
   }
 
-  activate() {
-    if (!this.isSupported()) return;
+  activate(inTargetElement: HTMLElement) {
+    if (!this.isSupported(inTargetElement)) return;
     if (this._activated) return;
 
     this._allTouchDataMap.clear();
     this._allCachedTouchDataArray.length = 0;
 
-    document.addEventListener('touchstart', this._handleTouchStart);
-    document.addEventListener('touchend', this._handleTouchEnd);
-    document.addEventListener('touchcancel', this._handleTouchEnd);
-    document.addEventListener('touchmove', this._handleTouchMove, {
+    inTargetElement.addEventListener('touchstart', this._handleTouchStart);
+    inTargetElement.addEventListener('touchend', this._handleTouchEnd);
+    inTargetElement.addEventListener('touchcancel', this._handleTouchEnd);
+    inTargetElement.addEventListener('touchmove', this._handleTouchMove, {
       passive: false
     });
 
     this._activated = true;
   }
 
-  deactivate() {
+  deactivate(inTargetElement: HTMLElement) {
     if (!this._activated) return;
 
     this._allTouchDataMap.clear();
     this._allCachedTouchDataArray.length = 0;
 
-    document.removeEventListener('touchstart', this._handleTouchStart);
-    document.removeEventListener('touchend', this._handleTouchEnd);
-    document.removeEventListener('touchcancel', this._handleTouchEnd);
-    document.removeEventListener('touchmove', this._handleTouchMove);
+    inTargetElement.removeEventListener('touchstart', this._handleTouchStart);
+    inTargetElement.removeEventListener('touchend', this._handleTouchEnd);
+    inTargetElement.removeEventListener('touchcancel', this._handleTouchEnd);
+    inTargetElement.removeEventListener('touchmove', this._handleTouchMove);
 
     this._activated = false;
   }

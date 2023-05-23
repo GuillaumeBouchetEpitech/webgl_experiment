@@ -411,7 +411,7 @@ export class MarchingCube
     //Find which vertices are inside of the surface and which are outside
     let iFlagIndex = 0 | 0;
     for (let iVertexTest = 0 | 0; iVertexTest < 8; ++iVertexTest)
-      if (this._afCubeValue[iVertexTest] <= this._limit)
+      if (this._afCubeValue[iVertexTest] <= this._threshold)
         iFlagIndex |= 1 << iVertexTest;
 
     //Find which edges are intersected by the surface
@@ -430,7 +430,7 @@ export class MarchingCube
         const fOffset = utilities.getOffset(
           this._afCubeValue[currEdge[0]],
           this._afCubeValue[currEdge[1]],
-          this._limit
+          this._threshold
         );
 
         const currOffset = a2fVertexOffset[currEdge[0]];

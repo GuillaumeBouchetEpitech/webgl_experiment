@@ -155,19 +155,29 @@ export class WebGLRenderer {
     this._mainHudCamera.setUpAxis([0, 1, 0]);
     this._mainHudCamera.computeMatrices();
 
-    const posX = this._viewportSize[0] * 0.75;
-    this._miniMapHudCamera.setViewportPos(posX, 0);
+    //
+
+    const k_minSize = 200;
+    const k_viewSize = 100;
+
+    const minViewportSize = Math.min(this._viewportSize[0], this._viewportSize[1]);
+
+    const minimapWidth = Math.max(minViewportSize * 0.5, k_minSize);
+    const minimapHeight = Math.max(minViewportSize * 0.5, k_minSize);
+
+    const minimapPosX = this._viewportSize[0] - minimapWidth;
+    this._miniMapHudCamera.setViewportPos(minimapPosX, 0);
+
     this._miniMapHudCamera.setViewportSize(
-      this._viewportSize[0] * 0.33,
-      this._viewportSize[1] * 0.45
+      minimapWidth,
+      minimapHeight
     );
-    const sizeCamSize = this._miniMapHudCamera.getViewportSize();
-    const aspectRatio = sizeCamSize[0] / sizeCamSize[1];
-    const orthoSizeH = 125;
+    const aspectRatio = minimapWidth / minimapHeight;
+    const orthoSizeH = aspectRatio >= 1.0 ? k_viewSize : k_viewSize * (1 / aspectRatio);
     const orthoSizeW = orthoSizeH * aspectRatio;
     this._miniMapHudCamera.setAsOrthogonal({
-      left: -orthoSizeW + 20,
-      right: +orthoSizeW + 20,
+      left: -orthoSizeW,
+      right: +orthoSizeW,
       top: -orthoSizeH,
       bottom: +orthoSizeH,
       near: -200,
@@ -359,7 +369,7 @@ export class WebGLRenderer {
     const forwardPhi = this._freeFlyController.getPhi();
     const upPhi = forwardPhi + Math.PI * 0.5;
     const forwardTheta = this._freeFlyController.getTheta();
-    const rightTheta = forwardTheta - Math.PI * 0.20;
+    const rightTheta = forwardTheta - Math.PI * 0.25;
 
     const rightCosTheta = Math.cos(rightTheta);
     const rightSinTheta = Math.sin(rightTheta);
