@@ -1,20 +1,17 @@
-
 export interface IFrameProfiler {
   framesDelta: ReadonlyArray<number>;
   averageDelta: number;
   minDelta: number;
   maxDelta: number;
-};
+}
 
 export class FrameProfiler implements IFrameProfiler {
-
   private _framesDelta: number[] = [];
   private _averageDelta: number = 0;
   private _minDelta: number = 0;
   private _maxDelta: number = 0;
 
   pushDelta(inDelta: number) {
-
     if (this._framesDelta.length >= 100) {
       this._framesDelta.shift();
     }
@@ -49,5 +46,4 @@ export class FrameProfiler implements IFrameProfiler {
   get maxDelta(): number {
     return this._maxDelta;
   }
-
-};
+}

@@ -70,7 +70,12 @@ export class ChunksRenderer implements IChunksRenderer {
       vertexSrc: shaders.chunksRenderer.vertex,
       fragmentSrc: shaders.chunksRenderer.fragment,
       attributes: ['a_vertex_position', 'a_vertex_normal'],
-      uniforms: ['u_composedMatrix', 'u_eyePosition', 'u_sceneOrigin', 'u_texture']
+      uniforms: [
+        'u_composedMatrix',
+        'u_eyePosition',
+        'u_sceneOrigin',
+        'u_texture'
+      ]
     });
 
     this._geometryDefinition = {
@@ -124,17 +129,22 @@ export class ChunksRenderer implements IChunksRenderer {
     this._inUseGeometries.splice(index, 1);
   }
 
-  render(
-    inCamera: ICamera,
-    sceneOrigin: glm.ReadonlyVec3
-  ) {
+  render(inCamera: ICamera, sceneOrigin: glm.ReadonlyVec3) {
     const gl = WebGLContext.getContext();
 
     this._shader.bind();
     this._shader.setInteger1Uniform('u_texture', 0);
-    this._shader.setMatrix4Uniform('u_composedMatrix', inCamera.getComposedMatrix());
+    this._shader.setMatrix4Uniform(
+      'u_composedMatrix',
+      inCamera.getComposedMatrix()
+    );
     const eyePos = inCamera.getEye();
-    this._shader.setFloat3Uniform('u_eyePosition', eyePos[0], eyePos[1], eyePos[2]);
+    this._shader.setFloat3Uniform(
+      'u_eyePosition',
+      eyePos[0],
+      eyePos[1],
+      eyePos[2]
+    );
 
     this._shader.setFloat3Uniform(
       'u_sceneOrigin',

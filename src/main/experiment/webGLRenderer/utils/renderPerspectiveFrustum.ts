@@ -8,7 +8,7 @@ export const renderPerspectiveFrustum = (
   inNear: number,
   inFar: number,
   inFreeFlyController: FreeFlyController,
-  inStackRenderers: IStackRenderers,
+  inStackRenderers: IStackRenderers
 ): void => {
   const fH = Math.tan((inFovY / 360.0) * Math.PI) * inNear;
   const fW = fH * inAspect;
@@ -42,14 +42,9 @@ export const renderPerspectiveFrustum = (
   //
 
   {
-
     const tmpMatrix = glm.mat4.identity(glm.mat4.create());
 
-    glm.mat4.translate(
-      tmpMatrix,
-      tmpMatrix,
-      inFreeFlyController.getPosition()
-    );
+    glm.mat4.translate(tmpMatrix, tmpMatrix, inFreeFlyController.getPosition());
     glm.mat4.rotate(
       tmpMatrix,
       tmpMatrix,
@@ -64,15 +59,17 @@ export const renderPerspectiveFrustum = (
     );
 
     for (let ii = 0; ii < tmpVertices.length; ++ii) {
-      tmpVertices[ii] = glm.vec3.transformMat4(tmpVertices[ii], tmpVertices[ii], tmpMatrix);
+      tmpVertices[ii] = glm.vec3.transformMat4(
+        tmpVertices[ii],
+        tmpVertices[ii],
+        tmpMatrix
+      );
     }
-
   }
 
   //
 
   {
-
     const indices = [];
     indices.push(0, 1, 1, 3, 3, 2, 2, 0);
     indices.push(0, 4, 1, 5, 2, 6, 3, 7);
@@ -90,11 +87,9 @@ export const renderPerspectiveFrustum = (
       const posB1 = tmpVertices[9];
       const posB2 = tmpVertices[10];
       const posB3 = tmpVertices[11];
-      inStackRenderers.pushLine(posA, posB1, [1,0,0]);
-      inStackRenderers.pushLine(posA, posB2, [0,1,0]);
-      inStackRenderers.pushLine(posA, posB3, [0,0,1]);
+      inStackRenderers.pushLine(posA, posB1, [1, 0, 0]);
+      inStackRenderers.pushLine(posA, posB2, [0, 1, 0]);
+      inStackRenderers.pushLine(posA, posB3, [0, 0, 1]);
     }
-
   }
-
 };

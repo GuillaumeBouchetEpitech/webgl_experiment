@@ -24,7 +24,6 @@ interface IOrthogonalData {
 }
 
 export interface ICamera {
-
   getEye(): glm.ReadonlyVec3;
   getTarget(): glm.ReadonlyVec3;
   getUpAxis(): glm.ReadonlyVec3;
@@ -35,7 +34,7 @@ export interface ICamera {
 
   getPerspectiveData(): Readonly<IPerspectiveData | undefined>;
   getOrthogonalData(): Readonly<IOrthogonalData | undefined>;
-};
+}
 
 export class Camera implements ICamera {
   private _projectionType = ProjectionType.perspective;

@@ -14,7 +14,8 @@ export const renderFpsMeter = (
   // fps meter
 
   const k_divider = 5;
-  const k_verticalSize = Math.ceil(inFrameProfiler.maxDelta / k_divider) * k_divider;
+  const k_verticalSize =
+    Math.ceil(inFrameProfiler.maxDelta / k_divider) * k_divider;
 
   {
     // border
@@ -111,12 +112,12 @@ export const renderFpsMeter = (
         return `${inVal.toFixed(0)}`.padStart(3, ' ');
       }
       return '???';
-    }
+    };
 
     const text = [
       `~${_getFpsStr(latestValue)}fps`,
-      `${_getFpsStr(minFps)}..${_getFpsStr(maxFps)}`,
-    ].join("\n");
+      `${_getFpsStr(minFps)}..${_getFpsStr(maxFps)}`
+    ].join('\n');
 
     inTextRenderer.pushText(text, [inPos[0] + 7, inPos[1] - 8], 14);
   } // counter

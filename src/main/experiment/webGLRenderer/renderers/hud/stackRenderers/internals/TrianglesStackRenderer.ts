@@ -84,15 +84,15 @@ export class TrianglesStackRenderer {
     const stepY = Math.sin(angle) * thickness * 0.5;
 
     this.pushTriangle(
-      [ inPointA[0] - stepX, inPointA[1] - stepY, inPointA[2] ],
-      [ inPointB[0] - stepX, inPointB[1] - stepY, inPointB[2] ],
-      [ inPointB[0] + stepX, inPointB[1] + stepY, inPointB[2] ],
+      [inPointA[0] - stepX, inPointA[1] - stepY, inPointA[2]],
+      [inPointB[0] - stepX, inPointB[1] - stepY, inPointB[2]],
+      [inPointB[0] + stepX, inPointB[1] + stepY, inPointB[2]],
       inColor
     );
     this.pushTriangle(
-      [ inPointA[0] - stepX, inPointA[1] - stepY, inPointA[2] ],
-      [ inPointB[0] + stepX, inPointB[1] + stepY, inPointB[2] ],
-      [ inPointA[0] + stepX, inPointA[1] + stepY, inPointA[2] ],
+      [inPointA[0] - stepX, inPointA[1] - stepY, inPointA[2]],
+      [inPointB[0] + stepX, inPointB[1] + stepY, inPointB[2]],
+      [inPointA[0] + stepX, inPointA[1] + stepY, inPointA[2]],
       inColor
     );
   }
@@ -135,16 +135,16 @@ export class TrianglesStackRenderer {
     ];
 
     this.pushTriangle(
-      [ inOrigin[0], inOrigin[1], inOrigin[2] ],
-      [ maxCoord[0], maxCoord[1], inOrigin[2] ],
-      [ inOrigin[0], maxCoord[1], inOrigin[2] ],
+      [inOrigin[0], inOrigin[1], inOrigin[2]],
+      [maxCoord[0], maxCoord[1], inOrigin[2]],
+      [inOrigin[0], maxCoord[1], inOrigin[2]],
       inColor
     );
 
     this.pushTriangle(
-      [ inOrigin[0], inOrigin[1], inOrigin[2] ],
-      [ maxCoord[0], inOrigin[1], inOrigin[2] ],
-      [ maxCoord[0], maxCoord[1], inOrigin[2] ],
+      [inOrigin[0], inOrigin[1], inOrigin[2]],
+      [maxCoord[0], inOrigin[1], inOrigin[2]],
+      [maxCoord[0], maxCoord[1], inOrigin[2]],
       inColor
     );
   }

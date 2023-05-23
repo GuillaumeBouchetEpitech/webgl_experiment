@@ -1,4 +1,3 @@
-
 const k_grad3: [number, number, number][] = [
   [1, 1, 0],
   [-1, 1, 0],
@@ -102,11 +101,15 @@ export class ClassicalNoise {
     const gi000 = this._perm[X + this._perm[Y + this._perm[Z]]] % 12 | 0;
     const gi001 = this._perm[X + this._perm[Y + this._perm[Z + 1]]] % 12 | 0;
     const gi010 = this._perm[X + this._perm[Y + 1 + this._perm[Z]]] % 12 | 0;
-    const gi011 = this._perm[X + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
+    const gi011 =
+      this._perm[X + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
     const gi100 = this._perm[X + 1 + this._perm[Y + this._perm[Z]]] % 12 | 0;
-    const gi101 = this._perm[X + 1 + this._perm[Y + this._perm[Z + 1]]] % 12 | 0;
-    const gi110 = this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z]]] % 12 | 0;
-    const gi111 = this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
+    const gi101 =
+      this._perm[X + 1 + this._perm[Y + this._perm[Z + 1]]] % 12 | 0;
+    const gi110 =
+      this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z]]] % 12 | 0;
+    const gi111 =
+      this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
 
     // Calculate noise contributions from each of the eight corners
     const n000 = this._dot(gi000, x, y, z);

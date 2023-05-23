@@ -20,13 +20,15 @@ interface Indicator {
     color: glm.ReadonlyVec3;
   }[];
   color: glm.ReadonlyVec3;
-};
+}
 
 const defaultColor: glm.ReadonlyVec3 = [0.2, 0.2, 0.2];
 const activatedColor: glm.ReadonlyVec3 = [0.2, 0.6, 0.2];
 
-const _addKeyStrokesWidgets = (inAllIndicator: Indicator[], inPos: glm.ReadonlyVec2) => {
-
+const _addKeyStrokesWidgets = (
+  inAllIndicator: Indicator[],
+  inPos: glm.ReadonlyVec2
+) => {
   inAllIndicator.push({
     center: [inPos[0], inPos[1]],
     size: [40, 40],
@@ -58,11 +60,12 @@ const _addKeyStrokesWidgets = (inAllIndicator: Indicator[], inPos: glm.ReadonlyV
     text: 'D',
     color: GlobalKeyboardManager.isPressed('D') ? activatedColor : defaultColor
   });
-
 };
 
-const _addArrowStrokesWidgets = (inAllIndicator: Indicator[], inPos: glm.ReadonlyVec2) => {
-
+const _addArrowStrokesWidgets = (
+  inAllIndicator: Indicator[],
+  inPos: glm.ReadonlyVec2
+) => {
   // arrow left
   inAllIndicator.push({
     center: [inPos[0], inPos[1]],
@@ -118,11 +121,13 @@ const _addArrowStrokesWidgets = (inAllIndicator: Indicator[], inPos: glm.Readonl
       ? activatedColor
       : defaultColor
   });
-
 };
 
-const _addKeysTouchesWidgets = (inAllIndicator: Indicator[], inCanvasElement: HTMLCanvasElement, inPos: glm.ReadonlyVec2) => {
-
+const _addKeysTouchesWidgets = (
+  inAllIndicator: Indicator[],
+  inCanvasElement: HTMLCanvasElement,
+  inPos: glm.ReadonlyVec2
+) => {
   if (GlobalTouchManager.isSupported(inCanvasElement)) {
     inAllIndicator.push({
       center: [inPos[0] + 115, inPos[1]],
@@ -154,7 +159,6 @@ const _addKeysTouchesWidgets = (inAllIndicator: Indicator[], inCanvasElement: HT
       color: [0.5, 0, 0]
     });
   }
-
 };
 
 export const renderControls = (
@@ -162,7 +166,6 @@ export const renderControls = (
   stackRenderers: IStackRenderers,
   textRenderer: ITextRenderer
 ) => {
-
   const allIndicator: Indicator[] = [];
 
   const keyEventsPos: glm.ReadonlyVec2 = [7 + 20, 165];

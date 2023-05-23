@@ -9,7 +9,6 @@ import { TrianglesStackRenderer } from './internals/TrianglesStackRenderer';
 import * as glm from 'gl-matrix';
 
 export interface IStackRenderers {
-
   pushTriangle(
     inPosA: glm.ReadonlyVec3,
     inPosB: glm.ReadonlyVec3,
@@ -191,12 +190,7 @@ export class StackRenderers implements IStackRenderers {
     inPosC: glm.ReadonlyVec3,
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
-    this._trianglesStackRenderer.pushTriangle(
-      inPosA,
-      inPosB,
-      inPosC,
-      inColor
-    );
+    this._trianglesStackRenderer.pushTriangle(inPosA, inPosB, inPosC, inColor);
   }
 
   flush(inCamera: ICamera) {
@@ -208,7 +202,10 @@ export class StackRenderers implements IStackRenderers {
     }
 
     this._shader.bind();
-    this._shader.setMatrix4Uniform('u_composedMatrix', inCamera.getComposedMatrix());
+    this._shader.setMatrix4Uniform(
+      'u_composedMatrix',
+      inCamera.getComposedMatrix()
+    );
 
     this._wireFramesStackRenderer.flush();
     this._trianglesStackRenderer.flush();

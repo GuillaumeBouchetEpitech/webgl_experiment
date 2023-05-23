@@ -150,8 +150,16 @@ export class WebGLRenderer {
       near: -200,
       far: 200
     });
-    this._mainHudCamera.setEye([+this._viewportSize[0] * 0.5, +this._viewportSize[1] * 0.5, 1]);
-    this._mainHudCamera.setTarget([+this._viewportSize[0] * 0.5, +this._viewportSize[1] * 0.5, 0]);
+    this._mainHudCamera.setEye([
+      +this._viewportSize[0] * 0.5,
+      +this._viewportSize[1] * 0.5,
+      1
+    ]);
+    this._mainHudCamera.setTarget([
+      +this._viewportSize[0] * 0.5,
+      +this._viewportSize[1] * 0.5,
+      0
+    ]);
     this._mainHudCamera.setUpAxis([0, 1, 0]);
     this._mainHudCamera.computeMatrices();
 
@@ -160,7 +168,10 @@ export class WebGLRenderer {
     const k_minSize = 200;
     const k_viewSize = 100;
 
-    const minViewportSize = Math.min(this._viewportSize[0], this._viewportSize[1]);
+    const minViewportSize = Math.min(
+      this._viewportSize[0],
+      this._viewportSize[1]
+    );
 
     const minimapWidth = Math.max(minViewportSize * 0.5, k_minSize);
     const minimapHeight = Math.max(minViewportSize * 0.5, k_minSize);
@@ -168,12 +179,10 @@ export class WebGLRenderer {
     const minimapPosX = this._viewportSize[0] - minimapWidth;
     this._miniMapHudCamera.setViewportPos(minimapPosX, 0);
 
-    this._miniMapHudCamera.setViewportSize(
-      minimapWidth,
-      minimapHeight
-    );
+    this._miniMapHudCamera.setViewportSize(minimapWidth, minimapHeight);
     const aspectRatio = minimapWidth / minimapHeight;
-    const orthoSizeH = aspectRatio >= 1.0 ? k_viewSize : k_viewSize * (1 / aspectRatio);
+    const orthoSizeH =
+      aspectRatio >= 1.0 ? k_viewSize : k_viewSize * (1 / aspectRatio);
     const orthoSizeW = orthoSizeH * aspectRatio;
     this._miniMapHudCamera.setAsOrthogonal({
       left: -orthoSizeW,
@@ -183,7 +192,7 @@ export class WebGLRenderer {
       near: -200,
       far: 200
     });
-    this._miniMapHudCamera.setUpAxis([0,0,1]);
+    this._miniMapHudCamera.setUpAxis([0, 0, 1]);
   }
 
   //
@@ -358,10 +367,7 @@ export class WebGLRenderer {
     this._hud.textRenderer.flush(this._mainHudCamera.getComposedMatrix());
   }
 
-  private _renderMiniMapHud(
-    chunks: Chunks,
-    processingPos: glm.ReadonlyVec3[]
-  ) {
+  private _renderMiniMapHud(chunks: Chunks, processingPos: glm.ReadonlyVec3[]) {
     const gl = WebGLContext.getContext();
 
     const cameraPos = this._freeFlyController.getPosition();
@@ -425,7 +431,6 @@ export class WebGLRenderer {
           this._def.chunkSize * 0.5,
           [1, 1, 1]
         );
-
       } else {
         // render smaller red cubes
 
@@ -459,7 +464,6 @@ export class WebGLRenderer {
     this._hud.stackRenderers.flush(this._miniMapHudCamera);
 
     {
-
       const projData = this._mainCamera.getPerspectiveData()!;
 
       renderPerspectiveFrustum(
