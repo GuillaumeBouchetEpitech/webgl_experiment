@@ -1,11 +1,12 @@
 import * as shaders from './shaders';
+
 import {
-  WebGLContext,
   GeometryWrapper,
   ShaderProgram,
   Texture
 } from '../../../wrappers';
-import { ICamera } from '../../../camera/Camera';
+
+import { Camera } from '../../../camera/Camera';
 
 import * as glm from 'gl-matrix';
 
@@ -129,8 +130,35 @@ export class ChunksRenderer implements IChunksRenderer {
     this._inUseGeometries.splice(index, 1);
   }
 
-  render(inCamera: ICamera, sceneOrigin: glm.ReadonlyVec3) {
-    const gl = WebGLContext.getContext();
+  render(inCamera: Camera, inChunkSize: number) {
+
+    const eyePos = inCamera.getEye();
+
+    // the chunks textures coordinates are deduced from the vertices positions
+    // and when exploring far from the origin of the simulation, the vertices
+    // positions will reach higher and higher values, this will affect the
+    // decimal value precision of the vertices positions, and then in turn will
+    // affect the deduced textures coordinates decimal value precision, that
+    // create graphic artifacts since the textures precision become is very low
+    // this is mostly an issue on mobile phone and similar lower end hardware
+    // ---
+    // to fix this growing loss of precision the rendering of the chunks
+    // vertices is offset to keep it near the origin of the simulation, and in
+    // order for the chunks to remain visible the camera is also offset of the
+    // same value
+    // ---
+    // the chosen offset is the value of the chunk size, so in effect, if the
+    // chunk size is 15, the chunks and the camera used while rendering the
+    // chunks are both within the 3d space of [0..15] on X/Y/Z
+
+    const offsetSceneOrigin = glm.vec3.fromValues(
+      Math.floor(eyePos[0] / inChunkSize) * inChunkSize,
+      Math.floor(eyePos[1] / inChunkSize) * inChunkSize,
+      Math.floor(eyePos[2] / inChunkSize) * inChunkSize
+    );
+
+    inCamera.subOffset(offsetSceneOrigin);
+    inCamera.computeMatrices();
 
     this._shader.bind();
     this._shader.setInteger1Uniform('u_texture', 0);
@@ -138,7 +166,6 @@ export class ChunksRenderer implements IChunksRenderer {
       'u_composedMatrix',
       inCamera.getComposedMatrix()
     );
-    const eyePos = inCamera.getEye();
     this._shader.setFloat3Uniform(
       'u_eyePosition',
       eyePos[0],
@@ -148,13 +175,16 @@ export class ChunksRenderer implements IChunksRenderer {
 
     this._shader.setFloat3Uniform(
       'u_sceneOrigin',
-      sceneOrigin[0],
-      sceneOrigin[1],
-      sceneOrigin[2]
+      offsetSceneOrigin[0],
+      offsetSceneOrigin[1],
+      offsetSceneOrigin[2]
     );
 
     this._texture.bind();
 
     this._inUseGeometries.forEach((geometry) => geometry.render());
+
+    inCamera.addOffset(offsetSceneOrigin);
+    inCamera.computeMatrices();
   }
 }

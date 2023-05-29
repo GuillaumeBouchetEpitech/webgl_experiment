@@ -1,7 +1,6 @@
 import { GlobalTouchManager } from '../../../../inputManagers';
 
 import { IStackRenderers } from '../stackRenderers/StackRenderers';
-import { FreeFlyController } from '../../../controllers/FreeFlyController';
 
 import * as glm from 'gl-matrix';
 
@@ -10,7 +9,7 @@ const _touchesAngleMap = new Map<number, number>();
 export const renderTouchEvents = (
   viewportSize: glm.ReadonlyVec2,
   stackRenderers: IStackRenderers,
-  freeFlyController: FreeFlyController
+  isMovingForward: boolean
 ) => {
   // touches
 
@@ -36,7 +35,7 @@ export const renderTouchEvents = (
       }
 
       const angles = [0.0, 0.5];
-      if (freeFlyController.getTouchMoveForward()) angles.push(0.25, 0.75);
+      if (isMovingForward) angles.push(0.25, 0.75);
 
       for (const offsetAngle of angles) {
         const finalAngle = angle + offsetAngle * Math.PI;

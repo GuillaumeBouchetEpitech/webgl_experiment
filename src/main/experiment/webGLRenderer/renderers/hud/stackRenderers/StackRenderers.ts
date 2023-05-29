@@ -49,7 +49,7 @@ export interface IStackRenderers {
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ): void;
 
-  flush(inCamera: ICamera): void;
+  flush(composedMatrix: glm.ReadonlyMat4): void;
   clear(): void;
 }
 
@@ -193,7 +193,7 @@ export class StackRenderers implements IStackRenderers {
     this._trianglesStackRenderer.pushTriangle(inPosA, inPosB, inPosC, inColor);
   }
 
-  flush(inCamera: ICamera) {
+  flush(composedMatrix: glm.ReadonlyMat4): void {
     if (
       !this._wireFramesStackRenderer.canRender() &&
       !this._trianglesStackRenderer.canRender()
@@ -202,10 +202,7 @@ export class StackRenderers implements IStackRenderers {
     }
 
     this._shader.bind();
-    this._shader.setMatrix4Uniform(
-      'u_composedMatrix',
-      inCamera.getComposedMatrix()
-    );
+    this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
 
     this._wireFramesStackRenderer.flush();
     this._trianglesStackRenderer.flush();

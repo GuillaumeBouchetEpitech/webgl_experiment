@@ -48,15 +48,14 @@ export interface IWireFrameCubesRenderer {
   pushCenteredCube(
     inCenter: glm.ReadonlyVec3,
     inScale: number,
-    inColor: glm.ReadonlyVec3
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ): void;
-
   pushOriginBoundCube(
     inOrigin: glm.ReadonlyVec3,
     inScale: number,
-    inColor: glm.ReadonlyVec3
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ): void;
-
+  flush(composedMatrix: glm.ReadonlyMat4): void;
   clear(): void;
 }
 
@@ -170,7 +169,7 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     this._buffer[this._currentSize++] = inColor[3] || 1;
   }
 
-  flush(inCamera: ICamera) {
+  flush(composedMatrix: glm.ReadonlyMat4): void {
     if (this._currentSize <= 0) {
       return;
     }
@@ -178,7 +177,7 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     this._shader.bind();
     this._shader.setMatrix4Uniform(
       'u_composedMatrix',
-      inCamera.getComposedMatrix()
+      composedMatrix
     );
 
     this._geometry.updateBuffer(1, this._buffer, this._currentSize);

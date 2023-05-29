@@ -1,13 +1,14 @@
 import * as glm from 'gl-matrix';
-import { IStackRenderers } from '../renderers/hud';
-import { FreeFlyController } from '../controllers/FreeFlyController';
+import { IStackRenderers } from '../../../hud';
 
 export const renderPerspectiveFrustum = (
   inFovY: number,
   inAspect: number,
   inNear: number,
   inFar: number,
-  inFreeFlyController: FreeFlyController,
+  eyePos: glm.ReadonlyVec3,
+  theta: number,
+  phi: number,
   inStackRenderers: IStackRenderers
 ): void => {
   const fH = Math.tan((inFovY / 360.0) * Math.PI) * inNear;
@@ -44,19 +45,9 @@ export const renderPerspectiveFrustum = (
   {
     const tmpMatrix = glm.mat4.identity(glm.mat4.create());
 
-    glm.mat4.translate(tmpMatrix, tmpMatrix, inFreeFlyController.getPosition());
-    glm.mat4.rotate(
-      tmpMatrix,
-      tmpMatrix,
-      inFreeFlyController.getTheta(),
-      [0, 0, 1]
-    );
-    glm.mat4.rotate(
-      tmpMatrix,
-      tmpMatrix,
-      inFreeFlyController.getPhi(),
-      [0, -1, 0]
-    );
+    glm.mat4.translate(tmpMatrix, tmpMatrix, eyePos);
+    glm.mat4.rotate(tmpMatrix, tmpMatrix, theta, [0, 0, 1]);
+    glm.mat4.rotate(tmpMatrix, tmpMatrix, phi, [0, -1, 0]);
 
     for (let ii = 0; ii < tmpVertices.length; ++ii) {
       tmpVertices[ii] = glm.vec3.transformMat4(

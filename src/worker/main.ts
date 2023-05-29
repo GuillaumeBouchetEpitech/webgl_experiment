@@ -12,6 +12,7 @@ import { DeterministicRng } from './helpers/DeterministicRng';
 type Vec3 = [number, number, number];
 
 const tmpRng = new DeterministicRng();
+tmpRng.setSeed(1);
 
 const simplexNoiseInstance = new ClassicalNoise({
   randomCallback: () => tmpRng.random(),
