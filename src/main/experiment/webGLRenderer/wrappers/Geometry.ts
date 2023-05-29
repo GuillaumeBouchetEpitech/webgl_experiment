@@ -51,12 +51,12 @@ export namespace GeometryWrapper {
       const gl = WebGLContext.getContext();
 
       if (def.vbos.length === 0) {
-        throw new Error('empty vbo defintion');
+        throw new Error('empty vbo definition');
       }
 
       for (const vbo of def.vbos) {
         if (vbo.attrs.length === 0) {
-          throw new Error('empty vbo attribute defintion');
+          throw new Error('empty vbo attribute definition');
         }
 
         for (const attr of vbo.attrs) {

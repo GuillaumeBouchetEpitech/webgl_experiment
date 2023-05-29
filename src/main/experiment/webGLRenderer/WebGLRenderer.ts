@@ -5,7 +5,6 @@ import { FreeFlyController } from './controllers/FreeFlyController';
 import { IFrustumCulling, FrustumCulling } from './camera/FrustumCulling';
 import { Camera } from './camera/Camera';
 
-import * as common from './renderers/common';
 import * as scene from './renderers/scene';
 import * as hud from './renderers/hud';
 
@@ -32,17 +31,15 @@ interface IDefinition {
   touchSensibility: number;
 }
 
-interface ICommon {
-  wireFrameCubesRenderer: common.WireFrameCubesRenderer;
-}
-
 interface IScene {
   chunksRenderer: scene.ChunksRenderer;
+  triangleCubesRenderer: scene.TriangleCubesRenderer;
 }
 
 interface IHud {
   textRenderer: hud.TextRenderer;
   stackRenderers: hud.StackRenderers;
+  wireFrameCubesRenderer: hud.WireFrameCubesRenderer;
 }
 
 export class WebGLRenderer {
@@ -60,7 +57,6 @@ export class WebGLRenderer {
   private onContextLost: (() => void) | null = null;
   private onContextRestored: (() => void) | null = null;
 
-  private _common: ICommon;
   private _scene: IScene;
   private _hud: IHud;
 
@@ -114,17 +110,15 @@ export class WebGLRenderer {
 
     this._offsetSceneOrigin = glm.vec3.fromValues(0, 0, 0);
 
-    this._common = {
-      wireFrameCubesRenderer: new common.WireFrameCubesRenderer()
-    };
-
     this._scene = {
-      chunksRenderer: new scene.ChunksRenderer()
+      chunksRenderer: new scene.ChunksRenderer(),
+      triangleCubesRenderer: new scene.TriangleCubesRenderer(),
     };
 
     this._hud = {
       textRenderer: new hud.TextRenderer(),
-      stackRenderers: new hud.StackRenderers()
+      stackRenderers: new hud.StackRenderers(),
+      wireFrameCubesRenderer: new hud.WireFrameCubesRenderer(),
     };
   }
 
@@ -306,7 +300,7 @@ export class WebGLRenderer {
     //
     //
 
-    this._common.wireFrameCubesRenderer.flush(this._mainCamera);
+    this._scene.triangleCubesRenderer.flush(this._mainCamera);
   }
 
   renderHUD(chunks: Chunks, processingPos: glm.ReadonlyVec3[]) {
@@ -410,7 +404,7 @@ export class WebGLRenderer {
     gl.disable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
 
-    this._common.wireFrameCubesRenderer.clear();
+    this._hud.wireFrameCubesRenderer.clear();
 
     const hSize = this._def.chunkSize * 0.5;
 
@@ -426,7 +420,7 @@ export class WebGLRenderer {
       if (currChunk.isVisible) {
         // render white cubes
 
-        this._common.wireFrameCubesRenderer.pushCenteredCube(
+        this._hud.wireFrameCubesRenderer.pushCenteredCube(
           chunkCenter,
           this._def.chunkSize * 0.5,
           [1, 1, 1]
@@ -434,7 +428,7 @@ export class WebGLRenderer {
       } else {
         // render smaller red cubes
 
-        this._common.wireFrameCubesRenderer.pushCenteredCube(
+        this._hud.wireFrameCubesRenderer.pushCenteredCube(
           chunkCenter,
           this._def.chunkSize * 0.5,
           [1, 0, 0, 0.8]
@@ -452,7 +446,7 @@ export class WebGLRenderer {
           currPos[2] + hSize
         ];
 
-        this._common.wireFrameCubesRenderer.pushCenteredCube(
+        this._hud.wireFrameCubesRenderer.pushCenteredCube(
           chunkCenter,
           this._def.chunkSize * 1.2,
           [0, 1, 0]
@@ -460,7 +454,7 @@ export class WebGLRenderer {
       }
     }
 
-    this._common.wireFrameCubesRenderer.flush(this._miniMapHudCamera);
+    this._hud.wireFrameCubesRenderer.flush(this._miniMapHudCamera);
     this._hud.stackRenderers.flush(this._miniMapHudCamera);
 
     {
@@ -486,8 +480,11 @@ export class WebGLRenderer {
     return this._freeFlyController;
   }
 
-  get wireFrameCubesRenderer(): common.IWireFrameCubesRenderer {
-    return this._common.wireFrameCubesRenderer;
+  get wireFrameCubesRenderer(): hud.IWireFrameCubesRenderer {
+    return this._hud.wireFrameCubesRenderer;
+  }
+  get triangleCubesRenderer(): scene.ITriangleCubesRenderer {
+    return this._scene.triangleCubesRenderer;
   }
   get stackRenderers(): IStackRenderers {
     return this._hud.stackRenderers;

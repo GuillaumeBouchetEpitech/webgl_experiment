@@ -2,7 +2,7 @@ import {
   GlobalKeyboardManager,
   GlobalMouseManager,
   GlobalTouchManager
-} from '../../inputManagers';
+} from '../inputManagers';
 
 import * as glm from 'gl-matrix';
 

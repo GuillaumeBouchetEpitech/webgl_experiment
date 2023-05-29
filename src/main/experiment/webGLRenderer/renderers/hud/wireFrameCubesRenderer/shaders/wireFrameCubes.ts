@@ -12,7 +12,6 @@ in float a_offset_scale;
 in vec4  a_offset_color;
 
 flat out vec4 v_color;
-// out vec3 v_worldSpacePosition;
 
 void main(void)
 {
@@ -21,7 +20,6 @@ void main(void)
   gl_Position = u_composedMatrix * vec4(position, 1.0);
 
   v_color = a_offset_color;
-  // v_worldSpacePosition = position;
 }
 `.trim();
 

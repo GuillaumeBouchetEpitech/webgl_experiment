@@ -146,7 +146,8 @@ export class WebGLExperiment {
 
       canvasElement.style.left = '0px';
       canvasElement.style.top = '0px';
-
+      canvasElement.style.width = `${currentWidth}px`;
+      canvasElement.style.height = `${currentHeight}px`;
       canvasElement.width = currentWidth;
       canvasElement.height = currentHeight;
 
@@ -243,7 +244,7 @@ export class WebGLExperiment {
 
       ++visibleChunks;
 
-      this._renderer.wireFrameCubesRenderer.pushOriginBoundCube(
+      this._renderer.triangleCubesRenderer.pushOriginBoundCube(
         chunk.realPosition,
         configuration.chunkSize,
         [1, 1, 1]
