@@ -2,7 +2,7 @@ import {
   GlobalKeyboardManager,
   GlobalMouseManager,
   GlobalTouchManager
-} from '../inputManagers';
+} from '../../browser';
 
 import * as glm from 'gl-matrix';
 
@@ -68,7 +68,10 @@ export class FreeFlyController {
     return this._isActivated;
   }
 
-  update(elapsedTime: number) {
+  update(
+    elapsedTime: number,
+    inCollideCallback: (inX: number, inY: number, inZ: number) => boolean
+  ) {
     let moveForward = false;
     let moveBackward = false;
     let strafeLeft = false;
@@ -213,18 +216,141 @@ export class FreeFlyController {
 
     glm.vec3.cross(this._leftAxis, this._upAxis, this._forwardAxis);
 
-    if (moveForward) {
-      glm.vec3.add(this._position, this._position, scaledForward);
-    } else if (moveBackward) {
-      glm.vec3.sub(this._position, this._position, scaledForward);
+    if (true) {
+      if (moveForward) {
+        glm.vec3.add(this._position, this._position, scaledForward);
+      } else if (moveBackward) {
+        glm.vec3.sub(this._position, this._position, scaledForward);
+      }
+
+      if (strafeLeft) {
+        glm.vec3.add(this._position, this._position, scaledLeft);
+      } else if (strafeRight) {
+        glm.vec3.sub(this._position, this._position, scaledLeft);
+      }
+    } else {
+      // const noNeg = (inVal: number) => inVal < 0 ? -inVal : inVal;
+      // const forwardAxis: number[] = [0,1,2].sort((a, b) => noNeg(scaledForward[a]) - noNeg(scaledForward[b]));
+      // const strafeAxis: number[] = [0,1,2].sort((a, b) => noNeg(scaledLeft[a]) - noNeg(scaledLeft[b]));
+
+      if (moveForward) {
+        if (
+          !inCollideCallback(
+            this._position[0] + scaledForward[0],
+            this._position[1],
+            this._position[2]
+          )
+        ) {
+          this._position[0] += scaledForward[0];
+        }
+        if (
+          !inCollideCallback(
+            this._position[0],
+            this._position[1] + scaledForward[1],
+            this._position[2]
+          )
+        ) {
+          this._position[1] += scaledForward[1];
+        }
+        if (
+          !inCollideCallback(
+            this._position[0],
+            this._position[1],
+            this._position[2] + scaledForward[2]
+          )
+        ) {
+          this._position[2] += scaledForward[2];
+        }
+      } else if (moveBackward) {
+        if (
+          !inCollideCallback(
+            this._position[0] - scaledForward[0],
+            this._position[1],
+            this._position[2]
+          )
+        ) {
+          this._position[0] -= scaledForward[0];
+        }
+        if (
+          !inCollideCallback(
+            this._position[0],
+            this._position[1] - scaledForward[1],
+            this._position[2]
+          )
+        ) {
+          this._position[1] -= scaledForward[1];
+        }
+        if (
+          !inCollideCallback(
+            this._position[0],
+            this._position[1],
+            this._position[2] - scaledForward[2]
+          )
+        ) {
+          this._position[2] -= scaledForward[2];
+        }
+      }
+
+      if (strafeLeft) {
+        if (
+          !inCollideCallback(
+            this._position[0] + scaledLeft[0],
+            this._position[1],
+            this._position[2]
+          )
+        ) {
+          this._position[0] += scaledLeft[0];
+        }
+        if (
+          !inCollideCallback(
+            this._position[0],
+            this._position[1] + scaledLeft[1],
+            this._position[2]
+          )
+        ) {
+          this._position[1] += scaledLeft[1];
+        }
+        if (
+          !inCollideCallback(
+            this._position[0],
+            this._position[1],
+            this._position[2] + scaledLeft[2]
+          )
+        ) {
+          this._position[2] += scaledLeft[2];
+        }
+      } else if (strafeRight) {
+        if (
+          !inCollideCallback(
+            this._position[0] - scaledLeft[0],
+            this._position[1],
+            this._position[2]
+          )
+        ) {
+          this._position[0] -= scaledLeft[0];
+        }
+        if (
+          !inCollideCallback(
+            this._position[0],
+            this._position[1] - scaledLeft[1],
+            this._position[2]
+          )
+        ) {
+          this._position[1] -= scaledLeft[1];
+        }
+        if (
+          !inCollideCallback(
+            this._position[0],
+            this._position[1],
+            this._position[2] - scaledLeft[2]
+          )
+        ) {
+          this._position[2] -= scaledLeft[2];
+        }
+      }
     }
 
-    if (strafeLeft) {
-      glm.vec3.add(this._position, this._position, scaledLeft);
-    } else if (strafeRight) {
-      glm.vec3.sub(this._position, this._position, scaledLeft);
-    }
-
+    // update target
     glm.vec3.add(this._target, this._position, this._forwardAxis);
 
     //

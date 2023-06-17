@@ -1,126 +1,111 @@
 import * as glm from 'gl-matrix';
 
+import { WorkerManager, ChunkManager, Chunks, IPositionData } from './internals';
+
 import { ILiveGeometry } from '../webGLRenderer/WebGLRenderer';
+import { FrameProfiler } from '../utils/FrameProfiler';
+import { IMessage } from '../../../_common';
+
+type Vec3 = [number, number, number];
 
 interface IChunkGeneratorDef {
-  chunkSize: number;
-  chunkRange: number;
+  chunkGraphicSize: number;
+  chunkGenerationRange: number;
+  chunkLogicSize: number;
   workerTotal: number;
   workerFile: string;
-  workerBufferSize: number;
-  chunkIsVisible: (pos: glm.ReadonlyVec3) => boolean;
-  acquireGeometry: () => ILiveGeometry;
+  chunkIsVisible: (pos: Readonly<Vec3>) => boolean;
+  acquireGeometry: (inSize: number) => ILiveGeometry;
   releaseGeometry: (inGeom: ILiveGeometry) => void;
   onChunkCreated?: () => void;
   onChunkDiscarded?: () => void;
 }
 
-interface IChunk {
-  realPosition: glm.ReadonlyVec3;
-  indexPosition: glm.ReadonlyVec3;
-  geometry: ILiveGeometry;
-  isVisible: boolean;
-}
-
-export type Chunks = IChunk[];
-
-interface IPositionData {
-  realPosition: glm.ReadonlyVec3;
-  indexPosition: glm.ReadonlyVec3;
-}
-
-interface IWorkerInstance {
-  instance: Worker;
-  float32buffer: Float32Array;
+interface WorkerData {
+  geometryFloat32buffer: Float32Array;
+  dataFloat32buffer: Float32Array;
   processing?: IPositionData;
 }
 
-interface IMessage {
-  indexPosition: glm.ReadonlyVec3;
-  realPosition: glm.ReadonlyVec3;
-  float32buffer: Float32Array;
-  sizeUsed: number;
-}
-
 export class ChunkGenerator {
-  private _def: IChunkGeneratorDef;
+  private _def: Pick<IChunkGeneratorDef, 'workerFile' | 'workerTotal' | 'chunkLogicSize'>;
+  private _geometryBufferSize: number;
+  private _dataBufferSize: number;
 
   private _running: boolean = false;
-  private _chunks: Chunks = []; // live chunks
-  private _chunkPositionQueue: IPositionData[] = []; // position to be processed
-  private _savedIndex: glm.vec3 = [999, 999, 999]; // any other value than 0/0/0 will work
+  private _chunkManager: ChunkManager;
 
-  private _unusedWorkers: IWorkerInstance[] = [];
-  private _inUseWorkers: IWorkerInstance[] = [];
+  private _workerManager: WorkerManager<WorkerData, IMessage>;
 
-  private _cameraPosition: glm.vec3 = glm.vec3.fromValues(0, 0, 0);
+  private _frameProfiler = new FrameProfiler();
 
   constructor(def: IChunkGeneratorDef) {
     this._def = def;
 
-    for (let ii = 0; ii < this._def.workerTotal; ++ii) this._addWorker();
-  }
+    this._chunkManager = new ChunkManager({
+      chunkGraphicSize: def.chunkGraphicSize,
+      chunkGenerationRange: def.chunkGenerationRange,
+      chunkLogicSize: def.chunkLogicSize,
+      chunkIsVisible: def.chunkIsVisible,
+      acquireGeometry: def.acquireGeometry,
+      releaseGeometry: def.releaseGeometry,
+    });
 
-  private _addWorker() {
-    const newWorker: IWorkerInstance = {
-      instance: new Worker(this._def.workerFile),
-      float32buffer: new Float32Array(this._def.workerBufferSize)
-    };
+    this._workerManager = new WorkerManager<WorkerData, IMessage>(
+      (inWorkerData: WorkerData, inMessageData: IMessage) => {
 
-    this._unusedWorkers.push(newWorker);
+        //
+        // process response
+        //
 
-    const onWorkerMessage = (event: MessageEvent) => {
-      //
-      // set worker as "unused"
-      //
+        const {
+          indexPosition,
+          realPosition,
+          geometryFloat32buffer, // memory ownership transfer
+          dataFloat32buffer, // memory ownership transfer
+          sizeUsed
+        } = inMessageData;
 
-      const index = this._inUseWorkers.indexOf(newWorker);
-      if (index >= 0) {
-        this._unusedWorkers.push(newWorker);
-        this._inUseWorkers.splice(index, 1);
-      }
+        const currTime = Date.now();
+        const delta = currTime - inMessageData.time;
+        this._frameProfiler.pushDelta(delta);
 
-      //
-      // process response
-      //
+        inWorkerData.geometryFloat32buffer = geometryFloat32buffer;
+        inWorkerData.dataFloat32buffer = dataFloat32buffer;
 
-      const {
-        indexPosition,
-        realPosition,
-        // we now own the vertices buffer
-        float32buffer,
-        sizeUsed
-      } = event.data as IMessage;
+        inWorkerData.processing = undefined;
 
-      newWorker.float32buffer = float32buffer;
+        if (!this._running) {
+          return;
+        }
 
-      newWorker.processing = undefined;
+        //
+        // process next
+        //
 
-      if (!this._running) return;
+        this._chunkManager.pushNew(
+          indexPosition,
+          realPosition,
+          inWorkerData.geometryFloat32buffer,
+          sizeUsed,
+          inWorkerData.dataFloat32buffer,
+          this._geometryBufferSize
+        );
 
-      //
-      // process next
-      //
+        // launch again
+        this._launchWorker();
 
-      const geometry = this._def.acquireGeometry();
-
-      geometry.update(newWorker.float32buffer, sizeUsed);
-
-      // save
-      this._chunks.push({
-        realPosition,
-        indexPosition,
-        geometry,
-        isVisible: false
       });
 
-      if (this._def.onChunkCreated) this._def.onChunkCreated();
+    this._dataBufferSize = Math.pow(this._def.chunkLogicSize + 1 + 1, 3); // TODO: check size
+    this._geometryBufferSize = this._dataBufferSize * 20 * 6 * 3; // 20 triangles (3 vertices, 6 floats each)
 
-      // launch again
-      this._launchWorker();
-    };
-
-    newWorker.instance.addEventListener('message', onWorkerMessage, false);
+    for (let ii = 0; ii < this._def.workerTotal; ++ii) {
+      this._workerManager.addOneWorker(this._def.workerFile, {
+        geometryFloat32buffer: new Float32Array(this._geometryBufferSize),
+        dataFloat32buffer: new Float32Array(this._dataBufferSize)
+      });
+    }
   }
 
   start() {
@@ -132,9 +117,7 @@ export class ChunkGenerator {
 
     this._running = false;
 
-    this._chunkPositionQueue.length = 0;
-    this._chunks.forEach((chunk) => this._def.releaseGeometry(chunk.geometry));
-    this._chunks.length = 0;
+    this._chunkManager.clear();
   }
 
   update(cameraPosition: glm.ReadonlyVec3) {
@@ -143,17 +126,7 @@ export class ChunkGenerator {
     //
     //
 
-    this._updateGeneration(cameraPosition);
-
-    //
-    //
-
-    for (const currChunk of this._chunks) {
-      const isVisible = this._def.chunkIsVisible(currChunk.realPosition);
-
-      currChunk.isVisible = isVisible;
-      currChunk.geometry.setVisibility(isVisible);
-    }
+    this._chunkManager.update(cameraPosition, this._workerManager);
 
     //
     //
@@ -161,136 +134,20 @@ export class ChunkGenerator {
     this._launchWorker();
   }
 
-  private _updateGeneration(inCameraPosition: glm.ReadonlyVec3) {
-    //  check if moved enough to justify asking for new chunks
-    //      -> if yes
-    //          reset chunk queue
-    //          exclude chunk out of range
-    //          include chunk in range
-
-    glm.vec3.copy(this._cameraPosition, inCameraPosition);
-
-    const currIndex: glm.ReadonlyVec3 = [
-      Math.floor(inCameraPosition[0] / this._def.chunkSize),
-      Math.floor(inCameraPosition[1] / this._def.chunkSize),
-      Math.floor(inCameraPosition[2] / this._def.chunkSize)
-    ];
-
-    // did we move to another chunk?
-    if (
-      !(
-        this._chunks.length == 0 ||
-        !glm.vec3.exactEquals(currIndex, this._savedIndex)
-      )
-    ) {
-      // no -> stop here
-      return;
-    }
-
-    // yes -> save as the new current chunk
-    glm.vec3.copy(this._savedIndex, currIndex);
-
-    //
-
-    // clear the generation queue
-    this._chunkPositionQueue.length = 0;
-
-    // the range of chunk generation/exclusion
-    const { chunkRange } = this._def;
-
-    const minPos: glm.ReadonlyVec3 = [
-      Math.floor(currIndex[0] - chunkRange),
-      Math.floor(currIndex[1] - chunkRange),
-      Math.floor(currIndex[2] - chunkRange)
-    ];
-    const maxPos: glm.ReadonlyVec3 = [
-      Math.floor(currIndex[0] + chunkRange),
-      Math.floor(currIndex[1] + chunkRange),
-      Math.floor(currIndex[2] + chunkRange)
-    ];
-
-    //
-    // exclude the chunks that are too far away
-
-    for (let ii = 0; ii < this._chunks.length; ) {
-      const { indexPosition } = this._chunks[ii];
-
-      const isOutOfRange =
-        indexPosition[0] < minPos[0] ||
-        indexPosition[0] > maxPos[0] ||
-        indexPosition[1] < minPos[1] ||
-        indexPosition[1] > maxPos[1] ||
-        indexPosition[2] < minPos[2] ||
-        indexPosition[2] > maxPos[2];
-
-      if (isOutOfRange) {
-        // remove chunk
-        this._def.releaseGeometry(this._chunks[ii].geometry);
-        this._chunks.splice(ii, 1);
-
-        if (this._def.onChunkDiscarded) {
-          this._def.onChunkDiscarded();
-        }
-      } else {
-        ++ii;
-      }
-    }
-
-    //
-    // include in the generation queue the close enough chunks
-
-    const currPos: glm.vec3 = [0, 0, 0];
-    for (currPos[2] = minPos[2]; currPos[2] <= maxPos[2]; ++currPos[2]) {
-      for (currPos[1] = minPos[1]; currPos[1] <= maxPos[1]; ++currPos[1]) {
-        for (currPos[0] = minPos[0]; currPos[0] <= maxPos[0]; ++currPos[0]) {
-          {
-            const tmpIndex = this._chunks.findIndex((currChunk) => {
-              const { indexPosition } = currChunk;
-              return glm.vec3.exactEquals(indexPosition, currPos);
-            });
-            if (tmpIndex >= 0) {
-              continue; // already processed
-            }
-          }
-
-          {
-            const tmpIndex = this._inUseWorkers.findIndex((currWorker) => {
-              const { indexPosition } = currWorker.processing!;
-              return glm.vec3.exactEquals(indexPosition, currPos);
-            });
-
-            if (tmpIndex >= 0) {
-              continue; // already processing
-            }
-          }
-
-          this._chunkPositionQueue.push({
-            indexPosition: [...currPos],
-            realPosition: [
-              currPos[0] * this._def.chunkSize,
-              currPos[1] * this._def.chunkSize,
-              currPos[2] * this._def.chunkSize
-            ]
-          });
-        }
-      }
-    }
-  }
-
   private _launchWorker() {
     // determine the next chunk to process
 
     while (
       // is there something to process?
-      this._chunkPositionQueue.length > 0 &&
+      this._chunkManager.isNotDone() &&
       // is there an unused worker?
-      this._unusedWorkers.length > 0
+      this._workerManager.isWorkerAvailable()
     ) {
       //
       // find the "best" chunk to generate
       //
 
-      const nextPositionData = this._getBestNextChunkPosition();
+      const nextPositionData = this._chunkManager.getBestNextChunkPosition();
       if (!nextPositionData) {
         break;
       }
@@ -299,72 +156,219 @@ export class ChunkGenerator {
       // set worker as "in use"
       //
 
-      const currentWorker = this._unusedWorkers.pop()!;
-      this._inUseWorkers.push(currentWorker);
+      this._workerManager.pushTask((inWorkerData, inPushTask) => {
 
-      currentWorker.processing = nextPositionData;
+        inWorkerData.processing = nextPositionData;
 
-      currentWorker.instance.postMessage(
-        {
+        const payload: IMessage = {
           realPosition: nextPositionData.realPosition,
           indexPosition: nextPositionData.indexPosition,
-          float32buffer: currentWorker.float32buffer
-        } as IMessage,
-        [
-          // we now transfer the ownership of the vertices buffer
-          currentWorker.float32buffer.buffer
-        ]
-      );
+          geometryFloat32buffer: inWorkerData.geometryFloat32buffer,
+          geometryBufferSize: this._geometryBufferSize,
+          dataFloat32buffer: inWorkerData.dataFloat32buffer,
+          // dataBufferSize: this._dataBufferSize,
+          sizeUsed: 0,
+          time: Date.now()
+        };
+
+        inPushTask(payload, [
+          inWorkerData.geometryFloat32buffer.buffer, // memory ownership transfer
+          inWorkerData.dataFloat32buffer.buffer // memory ownership transfer
+        ])
+      });
     }
-  }
-
-  private _getBestNextChunkPosition(): IPositionData | undefined {
-    if (this._chunkPositionQueue.length === 0) {
-      return undefined;
-    }
-
-    // from here, we determine the next best chunk to process
-
-    const _getDistanceToCamera = (chunkPosition: glm.ReadonlyVec3) => {
-      const chunkHSize = this._def.chunkSize * 0.5;
-
-      const chunkCenter: glm.ReadonlyVec3 = [
-        this._cameraPosition[0] - (chunkPosition[0] + chunkHSize),
-        this._cameraPosition[1] - (chunkPosition[1] + chunkHSize),
-        this._cameraPosition[2] - (chunkPosition[2] + chunkHSize)
-      ];
-
-      return glm.vec3.length(chunkCenter);
-    };
-
-    let bestIndex = -1;
-    let bestMagnitude = -1;
-
-    for (let ii = 0; ii < this._chunkPositionQueue.length; ++ii) {
-      const { realPosition } = this._chunkPositionQueue[ii];
-
-      if (!this._def.chunkIsVisible(realPosition)) continue;
-
-      const magnitude = _getDistanceToCamera(realPosition);
-      if (bestMagnitude >= 0 && bestMagnitude < magnitude) continue;
-
-      bestIndex = ii;
-      bestMagnitude = magnitude;
-    }
-
-    if (bestIndex < 0) {
-      return undefined;
-    }
-
-    // removal
-    return this._chunkPositionQueue.splice(bestIndex, 1)[0];
   }
 
   getChunks(): Chunks {
-    return this._chunks;
+    return this._chunkManager.getChunks();
+  }
+
+  // isColliding(
+  //   inPosition: glm.ReadonlyVec3,
+  //   inLog: (...args: any[]) => void
+  // ): boolean {
+  //   const realLogicSize = this._def.chunkLogicSize + 1 + 1;
+
+  //   // const k_graphicLogicRatio = this._def.chunkGraphicSize / realLogicSize;
+
+  //   // const k_chunkRange = 2;
+
+  //   const logicalMinSqPos: glm.ReadonlyVec3 = [
+  //     Math.floor((inPosition[0] / this._def.chunkGraphicSize) * realLogicSize),
+  //     Math.floor((inPosition[1] / this._def.chunkGraphicSize) * realLogicSize),
+  //     Math.floor((inPosition[2] / this._def.chunkGraphicSize) * realLogicSize)
+  //   ];
+  //   const logicalMaxSqPos: glm.ReadonlyVec3 = [
+  //     Math.ceil((inPosition[0] / this._def.chunkGraphicSize) * realLogicSize),
+  //     Math.ceil((inPosition[1] / this._def.chunkGraphicSize) * realLogicSize),
+  //     Math.ceil((inPosition[2] / this._def.chunkGraphicSize) * realLogicSize)
+  //   ];
+
+  //   inLog(
+  //     ` -- logic (${logicalMinSqPos[0]}_${logicalMaxSqPos[0]}) (${logicalMinSqPos[1]}_${logicalMaxSqPos[1]}) (${logicalMinSqPos[2]}_${logicalMaxSqPos[2]})`
+  //   );
+  //   // inLog(`    chunk (${minChunkPos[0]}_${maxChunkPos[0]}) (${minChunkPos[1]}_${maxChunkPos[1]}) (${minChunkPos[2]}_${maxChunkPos[2]})`);
+  //   // inLog(`    local pos ${logicalSqPos}`);
+
+  //   const allVals: number[] = [];
+
+  //   loop3dimensions(logicalMinSqPos, logicalMaxSqPos, (inPos) => {
+  //     const tmpChunkPos: glm.ReadonlyVec3 = [
+  //       Math.floor(inPos[0] / realLogicSize),
+  //       Math.floor(inPos[1] / realLogicSize),
+  //       Math.floor(inPos[2] / realLogicSize)
+  //     ];
+
+  //     for (const currChunk of this._usedChunks) {
+  //       const { indexPosition } = currChunk;
+
+  //       if (
+  //         indexPosition[0] !== tmpChunkPos[0] ||
+  //         indexPosition[1] !== tmpChunkPos[1] ||
+  //         indexPosition[2] !== tmpChunkPos[2]
+  //       ) {
+  //         continue;
+  //       }
+
+  //       const localIndex: glm.ReadonlyVec3 = [
+  //         inPos[0] - indexPosition[0] * realLogicSize,
+  //         inPos[1] - indexPosition[1] * realLogicSize,
+  //         inPos[2] - indexPosition[2] * realLogicSize
+  //       ];
+
+  //       if (
+  //         localIndex[0] < 0 ||
+  //         localIndex[0] >= realLogicSize ||
+  //         localIndex[1] < 0 ||
+  //         localIndex[1] >= realLogicSize ||
+  //         localIndex[2] < 0 ||
+  //         localIndex[2] >= realLogicSize
+  //       ) {
+  //         continue;
+  //       }
+
+  //       const val = currChunk.data.get(
+  //         localIndex[0],
+  //         localIndex[1],
+  //         localIndex[2]
+  //       );
+
+  //       inLog(
+  //         `    -- ${tmpChunkPos[0]} ${tmpChunkPos[1]} ${tmpChunkPos[2]}`
+  //       );
+  //       inLog(
+  //         `      -- ${localIndex[0]} ${localIndex[1]} ${localIndex[2]}`
+  //       );
+  //       inLog(`        -- ${val}`);
+
+  //       allVals.push(val);
+  //     }
+  //   });
+
+  //   // const minChunkPos: glm.ReadonlyVec3 = [
+  //   //   Math.floor(logicalMinSqPos[0] / realLogicSize * this._def.chunkGraphicSize),
+  //   //   Math.floor(logicalMinSqPos[1] / realLogicSize * this._def.chunkGraphicSize),
+  //   //   Math.floor(logicalMinSqPos[2] / realLogicSize * this._def.chunkGraphicSize)
+  //   // ];
+  //   // const maxChunkPos: glm.ReadonlyVec3 = [
+  //   //   Math.ceil(logicalMaxSqPos[0] / realLogicSize * this._def.chunkGraphicSize),
+  //   //   Math.ceil(logicalMaxSqPos[1] / realLogicSize * this._def.chunkGraphicSize),
+  //   //   Math.ceil(logicalMaxSqPos[2] / realLogicSize * this._def.chunkGraphicSize)
+  //   // ];
+
+  //   // inLog(` -- logic (${logicalMinSqPos[0]}_${logicalMaxSqPos[0]}) (${logicalMinSqPos[1]}_${logicalMaxSqPos[1]}) (${logicalMinSqPos[2]}_${logicalMaxSqPos[2]})`);
+  //   // inLog(`    chunk (${minChunkPos[0]}_${maxChunkPos[0]}) (${minChunkPos[1]}_${maxChunkPos[1]}) (${minChunkPos[2]}_${maxChunkPos[2]})`);
+  //   // // inLog(`    local pos ${logicalSqPos}`);
+
+  //   // //
+  //   // //
+
+  //   // const allVals: number[] = [];
+
+  //   // for (const currChunk of this._usedChunks) {
+
+  //   //   const { indexPosition: chunkIndex } = currChunk;
+
+  //   //   const isOutOfRange =
+  //   //     chunkIndex[0] < minChunkPos[0] ||
+  //   //     chunkIndex[0] > maxChunkPos[0] ||
+  //   //     chunkIndex[1] < minChunkPos[1] ||
+  //   //     chunkIndex[1] > maxChunkPos[1] ||
+  //   //     chunkIndex[2] < minChunkPos[2] ||
+  //   //     chunkIndex[2] > maxChunkPos[2];
+
+  //   //   if (isOutOfRange) {
+  //   //     continue;
+  //   //   }
+
+  //   //   // LOOP HERE
+  //   //   // LOOP HERE
+  //   //   // LOOP HERE
+
+  //   //   // logicalSqPos
+
+  //   //   const localIndex: glm.ReadonlyVec3 = [
+  //   //     logicalSqPos[0] - chunkIndex[0] * realLogicSize,
+  //   //     logicalSqPos[1] - chunkIndex[1] * realLogicSize,
+  //   //     logicalSqPos[2] - chunkIndex[2] * realLogicSize,
+  //   //   ];
+
+  //   //   if (
+  //   //     localIndex[0] < 0 || localIndex[0] >= realLogicSize ||
+  //   //     localIndex[1] < 0 || localIndex[1] >= realLogicSize ||
+  //   //     localIndex[2] < 0 || localIndex[2] >= realLogicSize
+  //   //   ) {
+  //   //     continue;
+  //   //   }
+
+  //   //   const val = currChunk.data.get(localIndex[0], localIndex[1], localIndex[2]);
+
+  //   //   inLog(`    -- ${chunkIndex[0]} ${chunkIndex[1]} ${chunkIndex[2]}`);
+  //   //   inLog(`      -- ${localIndex[0]} ${localIndex[1]} ${localIndex[2]}`);
+  //   //   inLog(`        -- ${val}`);
+
+  //   //   allVals.push(val);
+  //   //   // if (val > 0.5) {
+  //   //   //   return true;
+  //   //   // }
+
+  //   // //   inLog('   -- localPos', minLocalPos, maxLocalPos);
+
+  //   // //   for (let iZ = minLocalPos[2]; iZ <= maxLocalPos[2]; ++iZ) {
+  //   // //     for (let iY = minLocalPos[1]; iY <= maxLocalPos[1]; ++iY) {
+  //   // //       for (let iX = minLocalPos[0]; iX <= maxLocalPos[0]; ++iX) {
+
+  //   // //         if (currChunk.data.get(iX, iY, iZ) < 0.5) {
+  //   // //           return true;
+  //   // //         }
+
+  //   // //       }
+  //   // //     }
+  //   // //   }
+
+  //   // }
+
+  //   if (allVals.length > 0) {
+  //     let average = 0;
+  //     allVals.forEach((val) => (average += val));
+  //     average /= allVals.length;
+
+  //     inLog(` average: ${average}`);
+
+  //     if (average > 0.5) {
+  //       return true;
+  //     }
+  //   }
+
+  //   return false;
+  // }
+
+  getFrameProfiler(): Readonly<FrameProfiler> {
+    return this._frameProfiler;
   }
 
   getProcessingRealPositions(): glm.ReadonlyVec3[] {
-    return this._inUseWorkers.map((worker) => worker.processing!.realPosition);
+    return this._workerManager.getInUseWorkersData().map((workerData) => workerData.processing!.realPosition);
   }
+
 }

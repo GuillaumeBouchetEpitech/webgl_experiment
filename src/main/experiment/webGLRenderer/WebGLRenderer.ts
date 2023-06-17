@@ -1,4 +1,3 @@
-import { WebGLContext, ShaderProgram } from './wrappers';
 
 import { IFrustumCulling, FrustumCulling } from './camera/FrustumCulling';
 import { Camera, ICamera } from './camera/Camera';
@@ -6,7 +5,9 @@ import { Camera, ICamera } from './camera/Camera';
 import * as scene from './renderers/scene';
 import * as hud from './renderers/hud';
 
-import { GlobalMouseManager, GlobalTouchManager } from '../inputManagers';
+import { GlobalMouseManager, GlobalTouchManager, webgl2 } from '../../browser';
+const { WebGLContext, ShaderProgram } = webgl2;
+
 
 import * as glm from 'gl-matrix';
 
@@ -14,7 +15,6 @@ import * as glm from 'gl-matrix';
 
 interface IDefinition {
   canvasDomElement: HTMLCanvasElement;
-  chunkSize: number;
 }
 
 interface IScene {
@@ -73,18 +73,26 @@ export class WebGLRenderer {
       }
     };
 
-    this._def.canvasDomElement.addEventListener('webglcontextlost', onContextLost, false);
-    this._def.canvasDomElement.addEventListener('webglcontextrestored', onContextRestored, false);
+    this._def.canvasDomElement.addEventListener(
+      'webglcontextlost',
+      onContextLost,
+      false
+    );
+    this._def.canvasDomElement.addEventListener(
+      'webglcontextrestored',
+      onContextRestored,
+      false
+    );
 
     this._scene = {
       chunksRenderer: new scene.ChunksRenderer(),
-      triangleCubesRenderer: new scene.TriangleCubesRenderer(),
+      triangleCubesRenderer: new scene.TriangleCubesRenderer()
     };
 
     this._hud = {
       textRenderer: new hud.TextRenderer(),
       stackRenderers: new hud.StackRenderers(),
-      wireFrameCubesRenderer: new hud.WireFrameCubesRenderer(),
+      wireFrameCubesRenderer: new hud.WireFrameCubesRenderer()
     };
   }
 
@@ -93,7 +101,7 @@ export class WebGLRenderer {
     this._viewportSize[1] = height;
 
     this._mainCamera.setViewportSize(width, height);
-    this._mainCamera.setAsPerspective({ fovy: 70, near: 0.1, far: 55 });
+    this._mainCamera.setAsPerspective({ fovy: 70, near: 0.1, far: 70 });
 
     this._mainHudCamera.setViewportSize(width, height);
     this._mainHudCamera.setAsOrthogonal({
@@ -168,7 +176,11 @@ export class WebGLRenderer {
     return this._viewportSize;
   }
 
-  lookAt(inEye: glm.ReadonlyVec3, inTarget: glm.ReadonlyVec3, inUpAxis: glm.ReadonlyVec3) {
+  lookAt(
+    inEye: glm.ReadonlyVec3,
+    inTarget: glm.ReadonlyVec3,
+    inUpAxis: glm.ReadonlyVec3
+  ) {
     this._mainCamera.setEye(inEye);
     this._mainCamera.setTarget(inTarget);
     this._mainCamera.setUpAxis(inUpAxis);
@@ -176,7 +188,6 @@ export class WebGLRenderer {
   }
 
   update() {
-
     GlobalMouseManager.resetDelta();
     GlobalTouchManager.resetDeltas();
 
@@ -186,7 +197,7 @@ export class WebGLRenderer {
     );
   }
 
-  renderScene() {
+  renderScene(inChunkSize: number) {
     const gl = WebGLContext.getContext();
 
     const viewPos = this._mainCamera.getViewportPos();
@@ -200,7 +211,7 @@ export class WebGLRenderer {
     //
     //
 
-    this._scene.chunksRenderer.render(this._mainCamera, this._def.chunkSize);
+    this._scene.chunksRenderer.render(this._mainCamera, inChunkSize);
 
     //
     //

@@ -1,10 +1,11 @@
 {
     "extends": "../base-tsconfig.json",
     "compilerOptions": {
-        "lib": ["es2019", "dom", "webworker"]
+        "lib": ["es2020", "dom", "webworker"]
     },
     "include": [
         "./**/*.ts",
         "../main/**/*.ts",
+        "../_common/**/*.ts"
     ]
 }

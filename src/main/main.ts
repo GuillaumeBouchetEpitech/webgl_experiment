@@ -1,36 +1,113 @@
-window.onerror = (...args: any[]) => {
-  alert(JSON.stringify(args));
-};
 
+import { isWebGL2Supported, isWebWorkerSupported, GlobalFullScreenManager } from './browser';
 import { WebGLExperiment } from './experiment/WebGLExperiment';
-import { GlobalTouchManager } from './experiment/inputManagers';
 
-const run = async () => {
-  const canvasElement =
-    document.querySelector<HTMLCanvasElement>('#main-canvas');
-  if (!canvasElement) throw new Error('main-canvas not found');
+const onPageLoad = async () => {
 
-  const demo = new WebGLExperiment(canvasElement);
+  let mainDemo: WebGLExperiment | null = null;
+  const onPageError = async () => {
+    if (mainDemo) {
+      mainDemo.stop();
+    }
+  };
+  window.addEventListener('error', onPageError);
 
-  await demo.init();
+  //
+  // HTML elements check
+  //
 
-  demo.start();
+  const canvasElement = document.querySelector<HTMLCanvasElement>('#main-canvas');
+  if (!canvasElement) {
+    throw new Error('main-canvas not found');
+  }
+  const guiToggleStart = document.querySelector<HTMLButtonElement>('#gui_toggle_start');
+  if (!guiToggleStart) {
+    throw new Error('guiToggleStart not found');
+  }
 
-  {
-    // UI
+  const guiFullscreen = document.querySelector<HTMLButtonElement>('#gui_fullscreen');
+  if (!guiFullscreen) {
+    throw new Error('guiFullscreen not found');
+  }
 
-    const gui_toggle_start = document.getElementById('gui_toggle_start');
-    if (!gui_toggle_start) throw new Error('gui_toggle_start not found');
+  //
+  // browser features check
+  //
 
-    gui_toggle_start.addEventListener('click', () => {
-      console.log('toggle_start');
+  if (!isWebGL2Supported()) {
+    throw new Error("missing WebGL2 feature (unsupported)");
+  }
+  if (!isWebWorkerSupported()) {
+    throw new Error("missing WebWorker feature (unsupported)");
+  }
 
-      if (demo.isRunning()) {
-        demo.stop();
-      } else {
-        demo.start();
-      }
-    });
-  } // UI
+  //
+  // setup start/stop support
+  //
+
+  guiToggleStart.addEventListener('click', () => {
+    if (!mainDemo) {
+      return;
+    }
+
+    if (mainDemo.isRunning()) {
+      mainDemo.stop();
+    } else {
+      mainDemo.start();
+    }
+  });
+
+  //
+  // setup fullscreen support
+  //
+
+  guiFullscreen.addEventListener('click', () => {
+    if (!mainDemo) {
+      return;
+    }
+
+    GlobalFullScreenManager.requestFullScreen(canvasElement);
+  });
+
+  GlobalFullScreenManager.addOnFullScreenChange(() => {
+    if (!mainDemo) {
+      return;
+    }
+
+    let currentWidth = 800;
+    let currentHeight = 600;
+
+    const isFullScreen = GlobalFullScreenManager.isFullScreen(canvasElement);
+
+    if (isFullScreen) {
+      canvasElement.style.position = 'absolute';
+
+      currentWidth = window.innerWidth;
+      currentHeight = window.innerHeight;
+    } else {
+      canvasElement.style.position = 'relative';
+    }
+
+    canvasElement.style.left = '0px';
+    canvasElement.style.top = '0px';
+    canvasElement.style.width = `${currentWidth}px`;
+    canvasElement.style.height = `${currentHeight}px`;
+    canvasElement.width = currentWidth;
+    canvasElement.height = currentHeight;
+
+    mainDemo.resize(currentWidth, currentHeight, isFullScreen);
+  });
+
+  //
+  // setup application
+  //
+
+  mainDemo = new WebGLExperiment(canvasElement);
+
+  await mainDemo.init();
+
+  mainDemo.start();
+
 };
-run();
+
+window.addEventListener('load', onPageLoad);

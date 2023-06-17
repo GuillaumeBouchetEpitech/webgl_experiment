@@ -13,6 +13,23 @@ export namespace GeometryWrapper {
     mat4f
   }
 
+  const getAttrTypeSize = (inType: AttributeType) => {
+    switch (inType) {
+      case AttributeType.float:
+        return 1;
+      case AttributeType.vec2f:
+        return 2;
+      case AttributeType.vec3f:
+        return 3;
+      case AttributeType.vec4f:
+        return 4;
+      case AttributeType.mat3f:
+        return 9;
+      case AttributeType.mat4f:
+        return 16;
+    }
+  };
+
   export enum PrimitiveType {
     lines,
     triangles,
@@ -311,6 +328,76 @@ export namespace GeometryWrapper {
 
     setInstancedCount(count: number) {
       this._instanceCount = count;
+    }
+  }
+
+  export class GeometryBuilder {
+    private _def: GeometryDefinition = {
+      vbos: [],
+      primitiveType: PrimitiveType.lines
+    };
+
+    reset(): this {
+      this._def = {
+        vbos: [],
+        primitiveType: PrimitiveType.lines
+      };
+      return this;
+    }
+
+    getDef(): GeometryDefinition {
+      return this._def;
+    }
+
+    setPrimitiveType(
+      inPrimitive: 'lines' | 'triangles' | 'triangleStrip'
+    ): this {
+      this._def.primitiveType = PrimitiveType[inPrimitive];
+      return this;
+    }
+    addVbo(): this {
+      this._def.vbos.push({
+        attrs: [],
+        // stride: 0,
+        instanced: false
+        // dynamic: false,
+      });
+      return this;
+    }
+    setVboAsInstanced(): this {
+      this._getLastVbo().instanced = true;
+      return this;
+    }
+    setVboAsDynamic(): this {
+      this._getLastVbo().dynamic = true;
+      return this;
+    }
+    setStride(inStride: number): this {
+      this._getLastVbo().stride = inStride;
+      return this;
+    }
+    addVboAttribute(
+      inName: string,
+      inType: 'float' | 'vec2f' | 'vec3f' | 'vec4f' | 'mat3f' | 'mat4f'
+    ): this {
+      const currVbo = this._getLastVbo();
+      const lastAttr =
+        currVbo.attrs.length > 0
+          ? currVbo.attrs[currVbo.attrs.length - 1]
+          : null;
+      currVbo.attrs.push({
+        name: inName,
+        type: AttributeType[inType],
+        index: lastAttr ? lastAttr.index + getAttrTypeSize(lastAttr.type) : 0
+      });
+      return this;
+    }
+
+    private _getLastVbo(): VboDefinition {
+      if (this._def.vbos.length === 0) {
+        throw new Error('no VBO setup');
+      }
+      return this._def.vbos[this._def.vbos.length - 1];
     }
   }
 }

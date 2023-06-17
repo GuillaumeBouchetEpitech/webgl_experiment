@@ -1,4 +1,4 @@
-import { ShaderProgram, Texture, GeometryWrapper } from '../../../wrappers';
+import { ShaderProgram, Texture, GeometryWrapper, WebGLContext } from '../../../../../browser/webgl2';
 
 import * as shaders from './shaders';
 
@@ -11,24 +11,20 @@ const k_texCoord: glm.ReadonlyVec2 = [1 / k_gridSize[0], 1 / k_gridSize[1]];
 
 const k_bufferSize = 9 * 1024 * 4;
 
+type HorizontalTextAlign = 'left' | 'centered' | 'right';
+type VerticalTextAlign = 'top' | 'centered' | 'bottom';
+
 export interface ITextRenderer {
-  pushText(
-    inMessage: string,
-    inPosition: glm.ReadonlyVec2,
-    inScale: number
-  ): void;
-  pushCenteredText(
-    inMessage: string,
-    inCenter: glm.ReadonlyVec2,
-    inScale: number
-  ): void;
-  pushRightAlignedText(
-    inMessage: string,
-    inRightOrigin: glm.ReadonlyVec2,
-    inScale: number
-  ): void;
-  flush(composedMatrix: glm.ReadonlyMat4): void;
-  clear(): void;
+  setTextAlign(
+    inHorizontalTextAlign: HorizontalTextAlign,
+    inVerticalTextAlign: VerticalTextAlign
+  ): this;
+  setTextScale(inScale: number): this;
+
+  pushText(inMessage: string, inPosition: glm.ReadonlyVec2): this;
+
+  flush(composedMatrix: glm.ReadonlyMat4): this;
+  clear(): this;
 }
 
 export class TextRenderer implements ITextRenderer {
@@ -40,8 +36,13 @@ export class TextRenderer implements ITextRenderer {
   private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
 
+  private _textScale: number = 14;
+
+  private _horizontalTextAlign: HorizontalTextAlign = 'left';
+  private _verticalTextAlign: VerticalTextAlign = 'top';
+
   constructor() {
-    this._shader = new ShaderProgram({
+    this._shader = new ShaderProgram('TextRenderer', {
       vertexSrc: shaders.textRenderer.vertex,
       fragmentSrc: shaders.textRenderer.fragment,
       attributes: [
@@ -55,57 +56,27 @@ export class TextRenderer implements ITextRenderer {
       uniforms: ['u_composedMatrix', 'u_texture']
     });
 
-    const geometryDef = {
-      vbos: [
-        {
-          attrs: [
-            {
-              name: 'a_vertex_position',
-              type: GeometryWrapper.AttributeType.vec2f,
-              index: 0
-            },
-            {
-              name: 'a_vertex_texCoord',
-              type: GeometryWrapper.AttributeType.vec2f,
-              index: 2
-            }
-          ],
-          stride: 4 * 4,
-          instanced: false,
-          dynamic: false
-        },
-        {
-          attrs: [
-            {
-              name: 'a_offset_position',
-              type: GeometryWrapper.AttributeType.vec3f,
-              index: 0
-            },
-            {
-              name: 'a_offset_texCoord',
-              type: GeometryWrapper.AttributeType.vec2f,
-              index: 3
-            },
-            {
-              name: 'a_offset_color',
-              type: GeometryWrapper.AttributeType.vec3f,
-              index: 5
-            },
-            {
-              name: 'a_offset_scale',
-              type: GeometryWrapper.AttributeType.float,
-              index: 8
-            }
-          ],
-          stride: 9 * 4,
-          instanced: true,
-          dynamic: true
-        }
-      ],
-      primitiveType: GeometryWrapper.PrimitiveType.triangles
-    } as GeometryWrapper.GeometryDefinition;
+    const geoBuilder = new GeometryWrapper.GeometryBuilder();
+    geoBuilder
+      .reset()
+      .setPrimitiveType('triangles')
+      .addVbo()
+      .addVboAttribute('a_vertex_position', 'vec2f')
+      .addVboAttribute('a_vertex_texCoord', 'vec2f')
+      .setStride(4 * 4)
+      .addVbo()
+      .setVboAsDynamic()
+      .setVboAsInstanced()
+      .addVboAttribute('a_offset_position', 'vec3f')
+      .addVboAttribute('a_offset_texCoord', 'vec2f')
+      .addVboAttribute('a_offset_color', 'vec3f')
+      .addVboAttribute('a_offset_scale', 'float')
+      .setStride(9 * 4);
 
-    this._geometry = new GeometryWrapper.Geometry(this._shader, geometryDef);
+    this._geometry = new GeometryWrapper.Geometry(
+      this._shader,
+      geoBuilder.getDef()
+    );
 
     type Vertex = { position: glm.ReadonlyVec2; texCoord: glm.ReadonlyVec2 };
 
@@ -276,29 +247,32 @@ export class TextRenderer implements ITextRenderer {
     this._texture.loadFromMemory(width, height, imagePixels, true);
   }
 
-  pushText(inMessage: string, inPosition: glm.ReadonlyVec2, inScale: number) {
-    const currPos: glm.vec2 = [inPosition[0], inPosition[1]];
-
-    for (let ii = 0; ii < inMessage.length; ++ii) {
-      const letter = inMessage[ii];
-
-      if (letter == '\n') {
-        currPos[0] = inPosition[0]; // go back
-        currPos[1] -= inScale; // got down
-        continue;
-      }
-
-      this._pushLetter(letter, currPos, inScale);
-
-      currPos[0] += inScale;
-    }
+  setTextAlign(
+    inHorizontalTextAlign: HorizontalTextAlign,
+    inVerticalTextAlign: VerticalTextAlign
+  ): this {
+    this._horizontalTextAlign = inHorizontalTextAlign;
+    this._verticalTextAlign = inVerticalTextAlign;
+    return this;
   }
 
-  pushCenteredText(
-    inMessage: string,
-    inCenter: glm.ReadonlyVec2,
-    inScale: number
-  ) {
+  setTextScale(inScale: number): this {
+    this._textScale = inScale;
+    return this;
+  }
+
+  pushText(inMessage: string, inPosition: glm.ReadonlyVec2): this {
+    //
+    // validate
+    //
+
+    if (inMessage.length === 0) {
+      return this;
+    }
+    if (this._textScale <= 0) {
+      return this;
+    }
+
     const allLineWidth: number[] = [0];
     for (let ii = 0; ii < inMessage.length; ++ii) {
       if (inMessage[ii] == '\n') {
@@ -308,77 +282,91 @@ export class TextRenderer implements ITextRenderer {
       }
     }
 
-    let lineIndex = 0;
-
-    const currPos: glm.vec2 = [0, 0];
-    currPos[0] =
-      inCenter[0] - allLineWidth[lineIndex] * inScale * 0.5 + inScale * 0.5;
-    currPos[1] =
-      inCenter[1] + allLineWidth.length * inScale * 0.5 - inScale * 0.5;
-
-    for (let ii = 0; ii < inMessage.length; ++ii) {
-      const letter = inMessage[ii];
-
-      if (letter == '\n') {
-        lineIndex += 1;
-        // go back
-        (currPos[0] =
-          inCenter[0] -
-          allLineWidth[lineIndex] * inScale * 0.5 +
-          inScale * 0.5),
-          // go down
-          (currPos[1] -= inScale);
-      } else {
-        this._pushLetter(letter, currPos, inScale);
-        // go right
-        currPos[0] += inScale;
-      }
+    if (allLineWidth.length === 0) {
+      return this;
     }
-  }
-
-  pushRightAlignedText(
-    inMessage: string,
-    inRightOrigin: glm.ReadonlyVec2,
-    inScale: number
-  ) {
-    const allLineWidth: number[] = [0];
-    for (let ii = 0; ii < inMessage.length; ++ii) {
-      if (inMessage[ii] == '\n') {
-        allLineWidth.push(0);
-      } else {
-        allLineWidth[allLineWidth.length - 1] += 1;
-      }
-    }
+    // for (const currLine of allLineWidth) {
+    //   if (currLine === 0) {
+    //     return this;
+    //   }
+    // }
 
     let lineIndex = 0;
 
     const currPos: glm.vec2 = [0, 0];
-    currPos[0] = inRightOrigin[0] - allLineWidth[lineIndex] * inScale + inScale;
-    currPos[1] = inRightOrigin[1];
 
-    for (let ii = 0; ii < inMessage.length; ++ii) {
-      const letter = inMessage[ii];
+    //
+    // pre process
+    //
 
-      if (letter == '\n') {
-        lineIndex += 1;
-        // go back
+    const hScale = this._textScale * 0.5;
+
+    switch (this._horizontalTextAlign) {
+      case 'left':
+        currPos[0] = inPosition[0];
+        break;
+      case 'centered':
+        currPos[0] = inPosition[0] - allLineWidth[lineIndex] * hScale + hScale;
+        break;
+      case 'right':
         currPos[0] =
-          inRightOrigin[0] - allLineWidth[lineIndex] * inScale + inScale;
-        // go down
-        currPos[1] -= inScale;
+          inPosition[0] -
+          allLineWidth[lineIndex] * this._textScale +
+          this._textScale;
+        break;
+    }
+
+    switch (this._verticalTextAlign) {
+      case 'top':
+        currPos[1] = inPosition[1];
+        break;
+      case 'centered':
+        currPos[1] = inPosition[1] + allLineWidth.length * hScale - hScale;
+        break;
+      case 'bottom':
+        currPos[1] =
+          inPosition[1] - (allLineWidth.length - 1) * this._textScale;
+        break;
+    }
+
+    //
+    // process
+    //
+
+    for (let ii = 0; ii < inMessage.length; ++ii) {
+      const letter = inMessage[ii];
+
+      if (letter == '\n') {
+        lineIndex += 1;
+
+        // go back
+        switch (this._horizontalTextAlign) {
+          case 'left':
+            currPos[0] = inPosition[0];
+            break;
+          case 'centered':
+            currPos[0] =
+              inPosition[0] - allLineWidth[lineIndex] * hScale + hScale;
+            break;
+          case 'right':
+            currPos[0] =
+              inPosition[0] -
+              allLineWidth[lineIndex] * this._textScale +
+              this._textScale;
+            break;
+        }
+
+        currPos[1] -= this._textScale; // go down
       } else {
-        this._pushLetter(letter, currPos, inScale);
+        this._pushLetter(letter, currPos);
         // go right
-        currPos[0] += inScale;
+        currPos[0] += this._textScale;
       }
     }
+    return this;
   }
 
-  private _pushLetter(
-    inCharacter: string,
-    inPosition: glm.ReadonlyVec2,
-    inScale: number
-  ) {
+  private _pushLetter(inCharacter: string, inPosition: glm.ReadonlyVec2) {
     if (this._currentSize + 9 * 10 >= this._buffer.length) {
       return;
     }
@@ -401,7 +389,7 @@ export class TextRenderer implements ITextRenderer {
         this._buffer[this._currentSize++] = blackColor[0];
         this._buffer[this._currentSize++] = blackColor[1];
         this._buffer[this._currentSize++] = blackColor[2];
-        this._buffer[this._currentSize++] = inScale;
+        this._buffer[this._currentSize++] = this._textScale;
       }
     }
 
@@ -413,30 +401,35 @@ export class TextRenderer implements ITextRenderer {
     this._buffer[this._currentSize++] = whiteColor[0];
     this._buffer[this._currentSize++] = whiteColor[1];
     this._buffer[this._currentSize++] = whiteColor[2];
-    this._buffer[this._currentSize++] = inScale;
+    this._buffer[this._currentSize++] = this._textScale;
   }
 
-  flush(composedMatrix: glm.ReadonlyMat4) {
+  flush(composedMatrix: glm.ReadonlyMat4): this {
     if (this._currentSize === 0) {
-      return;
+      return this;
     }
 
-    this._shader.bind();
-    this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
+    this._shader.bind(() => {
 
-    this._texture.bind();
+      this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
+      this._shader.setTextureUniform('u_texture', this._texture, 0);
 
-    this._geometry.updateBuffer(1, this._buffer, this._currentSize);
-    this._geometry.setInstancedCount(this._currentSize / 9);
-    this._geometry.render();
+      this._geometry.updateBuffer(1, this._buffer, this._currentSize);
+      this._geometry.setInstancedCount(this._currentSize / 9);
+      this._geometry.render();
+
+    });
 
     Texture.unbind();
 
     this.clear();
+
+    return this;
   }
 
-  clear(): void {
+  clear(): this {
     // reset vertices
     this._currentSize = 0;
+    return this;
   }
 }

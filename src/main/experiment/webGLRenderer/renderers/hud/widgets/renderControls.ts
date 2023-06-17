@@ -2,7 +2,7 @@ import {
   GlobalKeyboardManager,
   GlobalTouchManager,
   GlobalPointerLockManager
-} from '../../../../inputManagers';
+} from '../../../../../browser';
 
 import { IStackRenderers } from '../stackRenderers/StackRenderers';
 import { ITextRenderer } from '../textRenderer/TextRenderer';
@@ -192,7 +192,11 @@ export const renderControls = (
     );
 
     if (currIndicator.text) {
-      textRenderer.pushCenteredText(currIndicator.text, center, 16);
+      textRenderer
+        .setTextScale(16)
+        .setTextAlign('centered', 'centered')
+        .pushText(currIndicator.text, center)
+        .setTextAlign('left', 'top');
     }
 
     if (currIndicator.lines) {

@@ -5,8 +5,7 @@ import {
   GlobalKeyboardManager,
   GlobalMouseManager,
   GlobalTouchManager,
-  GlobalFullScreenManager
-} from './inputManagers';
+} from '../browser';
 
 import { FreeFlyController } from './controllers/FreeFlyController';
 import { ChunkGenerator } from './generation/ChunkGenerator';
@@ -40,8 +39,8 @@ export class WebGLExperiment {
     this._freeFlyController = new FreeFlyController({
       position: glm.vec3.fromValues(0, 0, 0),
       coordinates: ['X', 'Y', 'Z'],
-      theta: Math.PI * 0.125,
-      phi: -Math.PI * 0.125,
+      theta: 0,
+      phi: 0,
       mouseSensibility: configuration.controllerMouseSensibility,
       movingSpeed: configuration.controllerMovingSpeed,
       keyboardSensibility: configuration.controllerKeyboardSensibility,
@@ -49,29 +48,20 @@ export class WebGLExperiment {
     });
 
     this._renderer = new WebGLRenderer({
-      canvasDomElement: canvasElement,
-      chunkSize: configuration.chunkSize,
+      canvasDomElement: canvasElement
     });
 
-    // put the camera outside the known chunk
-    const camera_pos = glm.vec3.fromValues(
-      (configuration.chunkSize / 4) * 3,
-      (configuration.chunkSize / 4) * 3,
-      0
-    );
-
-    this._freeFlyController.setPosition(camera_pos);
-
     this._chunkGenerator = new ChunkGenerator({
-      chunkSize: configuration.chunkSize,
-      chunkRange: configuration.chunkRange,
+      chunkGraphicSize: configuration.chunkGraphicSize,
+      chunkGenerationRange: configuration.chunkRange,
+      chunkLogicSize: configuration.chunkLogicSize,
 
       workerTotal: configuration.workerTotal,
       workerFile: configuration.workerFile,
-      workerBufferSize: configuration.workerBufferSize,
+      // workerBufferSize: configuration.workerBufferSize,
 
       chunkIsVisible: (pos: glm.ReadonlyVec3) => {
-        const hSize = configuration.chunkSize * 0.5;
+        const hSize = configuration.chunkGraphicSize * 0.5;
 
         return this._renderer.frustumCulling.cubeInFrustum(
           pos[0] + hSize,
@@ -80,10 +70,8 @@ export class WebGLExperiment {
           hSize
         );
       },
-      acquireGeometry: () => {
-        return this._renderer.chunksRenderer.acquireGeometry(
-          configuration.workerBufferSize
-        );
+      acquireGeometry: (inSize: number) => {
+        return this._renderer.chunksRenderer.acquireGeometry(inSize);
       },
       releaseGeometry: (inGeom: ILiveGeometry) => {
         this._renderer.chunksRenderer.releaseGeometry(inGeom);
@@ -132,40 +120,6 @@ export class WebGLExperiment {
 
     //
     //
-    // GUI (fullscreen button)
-
-    const guiFullscreen = document.getElementById('gui_fullscreen');
-    if (!guiFullscreen) throw new Error('guiFullscreen not found');
-
-    guiFullscreen.addEventListener('click', () => {
-      GlobalFullScreenManager.requestFullScreen(canvasElement);
-    });
-
-    GlobalFullScreenManager.addOnFullScreenChange(() => {
-      let currentWidth = 800;
-      let currentHeight = 600;
-
-      if (GlobalFullScreenManager.isFullScreen(canvasElement)) {
-        canvasElement.style.position = 'absolute';
-
-        currentWidth = window.innerWidth;
-        currentHeight = window.innerHeight;
-      } else {
-        canvasElement.style.position = 'relative';
-      }
-
-      canvasElement.style.left = '0px';
-      canvasElement.style.top = '0px';
-      canvasElement.style.width = `${currentWidth}px`;
-      canvasElement.style.height = `${currentHeight}px`;
-      canvasElement.width = currentWidth;
-      canvasElement.height = currentHeight;
-
-      this._renderer.resize(currentWidth, currentHeight);
-    });
-
-    // GUI (fullscreen button)
-    //
     //
 
     this._running = false;
@@ -188,6 +142,28 @@ export class WebGLExperiment {
 
   async init() {
     await this._renderer.init();
+  }
+
+  resize(inWidth: number, inHeight: number, inIsFullScreen: boolean) {
+    let currentWidth = inWidth;
+    let currentHeight = inHeight;
+
+    if (inIsFullScreen) {
+      this._canvasElement.style.position = 'absolute';
+      currentWidth = window.innerWidth;
+      currentHeight = window.innerHeight;
+    } else {
+      this._canvasElement.style.position = 'relative';
+    }
+
+    this._canvasElement.style.left = '0px';
+    this._canvasElement.style.top = '0px';
+    this._canvasElement.style.width = `${currentWidth}px`;
+    this._canvasElement.style.height = `${currentHeight}px`;
+    this._canvasElement.width = currentWidth;
+    this._canvasElement.height = currentHeight;
+
+    this._renderer.resize(currentWidth, currentHeight);
   }
 
   start() {
@@ -235,7 +211,16 @@ export class WebGLExperiment {
     //
     //
 
-    this._freeFlyController.update(elapsedTime / 1000);
+    this._freeFlyController.update(
+      elapsedTime / 1000,
+      (inX: number, inY: number, inZ: number) => {
+        // return this._chunkGenerator.isColliding(
+        //   glm.vec3.fromValues(inX, inY, inZ),
+        //   () => {}
+        // );
+        return false;
+      }
+    );
 
     this._renderer.lookAt(
       this._freeFlyController.getPosition(),
@@ -264,12 +249,12 @@ export class WebGLExperiment {
 
       this._renderer.triangleCubesRenderer.pushOriginBoundCube(
         chunk.realPosition,
-        configuration.chunkSize,
+        configuration.chunkGraphicSize,
         [1, 1, 1]
       );
     });
 
-    this._renderer.renderScene();
+    this._renderer.renderScene(configuration.chunkGraphicSize);
 
     //
     //
@@ -280,19 +265,30 @@ export class WebGLExperiment {
     this._renderer.stackRenderers.clear();
     this._renderer.textRenderer.clear();
 
+    // const allMsgs: string[] = [];
+    // const isColliding = this._chunkGenerator.isColliding(this._freeFlyController.getPosition(), (...args) => {
+    //   allMsgs.push(args.join(' '));
+    // });
+    // this._renderer.textRenderer
+    //   .setTextScale(14)
+    //   .setTextAlign('left', 'top')
+    //   .pushText(`isColliding=${isColliding}`, [250,400])
+    //   .pushText(allMsgs.join("\n"), [250,385]);
+    // this._renderer.textRenderer.flush();
+
     // top right text
     widgets.renderGenerationMetrics(
       this._renderer.getSize(),
       this._chunksCreated,
       this._chunksDiscarded,
       visibleChunks,
-      this._renderer.textRenderer,
+      this._renderer.textRenderer
     );
 
     // bottom left text
     widgets.renderCurrentCoordinates(
       this._renderer.getSize(),
-      configuration.chunkSize,
+      configuration.chunkGraphicSize,
       eyePos,
       this._renderer.textRenderer
     );
@@ -308,6 +304,15 @@ export class WebGLExperiment {
       [100, 50],
       this._frameProfiler,
       this._renderer.stackRenderers,
+      this._renderer.textRenderer,
+      true
+    );
+
+    widgets.renderFpsMeter(
+      [10, this._canvasElement.height - 150, 0],
+      [100, 50],
+      this._chunkGenerator.getFrameProfiler(),
+      this._renderer.stackRenderers,
       this._renderer.textRenderer
     );
 
@@ -317,17 +322,26 @@ export class WebGLExperiment {
       this._freeFlyController.getTouchMoveForward()
     );
 
-    this._renderer.stackRenderers.flush(this._renderer.hudCamera.getComposedMatrix());
-    this._renderer.textRenderer.flush(this._renderer.hudCamera.getComposedMatrix());
+    this._renderer.stackRenderers.flush(
+      this._renderer.hudCamera.getComposedMatrix()
+    );
+    this._renderer.textRenderer.flush(
+      this._renderer.hudCamera.getComposedMatrix()
+    );
+
+    const k_minScreenSize = 300;
+    const k_minViewSize = 150;
 
     widgets.renderMiniMap(
       this._renderer.mainCamera,
+      k_minScreenSize,
+      k_minViewSize,
       this._chunkGenerator.getChunks(),
-      configuration.chunkSize,
+      configuration.chunkGraphicSize,
       this._renderer.getSize(),
       this._chunkGenerator.getProcessingRealPositions(),
       this._renderer.wireFrameCubesRenderer,
-      this._renderer.stackRenderers,
+      this._renderer.stackRenderers
     );
   }
 }

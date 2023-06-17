@@ -1,9 +1,11 @@
+
 {
     "extends": "../base-tsconfig.json",
     "compilerOptions": {
-        "lib": ["es2019", "dom"]
+        "lib": ["es2020", "dom"]
     },
     "include": [
         "./**/*.ts",
+        "../_common/**/*.ts"
     ]
 }

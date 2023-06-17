@@ -1,4 +1,4 @@
-import { GlobalTouchManager } from '../../../../inputManagers';
+import { GlobalTouchManager } from '../../../../../browser';
 
 import { IStackRenderers } from '../stackRenderers/StackRenderers';
 

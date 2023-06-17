@@ -1,8 +1,7 @@
-
-import { WebGLContext } from '../../../wrappers';
+import { WebGLContext } from '../../../../../browser/webgl2';
 import { Camera, ICamera } from '../../../camera/Camera';
 
-import { Chunks } from '../../../../generation/ChunkGenerator';
+import { Chunks } from '../../../../generation/internals';
 
 import * as hud from '../../hud';
 
@@ -12,29 +11,28 @@ import * as glm from 'gl-matrix';
 
 export const renderMiniMap = (
   inCamera: ICamera,
-  chunks: Chunks,
+  inMinScreenSize: number,
+  inMinViewSize: number,
+  inChunks: Chunks,
   inChunkSize: number,
-  viewportSize: glm.ReadonlyVec2,
-  processingPos: glm.ReadonlyVec3[],
+  inViewportSize: glm.ReadonlyVec2,
+  inProcessingPos: glm.ReadonlyVec3[],
   inWireFrameCubesRenderer: hud.IWireFrameCubesRenderer,
-  inStackRenderers: hud.IStackRenderers,
+  inStackRenderers: hud.IStackRenderers
 ): void => {
   const gl = WebGLContext.getContext();
 
   //
   //
 
-  const [width, height] = viewportSize;
+  const [width, height] = inViewportSize;
 
   const miniMapHudCamera = new Camera();
 
-  const k_miniMapMinSize = 200;
-  const k_miniMapViewSize = 100;
-
   const minViewportSize = Math.min(width, height) * 0.5;
 
-  const minimapWidth = Math.max(minViewportSize, k_miniMapMinSize);
-  const minimapHeight = Math.max(minViewportSize, k_miniMapMinSize);
+  const minimapWidth = Math.max(minViewportSize, inMinScreenSize);
+  const minimapHeight = Math.max(minViewportSize, inMinScreenSize);
 
   const minimapPosX = width - minimapWidth;
   miniMapHudCamera.setViewportPos(minimapPosX, 0);
@@ -42,15 +40,15 @@ export const renderMiniMap = (
   miniMapHudCamera.setViewportSize(minimapWidth, minimapHeight);
   const aspectRatio = minimapWidth / minimapHeight;
   const orthoSizeH =
-    aspectRatio >= 1.0 ? k_miniMapViewSize : k_miniMapViewSize * (1 / aspectRatio);
+    aspectRatio >= 1.0 ? inMinViewSize : inMinViewSize * (1 / aspectRatio);
   const orthoSizeW = orthoSizeH * aspectRatio;
   miniMapHudCamera.setAsOrthogonal({
     left: -orthoSizeW,
     right: +orthoSizeW,
     top: -orthoSizeH,
     bottom: +orthoSizeH,
-    near: -200,
-    far: 200
+    near: -inMinViewSize,
+    far: +inMinViewSize
   });
   miniMapHudCamera.setUpAxis([0, 0, 1]);
 
@@ -62,14 +60,16 @@ export const renderMiniMap = (
   const diff = glm.vec3.sub(glm.vec3.create(), targetPos, mainEyePos);
 
   const forwardTheta = Math.atan2(diff[1], diff[0]);
-  const forwardPhi = Math.atan2(diff[2], glm.vec2.length(glm.vec2.fromValues(diff[1], diff[0])));
+  const forwardPhi = Math.atan2(
+    diff[2],
+    glm.vec2.length(glm.vec2.fromValues(diff[1], diff[0]))
+  );
 
-  const upPhi = forwardPhi + Math.PI * 0.5;
   const inclinedTheta = forwardTheta - Math.PI * 0.25;
+  const upPhi = forwardPhi + Math.PI * 0.5;
 
   const inclinedCosTheta = Math.cos(inclinedTheta);
   const inclinedSinTheta = Math.sin(inclinedTheta);
-
   const upAxisZ = Math.sin(upPhi);
 
   const miniMapEyePos = glm.vec3.copy(glm.vec3.create(), mainEyePos);
@@ -101,8 +101,7 @@ export const renderMiniMap = (
   const chunkCenter = glm.vec3.create();
   const chunkHalfSize = glm.vec3.fromValues(hSize, hSize, hSize);
 
-  for (const currChunk of chunks) {
-
+  inChunks.forEach((currChunk) => {
     glm.vec3.copy(chunkCenter, currChunk.realPosition);
     glm.vec3.add(chunkCenter, chunkCenter, chunkHalfSize);
 
@@ -117,19 +116,14 @@ export const renderMiniMap = (
     } else {
       // render smaller red cubes
 
-      inWireFrameCubesRenderer.pushCenteredCube(
-        chunkCenter,
-        hSize,
-        k_redColor
-      );
+      inWireFrameCubesRenderer.pushCenteredCube(chunkCenter, hSize, k_redColor);
     }
-  }
+  });
 
-  if (processingPos.length > 0) {
-
+  if (inProcessingPos.length > 0) {
     const extraSize = inChunkSize * 1.2;
 
-    for (const currPos of processingPos) {
+    inProcessingPos.forEach((currPos) => {
       // render green cubes (smaller -> scaled)
 
       glm.vec3.copy(chunkCenter, currPos);
@@ -140,7 +134,7 @@ export const renderMiniMap = (
         extraSize,
         k_greenColor
       );
-    }
+    });
   }
 
   inWireFrameCubesRenderer.flush(miniMapHudCamera.getComposedMatrix());
@@ -165,4 +159,4 @@ export const renderMiniMap = (
 
   gl.disable(gl.BLEND);
   gl.enable(gl.DEPTH_TEST);
-}
+};

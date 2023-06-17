@@ -1,4 +1,4 @@
-import { ShaderProgram, GeometryWrapper } from '../../../wrappers';
+import { ShaderProgram, GeometryWrapper } from '../../../../../browser/webgl2';
 import { ICamera } from '../../../camera/Camera';
 
 import * as shaders from './shaders';
@@ -69,7 +69,7 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
   private _currentSize: number = 0;
 
   constructor() {
-    this._shader = new ShaderProgram({
+    this._shader = new ShaderProgram('WireFrameCubesRenderer', {
       vertexSrc: shaders.wireFrameCubes.vertex,
       fragmentSrc: shaders.wireFrameCubes.fragment,
       attributes: [
@@ -81,49 +81,27 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
       uniforms: ['u_composedMatrix']
     });
 
-    const geometryDef = {
-      vbos: [
-        {
-          attrs: [
-            {
-              name: 'a_vertex_position',
-              type: GeometryWrapper.AttributeType.vec3f,
-              index: 0
-            }
-          ],
-          stride: 3 * 4,
-          instanced: false,
-          dynamic: false
-        },
-        {
-          attrs: [
-            {
-              name: 'a_offset_center',
-              type: GeometryWrapper.AttributeType.vec3f,
-              index: 0
-            },
-            {
-              name: 'a_offset_scale',
-              type: GeometryWrapper.AttributeType.float,
-              index: 3
-            },
-            {
-              name: 'a_offset_color',
-              type: GeometryWrapper.AttributeType.vec4f,
-              index: 4
-            }
-          ],
-          stride: 8 * 4,
-          instanced: true,
-          dynamic: true
-        }
-      ],
-      primitiveType: GeometryWrapper.PrimitiveType.lines
-    } as GeometryWrapper.GeometryDefinition;
+    const geoBuilder = new GeometryWrapper.GeometryBuilder();
+    geoBuilder
+      .reset()
+      .setPrimitiveType('lines')
+      .addVbo()
+      .addVboAttribute('a_vertex_position', 'vec3f')
+      .setStride(3 * 4)
+      .addVbo()
+      .setVboAsDynamic()
+      .setVboAsInstanced()
+      .addVboAttribute('a_offset_center', 'vec3f')
+      .addVboAttribute('a_offset_scale', 'float')
+      .addVboAttribute('a_offset_color', 'vec4f')
+      .setStride(8 * 4);
 
     const vertices = generateWireFrameCubeVertices(1);
 
-    this._geometry = new GeometryWrapper.Geometry(this._shader, geometryDef);
+    this._geometry = new GeometryWrapper.Geometry(
+      this._shader,
+      geoBuilder.getDef()
+    );
     this._geometry.updateBuffer(0, vertices, vertices.length);
     this._geometry.setPrimitiveCount(vertices.length / 3);
     this._geometry.setFloatBufferSize(1, k_bufferSize);
@@ -174,15 +152,14 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
       return;
     }
 
-    this._shader.bind();
-    this._shader.setMatrix4Uniform(
-      'u_composedMatrix',
-      composedMatrix
-    );
+    this._shader.bind(() => {
 
-    this._geometry.updateBuffer(1, this._buffer, this._currentSize);
-    this._geometry.setInstancedCount(this._currentSize / 8);
-    this._geometry.render();
+      this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
+
+      this._geometry.updateBuffer(1, this._buffer, this._currentSize);
+      this._geometry.setInstancedCount(this._currentSize / 8);
+      this._geometry.render();
+    });
 
     this.clear();
   }

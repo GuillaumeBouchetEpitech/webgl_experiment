@@ -141,17 +141,6 @@ export class Camera implements ICamera {
 
   //
 
-  addOffset(inOffset: glm.ReadonlyVec3) {
-    glm.vec3.add(this._eye, this._eye, inOffset);
-    glm.vec3.add(this._target, this._target, inOffset);
-  }
-  subOffset(inOffset: glm.ReadonlyVec3) {
-    glm.vec3.subtract(this._eye, this._eye, inOffset);
-    glm.vec3.subtract(this._target, this._target, inOffset);
-  }
-
-  //
-
   computeMatrices() {
     if (this._projectionType === ProjectionType.perspective) {
       const { fovy, aspectRatio, near, far } = this._perspectiveData!;

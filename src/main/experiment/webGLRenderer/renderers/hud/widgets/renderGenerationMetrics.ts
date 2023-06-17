@@ -1,4 +1,3 @@
-
 import * as hud from '../../../renderers/hud';
 
 import * as glm from 'gl-matrix';
@@ -8,9 +7,8 @@ export const renderGenerationMetrics = (
   inChunksCreated: number,
   inChunksDiscarded: number,
   inVisibleChunks: number,
-  inTextRenderer: hud.ITextRenderer,
+  inTextRenderer: hud.ITextRenderer
 ) => {
-
   const textsOrigin: glm.ReadonlyVec2 = [
     inViewportSize[0] - 10,
     inViewportSize[1] - 10
@@ -26,7 +24,8 @@ export const renderGenerationMetrics = (
     `Visible\nChunks:\n${inVisibleChunks} <`
   ].join('\n');
 
-  inTextRenderer.pushRightAlignedText(text, textsOrigin, 14);
-
+  inTextRenderer
+    .setTextScale(14)
+    .setTextAlign('right', 'top')
+    .pushText(text, textsOrigin);
 };
-

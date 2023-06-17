@@ -1,5 +1,4 @@
-import { ShaderProgram, GeometryWrapper } from '../../../wrappers';
-import { ICamera } from '../../../camera/Camera';
+import { ShaderProgram, GeometryWrapper } from '../../../../../browser/webgl2';
 
 import * as shaders from './shaders';
 
@@ -60,43 +59,29 @@ export class StackRenderers implements IStackRenderers {
   private _trianglesStackRenderer: TrianglesStackRenderer;
 
   constructor() {
-    this._shader = new ShaderProgram({
+    this._shader = new ShaderProgram('StackRenderers', {
       vertexSrc: shaders.stackRenderer.vertex,
       fragmentSrc: shaders.stackRenderer.fragment,
       attributes: ['a_vertex_position', 'a_vertex_color'],
       uniforms: ['u_composedMatrix']
     });
 
-    const geometryDef: GeometryWrapper.GeometryDefinition = {
-      vbos: [
-        {
-          attrs: [
-            {
-              name: 'a_vertex_position',
-              type: GeometryWrapper.AttributeType.vec3f,
-              index: 0
-            },
-            {
-              name: 'a_vertex_color',
-              type: GeometryWrapper.AttributeType.vec4f,
-              index: 3
-            }
-          ],
-          stride: 7 * 4,
-          instanced: false,
-          dynamic: true
-        }
-      ],
-      primitiveType: GeometryWrapper.PrimitiveType.lines // is overridden later
-    };
+    const geoBuilder = new GeometryWrapper.GeometryBuilder();
+    geoBuilder
+      .reset()
+      .setPrimitiveType('lines')
+      .addVbo()
+      .addVboAttribute('a_vertex_position', 'vec3f')
+      .addVboAttribute('a_vertex_color', 'vec4f')
+      .setStride(7 * 4);
 
     this._wireFramesStackRenderer = new WireFramesStackRenderer(
       this._shader,
-      geometryDef
+      geoBuilder.getDef()
     );
     this._trianglesStackRenderer = new TrianglesStackRenderer(
       this._shader,
-      geometryDef
+      geoBuilder.getDef()
     );
   }
 
@@ -201,11 +186,12 @@ export class StackRenderers implements IStackRenderers {
       return;
     }
 
-    this._shader.bind();
-    this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
+    this._shader.bind(() => {
+      this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
 
-    this._wireFramesStackRenderer.flush();
-    this._trianglesStackRenderer.flush();
+      this._wireFramesStackRenderer.flush();
+      this._trianglesStackRenderer.flush();
+    });
   }
 
   clear(): void {

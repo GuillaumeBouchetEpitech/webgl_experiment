@@ -47,13 +47,13 @@ export class ClassicalNoise {
       this._perm[ii] = initialP[ii & (k_sampleSize - 1)] | 0;
   }
 
-  noise(x2: number, y2: number, z2: number): number {
+  getNoise(inX: number, inY: number, inZ: number): number {
     let result = 0.0;
     let amp = this._amplitude;
 
-    let x = x2 * this._frequency;
-    let y = y2 * this._frequency;
-    let z = z2 * this._frequency;
+    let x = inX * this._frequency;
+    let y = inY * this._frequency;
+    let z = inZ * this._frequency;
 
     for (let ii = 0; ii < this._octaves; ++ii) {
       result += this._noise(x, y, z) * amp;
@@ -101,11 +101,15 @@ export class ClassicalNoise {
     const gi000 = this._perm[X + this._perm[Y + this._perm[Z]]] % 12 | 0;
     const gi001 = this._perm[X + this._perm[Y + this._perm[Z + 1]]] % 12 | 0;
     const gi010 = this._perm[X + this._perm[Y + 1 + this._perm[Z]]] % 12 | 0;
-    const gi011 = this._perm[X + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
+    const gi011 =
+      this._perm[X + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
     const gi100 = this._perm[X + 1 + this._perm[Y + this._perm[Z]]] % 12 | 0;
-    const gi101 = this._perm[X + 1 + this._perm[Y + this._perm[Z + 1]]] % 12 | 0;
-    const gi110 = this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z]]] % 12 | 0;
-    const gi111 = this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
+    const gi101 =
+      this._perm[X + 1 + this._perm[Y + this._perm[Z + 1]]] % 12 | 0;
+    const gi110 =
+      this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z]]] % 12 | 0;
+    const gi111 =
+      this._perm[X + 1 + this._perm[Y + 1 + this._perm[Z + 1]]] % 12 | 0;
 
     // Calculate noise contributions from each of the eight corners
     const n000 = this._dot(gi000, x, y, z);

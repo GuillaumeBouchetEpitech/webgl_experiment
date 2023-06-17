@@ -1,3 +1,4 @@
+import { Texture } from './Texture';
 import { WebGLContext } from './WebGLContext';
 
 import * as glm from 'gl-matrix';
@@ -10,12 +11,20 @@ export interface IShaderProgramOpts {
 }
 
 export class ShaderProgram {
+
+  private static _isBound: string | null = null;
+
+  private _name: string;
+
   private _program: WebGLProgram;
 
   private _attributes = new Map<string, number>();
   private _uniforms = new Map<string, WebGLUniformLocation>();
 
-  constructor(opt: IShaderProgramOpts) {
+  constructor(inName: string, opt: IShaderProgramOpts) {
+
+    this._name = inName;
+
     const gl = WebGLContext.getContext();
 
     const vertexShader = this._getShader(opt.vertexSrc, gl.VERTEX_SHADER);
@@ -45,18 +54,35 @@ export class ShaderProgram {
 
     // this._getAttribAndLocation(opt.attributes, opt.uniforms);
 
-    this.bind();
-
-    this._getAttributes(opt.attributes);
-    this._getUniforms(opt.uniforms);
-
-    ShaderProgram.unbind();
+    // this.rawBind();
+    this.bind(() => {
+      this._getAttributes(opt.attributes);
+      this._getUniforms(opt.uniforms);
+    });
+    // ShaderProgram.unbind();
   }
 
-  bind() {
-    const gl = WebGLContext.getContext();
+  // rawBind() {
+  //   const gl = WebGLContext.getContext();
 
+  //   gl.useProgram(this._program);
+  // }
+
+  async bind(inCallback: () => void) {
+
+    if (ShaderProgram._isBound !== null) {
+      throw new Error(`Double shader binding (bound: ${ShaderProgram._isBound}, binding: ${this._name})`);
+    }
+
+    ShaderProgram._isBound = this._name;
+    // this.rawBind();
+    const gl = WebGLContext.getContext();
     gl.useProgram(this._program);
+
+    inCallback();
+
+    ShaderProgram.unbind();
+    ShaderProgram._isBound = null;
   }
 
   static unbind() {
@@ -82,6 +108,14 @@ export class ShaderProgram {
     if (uniform === undefined) throw new Error(`uniform not found: ${name}`);
 
     return uniform;
+  }
+
+  setTextureUniform(inName: string, inTexture: Texture, inIndex: number) {
+    const gl = WebGLContext.getContext();
+
+    gl.activeTexture(gl.TEXTURE0 + inIndex);
+    gl.uniform1i(this.getUniform(inName), inIndex);
+    inTexture.bind();
   }
 
   setInteger1Uniform(inName: string, inValue: number) {

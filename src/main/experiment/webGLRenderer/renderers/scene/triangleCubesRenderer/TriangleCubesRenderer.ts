@@ -1,12 +1,14 @@
-import { ShaderProgram, GeometryWrapper } from '../../../wrappers';
+import { ShaderProgram, GeometryWrapper } from '../../../../../browser/webgl2';
 import { ICamera } from '../../../camera/Camera';
 
 import * as shaders from './shaders';
 
 import * as glm from 'gl-matrix';
 
-const generateCubeVertices = (inOrigin: glm.ReadonlyVec3, inSize: glm.ReadonlyVec3) => {
-
+const generateCubeVertices = (
+  inOrigin: glm.ReadonlyVec3,
+  inSize: glm.ReadonlyVec3
+) => {
   const vertices: glm.ReadonlyVec3[] = [];
 
   const hSizeX = inSize[0] * 0.5;
@@ -14,14 +16,14 @@ const generateCubeVertices = (inOrigin: glm.ReadonlyVec3, inSize: glm.ReadonlyVe
   const hSizeZ = inSize[2] * 0.5;
 
   const tmpVertices: glm.ReadonlyVec3[] = [
-    [ inOrigin[0] - hSizeX, inOrigin[1] - hSizeY, inOrigin[2] - hSizeZ ], // 0
-    [ inOrigin[0] + hSizeX, inOrigin[1] - hSizeY, inOrigin[2] - hSizeZ ], // 1
-    [ inOrigin[0] - hSizeX, inOrigin[1] + hSizeY, inOrigin[2] - hSizeZ ], // 2
-    [ inOrigin[0] + hSizeX, inOrigin[1] + hSizeY, inOrigin[2] - hSizeZ ], // 3
-    [ inOrigin[0] - hSizeX, inOrigin[1] - hSizeY, inOrigin[2] + hSizeZ ], // 4
-    [ inOrigin[0] + hSizeX, inOrigin[1] - hSizeY, inOrigin[2] + hSizeZ ], // 5
-    [ inOrigin[0] - hSizeX, inOrigin[1] + hSizeY, inOrigin[2] + hSizeZ ], // 6
-    [ inOrigin[0] + hSizeX, inOrigin[1] + hSizeY, inOrigin[2] + hSizeZ ], // 7
+    [inOrigin[0] - hSizeX, inOrigin[1] - hSizeY, inOrigin[2] - hSizeZ], // 0
+    [inOrigin[0] + hSizeX, inOrigin[1] - hSizeY, inOrigin[2] - hSizeZ], // 1
+    [inOrigin[0] - hSizeX, inOrigin[1] + hSizeY, inOrigin[2] - hSizeZ], // 2
+    [inOrigin[0] + hSizeX, inOrigin[1] + hSizeY, inOrigin[2] - hSizeZ], // 3
+    [inOrigin[0] - hSizeX, inOrigin[1] - hSizeY, inOrigin[2] + hSizeZ], // 4
+    [inOrigin[0] + hSizeX, inOrigin[1] - hSizeY, inOrigin[2] + hSizeZ], // 5
+    [inOrigin[0] - hSizeX, inOrigin[1] + hSizeY, inOrigin[2] + hSizeZ], // 6
+    [inOrigin[0] + hSizeX, inOrigin[1] + hSizeY, inOrigin[2] + hSizeZ] // 7
   ];
 
   const indices: number[] = [];
@@ -55,25 +57,60 @@ const generateCubeVertices = (inOrigin: glm.ReadonlyVec3, inSize: glm.ReadonlyVe
 };
 
 const generateWireFrameCubeVertices = (inSize: number): number[] => {
-
   const rectSize = 1 / 512;
-  const rectPos = (0.5 - rectSize * 0.5);
+  const rectPos = 0.5 - rectSize * 0.5;
 
   const vertices: glm.ReadonlyVec3[] = [
-    ...generateCubeVertices([inSize * -rectPos, inSize * -rectPos, 0], [rectSize, rectSize, 1.0]),
-    ...generateCubeVertices([inSize * +rectPos, inSize * -rectPos, 0], [rectSize, rectSize, 1.0]),
-    ...generateCubeVertices([inSize * +rectPos, inSize * +rectPos, 0], [rectSize, rectSize, 1.0]),
-    ...generateCubeVertices([inSize * -rectPos, inSize * +rectPos, 0], [rectSize, rectSize, 1.0]),
+    ...generateCubeVertices(
+      [inSize * -rectPos, inSize * -rectPos, 0],
+      [rectSize, rectSize, 1.0]
+    ),
+    ...generateCubeVertices(
+      [inSize * +rectPos, inSize * -rectPos, 0],
+      [rectSize, rectSize, 1.0]
+    ),
+    ...generateCubeVertices(
+      [inSize * +rectPos, inSize * +rectPos, 0],
+      [rectSize, rectSize, 1.0]
+    ),
+    ...generateCubeVertices(
+      [inSize * -rectPos, inSize * +rectPos, 0],
+      [rectSize, rectSize, 1.0]
+    ),
 
-    ...generateCubeVertices([inSize * -rectPos, 0, inSize * -rectPos], [rectSize, 1.0, rectSize]),
-    ...generateCubeVertices([inSize * +rectPos, 0, inSize * -rectPos], [rectSize, 1.0, rectSize]),
-    ...generateCubeVertices([inSize * +rectPos, 0, inSize * +rectPos], [rectSize, 1.0, rectSize]),
-    ...generateCubeVertices([inSize * -rectPos, 0, inSize * +rectPos], [rectSize, 1.0, rectSize]),
+    ...generateCubeVertices(
+      [inSize * -rectPos, 0, inSize * -rectPos],
+      [rectSize, 1.0, rectSize]
+    ),
+    ...generateCubeVertices(
+      [inSize * +rectPos, 0, inSize * -rectPos],
+      [rectSize, 1.0, rectSize]
+    ),
+    ...generateCubeVertices(
+      [inSize * +rectPos, 0, inSize * +rectPos],
+      [rectSize, 1.0, rectSize]
+    ),
+    ...generateCubeVertices(
+      [inSize * -rectPos, 0, inSize * +rectPos],
+      [rectSize, 1.0, rectSize]
+    ),
 
-    ...generateCubeVertices([0, inSize * -rectPos, inSize * -rectPos], [1.0, rectSize, rectSize]),
-    ...generateCubeVertices([0, inSize * +rectPos, inSize * -rectPos], [1.0, rectSize, rectSize]),
-    ...generateCubeVertices([0, inSize * +rectPos, inSize * +rectPos], [1.0, rectSize, rectSize]),
-    ...generateCubeVertices([0, inSize * -rectPos, inSize * +rectPos], [1.0, rectSize, rectSize]),
+    ...generateCubeVertices(
+      [0, inSize * -rectPos, inSize * -rectPos],
+      [1.0, rectSize, rectSize]
+    ),
+    ...generateCubeVertices(
+      [0, inSize * +rectPos, inSize * -rectPos],
+      [1.0, rectSize, rectSize]
+    ),
+    ...generateCubeVertices(
+      [0, inSize * +rectPos, inSize * +rectPos],
+      [1.0, rectSize, rectSize]
+    ),
+    ...generateCubeVertices(
+      [0, inSize * -rectPos, inSize * +rectPos],
+      [1.0, rectSize, rectSize]
+    )
   ];
 
   const finalVertices: number[] = [];
@@ -115,7 +152,7 @@ export class TriangleCubesRenderer implements ITriangleCubesRenderer {
   private _currentSize: number = 0;
 
   constructor() {
-    this._shader = new ShaderProgram({
+    this._shader = new ShaderProgram('TriangleCubesRenderer', {
       vertexSrc: shaders.triangleCubes.vertex,
       fragmentSrc: shaders.triangleCubes.fragment,
       attributes: [
@@ -127,49 +164,27 @@ export class TriangleCubesRenderer implements ITriangleCubesRenderer {
       uniforms: ['u_composedMatrix']
     });
 
-    const geometryDef = {
-      vbos: [
-        {
-          attrs: [
-            {
-              name: 'a_vertex_position',
-              type: GeometryWrapper.AttributeType.vec3f,
-              index: 0
-            }
-          ],
-          stride: 3 * 4,
-          instanced: false,
-          dynamic: false
-        },
-        {
-          attrs: [
-            {
-              name: 'a_offset_center',
-              type: GeometryWrapper.AttributeType.vec3f,
-              index: 0
-            },
-            {
-              name: 'a_offset_scale',
-              type: GeometryWrapper.AttributeType.float,
-              index: 3
-            },
-            {
-              name: 'a_offset_color',
-              type: GeometryWrapper.AttributeType.vec4f,
-              index: 4
-            }
-          ],
-          stride: 8 * 4,
-          instanced: true,
-          dynamic: true
-        }
-      ],
-      primitiveType: GeometryWrapper.PrimitiveType.triangles
-    } as GeometryWrapper.GeometryDefinition;
+    const geoBuilder = new GeometryWrapper.GeometryBuilder();
+    geoBuilder
+      .reset()
+      .setPrimitiveType('triangles')
+      .addVbo()
+      .addVboAttribute('a_vertex_position', 'vec3f')
+      .setStride(3 * 4)
+      .addVbo()
+      .setVboAsDynamic()
+      .setVboAsInstanced()
+      .addVboAttribute('a_offset_center', 'vec3f')
+      .addVboAttribute('a_offset_scale', 'float')
+      .addVboAttribute('a_offset_color', 'vec4f')
+      .setStride(8 * 4);
 
     const vertices = generateWireFrameCubeVertices(1);
 
-    this._geometry = new GeometryWrapper.Geometry(this._shader, geometryDef);
+    this._geometry = new GeometryWrapper.Geometry(
+      this._shader,
+      geoBuilder.getDef()
+    );
     this._geometry.updateBuffer(0, vertices, vertices.length);
     this._geometry.setPrimitiveCount(vertices.length / 3);
     this._geometry.setFloatBufferSize(1, k_bufferSize);
@@ -220,15 +235,17 @@ export class TriangleCubesRenderer implements ITriangleCubesRenderer {
       return;
     }
 
-    this._shader.bind();
-    this._shader.setMatrix4Uniform(
-      'u_composedMatrix',
-      inCamera.getComposedMatrix()
-    );
+    this._shader.bind(() => {
 
-    this._geometry.updateBuffer(1, this._buffer, this._currentSize);
-    this._geometry.setInstancedCount(this._currentSize / 8);
-    this._geometry.render();
+      this._shader.setMatrix4Uniform(
+        'u_composedMatrix',
+        inCamera.getComposedMatrix()
+      );
+
+      this._geometry.updateBuffer(1, this._buffer, this._currentSize);
+      this._geometry.setInstancedCount(this._currentSize / 8);
+      this._geometry.render();
+    });
 
     this.clear();
   }

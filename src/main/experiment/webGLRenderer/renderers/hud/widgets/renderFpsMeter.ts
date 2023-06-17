@@ -9,7 +9,8 @@ export const renderFpsMeter = (
   inSize: glm.ReadonlyVec2,
   inFrameProfiler: IFrameProfiler,
   inStackRenderers: IStackRenderers,
-  inTextRenderer: ITextRenderer
+  inTextRenderer: ITextRenderer,
+  inShowFps = false
 ) => {
   // fps meter
 
@@ -103,22 +104,38 @@ export const renderFpsMeter = (
   {
     // counter
 
-    const latestValue = 1000 / inFrameProfiler.averageDelta;
-    const minFps = 1000 / inFrameProfiler.maxDelta;
-    const maxFps = 1000 / inFrameProfiler.minDelta;
+    const k_textScale = 14;
+    const k_textHScale = k_textScale * 0.5;
 
-    const _getFpsStr = (inVal: number) => {
-      if (inVal < 999) {
-        return `${inVal.toFixed(0)}`.padStart(3, ' ');
-      }
-      return '???';
-    };
+    const averageValue = inFrameProfiler.averageDelta;
+    const maxValue = inFrameProfiler.maxDelta;
+    const minValue = inFrameProfiler.minDelta;
 
-    const text = [
-      `~${_getFpsStr(latestValue)}fps`,
-      `${_getFpsStr(minFps)}..${_getFpsStr(maxFps)}`
-    ].join('\n');
+    let averageStr = `~${averageValue.toFixed(0)}ms`;
+    let maxStr = `<${maxValue}ms`;
+    let minStr = `>${minValue}ms`;
 
-    inTextRenderer.pushText(text, [inPos[0] + 7, inPos[1] - 8], 14);
+    if (inShowFps === true) {
+      const _getFpsStr = (inVal: number) =>
+        inVal < 999 ? inVal.toFixed(0) : '???';
+
+      averageStr += `\n~${_getFpsStr(1000 / averageValue)}fps`;
+      maxStr += `\n<${_getFpsStr(1000 / maxValue)}fps`;
+      minStr += `\n>${_getFpsStr(1000 / minValue)}fps`;
+    }
+
+    inTextRenderer
+      .setTextScale(k_textScale)
+      .setTextAlign('left', 'top')
+      .pushText(averageStr, [inPos[0] + 7, inPos[1] - 8])
+      .setTextAlign('left', 'centered')
+      .pushText(maxStr, [
+        inPos[0] + inSize[0] + k_textHScale,
+        inPos[1] + inSize[1] - k_textHScale * 1
+      ])
+      .pushText(minStr, [
+        inPos[0] + inSize[0] + k_textHScale,
+        inPos[1] + k_textHScale * 1
+      ]);
   } // counter
 };
