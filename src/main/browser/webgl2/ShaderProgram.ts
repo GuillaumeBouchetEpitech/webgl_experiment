@@ -11,7 +11,6 @@ export interface IShaderProgramOpts {
 }
 
 export class ShaderProgram {
-
   private static _isBound: string | null = null;
 
   private _name: string;
@@ -22,7 +21,6 @@ export class ShaderProgram {
   private _uniforms = new Map<string, WebGLUniformLocation>();
 
   constructor(inName: string, opt: IShaderProgramOpts) {
-
     this._name = inName;
 
     const gl = WebGLContext.getContext();
@@ -69,9 +67,10 @@ export class ShaderProgram {
   // }
 
   async bind(inCallback: () => void) {
-
     if (ShaderProgram._isBound !== null) {
-      throw new Error(`Double shader binding (bound: ${ShaderProgram._isBound}, binding: ${this._name})`);
+      throw new Error(
+        `Double shader binding (bound: ${ShaderProgram._isBound}, binding: ${this._name})`
+      );
     }
 
     ShaderProgram._isBound = this._name;

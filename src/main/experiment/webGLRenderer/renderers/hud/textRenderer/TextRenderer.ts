@@ -1,4 +1,9 @@
-import { ShaderProgram, Texture, GeometryWrapper, WebGLContext } from '../../../../../browser/webgl2';
+import {
+  ShaderProgram,
+  Texture,
+  GeometryWrapper,
+  WebGLContext
+} from '../../../../../browser/webgl2';
 
 import * as shaders from './shaders';
 
@@ -410,14 +415,12 @@ export class TextRenderer implements ITextRenderer {
     }
 
     this._shader.bind(() => {
-
       this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
       this._shader.setTextureUniform('u_texture', this._texture, 0);
 
       this._geometry.updateBuffer(1, this._buffer, this._currentSize);
       this._geometry.setInstancedCount(this._currentSize / 9);
       this._geometry.render();
-
     });
 
     Texture.unbind();

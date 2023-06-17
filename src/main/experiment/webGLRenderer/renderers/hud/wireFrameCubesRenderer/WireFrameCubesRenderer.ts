@@ -153,7 +153,6 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
     }
 
     this._shader.bind(() => {
-
       this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
 
       this._geometry.updateBuffer(1, this._buffer, this._currentSize);

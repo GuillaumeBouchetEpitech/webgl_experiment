@@ -1,4 +1,7 @@
-import { ShaderProgram, GeometryWrapper } from '../../../../../../browser/webgl2';
+import {
+  ShaderProgram,
+  GeometryWrapper
+} from '../../../../../../browser/webgl2';
 
 import * as glm from 'gl-matrix';
 

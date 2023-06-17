@@ -1,4 +1,3 @@
-
 export class CubeData {
   private _size: number;
   private _buffer: Float32Array;

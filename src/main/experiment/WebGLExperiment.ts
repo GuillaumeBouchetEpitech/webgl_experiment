@@ -4,7 +4,7 @@ import {
   GlobalPointerLockManager,
   GlobalKeyboardManager,
   GlobalMouseManager,
-  GlobalTouchManager,
+  GlobalTouchManager
 } from '../browser';
 
 import { FreeFlyController } from './controllers/FreeFlyController';

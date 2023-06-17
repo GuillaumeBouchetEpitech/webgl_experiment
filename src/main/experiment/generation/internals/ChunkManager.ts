@@ -33,7 +33,6 @@ interface IChunkManagerDef {
 }
 
 export class ChunkManager {
-
   private _def: IChunkManagerDef;
 
   private _cameraPosition: glm.vec3 = glm.vec3.fromValues(0, 0, 0);
@@ -49,7 +48,6 @@ export class ChunkManager {
   }
 
   clear() {
-
     this._chunkPositionQueue.length = 0;
 
     this._unusedChunks.forEach((chunk) =>
@@ -83,10 +81,13 @@ export class ChunkManager {
     dataFloat32buffer: Float32Array,
     inGeometryBufferSize: number
   ) {
-
     const geometry = this._def.acquireGeometry(inGeometryBufferSize);
 
-    geometry.update(realPosition, geometryFloat32buffer, geometryBufferSizeUsed);
+    geometry.update(
+      realPosition,
+      geometryFloat32buffer,
+      geometryBufferSizeUsed
+    );
 
     // save
     if (this._unusedChunks.length === 0) {
@@ -111,15 +112,15 @@ export class ChunkManager {
 
     this._usedSet.add(indexPosition);
 
-
     if (this._def.onChunkCreated) {
       this._def.onChunkCreated();
     }
-
   }
 
-  update(cameraPosition: glm.ReadonlyVec3, inWorkerManager: IWorkerManager<{ processing?: IPositionData }>) {
-
+  update(
+    cameraPosition: glm.ReadonlyVec3,
+    inWorkerManager: IWorkerManager<{ processing?: IPositionData }>
+  ) {
     this._updateGeneration(cameraPosition, inWorkerManager);
 
     for (const currChunk of this._usedChunks) {
@@ -130,7 +131,10 @@ export class ChunkManager {
     }
   }
 
-  private _updateGeneration(inCameraPosition: glm.ReadonlyVec3, inWorkerManager: IWorkerManager<{ processing?: IPositionData }>) {
+  private _updateGeneration(
+    inCameraPosition: glm.ReadonlyVec3,
+    inWorkerManager: IWorkerManager<{ processing?: IPositionData }>
+  ) {
     //  check if moved enough to justify asking for new chunks
     //      -> if yes
     //          reset chunk queue
@@ -145,11 +149,13 @@ export class ChunkManager {
       Math.floor(inCameraPosition[2] / this._def.chunkGraphicSize)
     ];
 
-
     let needRefresh = false;
 
     // first time, no chunks yet?
-    if (this._usedChunks.length === 0 && inWorkerManager.areAllWorkerAvailable()) {
+    if (
+      this._usedChunks.length === 0 &&
+      inWorkerManager.areAllWorkerAvailable()
+    ) {
       needRefresh = true;
     }
 
@@ -217,7 +223,6 @@ export class ChunkManager {
     // include in the generation queue the close enough chunks
 
     loop3dimensions(minChunkPos, maxChunkPos, (inPos) => {
-
       {
         const tmpIndex = this._usedChunks.findIndex((currChunk) => {
           return this._usedSet.has(currChunk.indexPosition);
@@ -228,9 +233,14 @@ export class ChunkManager {
       }
 
       {
-        const tmpIndex = inWorkerManager.getInUseWorkersData().findIndex((currWorker) => {
-          return glm.vec3.exactEquals(currWorker.processing!.indexPosition, inPos);
-        });
+        const tmpIndex = inWorkerManager
+          .getInUseWorkersData()
+          .findIndex((currWorker) => {
+            return glm.vec3.exactEquals(
+              currWorker.processing!.indexPosition,
+              inPos
+            );
+          });
 
         if (tmpIndex >= 0) {
           return; // already processing
@@ -245,7 +255,6 @@ export class ChunkManager {
           inPos[2] * this._def.chunkGraphicSize
         ]
       });
-
     });
   }
 
@@ -294,5 +303,4 @@ export class ChunkManager {
     // removal
     return this._chunkPositionQueue.splice(bestIndex, 1)[0];
   }
-
 }

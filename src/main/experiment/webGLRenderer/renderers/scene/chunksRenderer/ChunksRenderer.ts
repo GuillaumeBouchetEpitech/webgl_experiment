@@ -1,6 +1,10 @@
 import * as shaders from './shaders';
 
-import { GeometryWrapper, ShaderProgram, Texture } from '../../../../../browser/webgl2';
+import {
+  GeometryWrapper,
+  ShaderProgram,
+  Texture
+} from '../../../../../browser/webgl2';
 
 import { ICamera } from '../../../camera/Camera';
 
@@ -91,7 +95,7 @@ export class ChunksRenderer implements IChunksRenderer {
         'u_texture_dirt',
         'u_texture_grass',
         'u_texture_stoneWall',
-        'u_texture_stoneWallBump',
+        'u_texture_stoneWallBump'
       ]
     });
 
@@ -117,7 +121,7 @@ export class ChunksRenderer implements IChunksRenderer {
       this._textureDirt.load('assets/dirt.png'),
       this._textureGrass.load('assets/grass.png'),
       this._textureStoneWall.load('assets/stone-wall.png'),
-      this._textureStoneWallBump.load('assets/stone-wall-bump.png'),
+      this._textureStoneWallBump.load('assets/stone-wall-bump.png')
     ]);
   }
 
@@ -149,7 +153,6 @@ export class ChunksRenderer implements IChunksRenderer {
     const eyePos = inCamera.getEye();
 
     this._shader.bind(() => {
-
       this._shader.setMatrix4Uniform(
         'u_composedMatrix',
         inCamera.getComposedMatrix()
@@ -166,11 +169,18 @@ export class ChunksRenderer implements IChunksRenderer {
 
       this._shader.setTextureUniform('u_texture_dirt', this._textureDirt, 0);
       this._shader.setTextureUniform('u_texture_grass', this._textureGrass, 1);
-      this._shader.setTextureUniform('u_texture_stoneWall', this._textureStoneWall, 2);
-      this._shader.setTextureUniform('u_texture_stoneWallBump', this._textureStoneWallBump, 3);
+      this._shader.setTextureUniform(
+        'u_texture_stoneWall',
+        this._textureStoneWall,
+        2
+      );
+      this._shader.setTextureUniform(
+        'u_texture_stoneWallBump',
+        this._textureStoneWallBump,
+        3
+      );
 
       this._inUseGeometries.forEach((geometry) => geometry.render());
-
     });
   }
 }

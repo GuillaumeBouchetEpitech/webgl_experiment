@@ -37,7 +37,12 @@ const _getLength = (inX: number, inY: number, inZ: number) => {
   return Math.sqrt(inX * inX + inY * inY + inZ * inZ);
 };
 
-const _getRadius = (inX: number, inY: number, inZ: number, inRadius: number) => {
+const _getRadius = (
+  inX: number,
+  inY: number,
+  inZ: number,
+  inRadius: number
+) => {
   return _getLength(inX, inY, inZ) / inRadius;
 };
 
@@ -119,7 +124,7 @@ const onMainScriptMessage = (event: TypedMessageEvent<IMessage>) => {
     realPosition,
     geometryFloat32buffer,
     geometryBufferSize,
-    dataFloat32buffer,
+    dataFloat32buffer
     // dataBufferSize
   } = event.data;
 

@@ -236,7 +236,6 @@ export class TriangleCubesRenderer implements ITriangleCubesRenderer {
     }
 
     this._shader.bind(() => {
-
       this._shader.setMatrix4Uniform(
         'u_composedMatrix',
         inCamera.getComposedMatrix()

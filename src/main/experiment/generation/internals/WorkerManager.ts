@@ -1,9 +1,8 @@
-
 import { TypedMessageEvent } from '../../../../_common';
 
 interface IWorkerInstance<T> {
   instance: Worker;
-  data: T
+  data: T;
 }
 
 type OnWorkerResult<T, P> = (inWorkerData: T, inMessageData: P) => void;
@@ -11,10 +10,9 @@ type OnWorkerResult<T, P> = (inWorkerData: T, inMessageData: P) => void;
 export interface IWorkerManager<T> {
   areAllWorkerAvailable(): boolean;
   getInUseWorkersData(): ReadonlyArray<T>;
-};
+}
 
 export class WorkerManager<T, P> implements IWorkerManager<T> {
-
   private _unusedWorkers: IWorkerInstance<T>[] = [];
   private _inUseWorkers: IWorkerInstance<T>[] = [];
 
@@ -33,11 +31,15 @@ export class WorkerManager<T, P> implements IWorkerManager<T> {
   }
 
   getInUseWorkersData(): ReadonlyArray<T> {
-    return this._inUseWorkers.map(worker => worker.data);
+    return this._inUseWorkers.map((worker) => worker.data);
   }
 
-  pushTask(inCallback: (inWorkerData: T, inPushTask: (inPayload: P, inTransfer: Transferable[]) => void) => void): boolean {
-
+  pushTask(
+    inCallback: (
+      inWorkerData: T,
+      inPushTask: (inPayload: P, inTransfer: Transferable[]) => void
+    ) => void
+  ): boolean {
     if (!this.isWorkerAvailable()) {
       return false;
     }
@@ -62,13 +64,12 @@ export class WorkerManager<T, P> implements IWorkerManager<T> {
   addOneWorker(inWorkerFile: string, inWorkerData: T) {
     const newWorker: IWorkerInstance<T> = {
       instance: new Worker(inWorkerFile),
-      data: inWorkerData,
+      data: inWorkerData
     };
 
     this._unusedWorkers.push(newWorker);
 
     const onWorkerMessage = (event: TypedMessageEvent<P>) => {
-
       //
       // set worker as "unused"
       //
@@ -88,6 +89,4 @@ export class WorkerManager<T, P> implements IWorkerManager<T> {
 
     newWorker.instance.addEventListener('message', onWorkerMessage, false);
   }
-
-
 }

@@ -1,8 +1,6 @@
-
 type Vec3 = [number, number, number];
 
 export class Vec3HashSet {
-
   private _hashSet = new Set<string>();
 
   clear() {
@@ -24,4 +22,4 @@ export class Vec3HashSet {
   private static _getName(inVec3: Readonly<Vec3>) {
     return `${inVec3[0]}/${inVec3[1]}/${inVec3[2]}`;
   }
-};
+}

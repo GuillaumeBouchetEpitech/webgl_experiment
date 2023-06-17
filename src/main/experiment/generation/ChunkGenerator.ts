@@ -1,6 +1,11 @@
 import * as glm from 'gl-matrix';
 
-import { WorkerManager, ChunkManager, Chunks, IPositionData } from './internals';
+import {
+  WorkerManager,
+  ChunkManager,
+  Chunks,
+  IPositionData
+} from './internals';
 
 import { ILiveGeometry } from '../webGLRenderer/WebGLRenderer';
 import { FrameProfiler } from '../utils/FrameProfiler';
@@ -28,7 +33,10 @@ interface WorkerData {
 }
 
 export class ChunkGenerator {
-  private _def: Pick<IChunkGeneratorDef, 'workerFile' | 'workerTotal' | 'chunkLogicSize'>;
+  private _def: Pick<
+    IChunkGeneratorDef,
+    'workerFile' | 'workerTotal' | 'chunkLogicSize'
+  >;
   private _geometryBufferSize: number;
   private _dataBufferSize: number;
 
@@ -48,12 +56,11 @@ export class ChunkGenerator {
       chunkLogicSize: def.chunkLogicSize,
       chunkIsVisible: def.chunkIsVisible,
       acquireGeometry: def.acquireGeometry,
-      releaseGeometry: def.releaseGeometry,
+      releaseGeometry: def.releaseGeometry
     });
 
     this._workerManager = new WorkerManager<WorkerData, IMessage>(
       (inWorkerData: WorkerData, inMessageData: IMessage) => {
-
         //
         // process response
         //
@@ -94,8 +101,8 @@ export class ChunkGenerator {
 
         // launch again
         this._launchWorker();
-
-      });
+      }
+    );
 
     this._dataBufferSize = Math.pow(this._def.chunkLogicSize + 1 + 1, 3); // TODO: check size
     this._geometryBufferSize = this._dataBufferSize * 20 * 6 * 3; // 20 triangles (3 vertices, 6 floats each)
@@ -157,7 +164,6 @@ export class ChunkGenerator {
       //
 
       this._workerManager.pushTask((inWorkerData, inPushTask) => {
-
         inWorkerData.processing = nextPositionData;
 
         const payload: IMessage = {
@@ -174,7 +180,7 @@ export class ChunkGenerator {
         inPushTask(payload, [
           inWorkerData.geometryFloat32buffer.buffer, // memory ownership transfer
           inWorkerData.dataFloat32buffer.buffer // memory ownership transfer
-        ])
+        ]);
       });
     }
   }
@@ -368,7 +374,8 @@ export class ChunkGenerator {
   }
 
   getProcessingRealPositions(): glm.ReadonlyVec3[] {
-    return this._workerManager.getInUseWorkersData().map((workerData) => workerData.processing!.realPosition);
+    return this._workerManager
+      .getInUseWorkersData()
+      .map((workerData) => workerData.processing!.realPosition);
   }
-
 }
