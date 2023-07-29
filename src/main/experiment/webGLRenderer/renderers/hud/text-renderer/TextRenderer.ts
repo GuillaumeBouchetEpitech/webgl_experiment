@@ -43,7 +43,7 @@ export class TextRenderer implements ITextRenderer {
   private _currentSize: number = 0;
 
   private _textScale: number = 14;
-  private _textColor: glm.vec3 = [1,1,1];
+  private _textColor: glm.vec3 = [1, 1, 1];
 
   private _horizontalTextAlign: HorizontalTextAlign = 'left';
   private _verticalTextAlign: VerticalTextAlign = 'top';

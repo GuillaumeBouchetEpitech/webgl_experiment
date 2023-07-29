@@ -127,19 +127,19 @@ export const renderFpsMeter = (
     inTextRenderer
       .setTextScale(k_textScale)
       .setTextAlign('left', 'top')
-      .setTextColor(1.0,1.0,0.75)
+      .setTextColor(1.0, 1.0, 0.75)
       .pushText(averageStr, [inPos[0] + 7, inPos[1] - 8])
       .setTextAlign('left', 'centered')
-      .setTextColor(1.0,0.75,0.75)
+      .setTextColor(1.0, 0.75, 0.75)
       .pushText(maxStr, [
         inPos[0] + inSize[0] + k_textHScale,
         inPos[1] + inSize[1] - k_textHScale * 1
       ])
-      .setTextColor(0.75,1.0,0.75)
+      .setTextColor(0.75, 1.0, 0.75)
       .pushText(minStr, [
         inPos[0] + inSize[0] + k_textHScale,
         inPos[1] + k_textHScale * 1
       ])
-      .setTextColor(1.0,1.0,1.0);
+      .setTextColor(1.0, 1.0, 1.0);
   } // counter
 };
