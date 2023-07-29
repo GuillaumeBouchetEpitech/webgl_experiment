@@ -2,7 +2,7 @@
 {
     "extends": "../base-tsconfig.json",
     "compilerOptions": {
-        "lib": ["es2020", "dom"]
+        "lib": ["es6", "dom"]
     },
     "include": [
         "./**/*.ts",
