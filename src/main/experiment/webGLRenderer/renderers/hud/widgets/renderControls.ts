@@ -4,8 +4,8 @@ import {
   GlobalPointerLockManager
 } from '../../../../../browser';
 
-import { IStackRenderers } from '../stackRenderers/StackRenderers';
-import { ITextRenderer } from '../textRenderer/TextRenderer';
+import { IStackRenderers } from '../stack-renderers/StackRenderers';
+import { ITextRenderer } from '../text-renderer/TextRenderer';
 
 import * as glm from 'gl-matrix';
 

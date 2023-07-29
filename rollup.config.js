@@ -17,7 +17,28 @@ const plugins = [
 ];
 
 if (isDebug === false) {
-  plugins.push(terser({ format: { comments: false }, compress: true }));
+  plugins.push(terser({
+    format: { comments: false },
+    mangle: {
+      keep_classnames: false,
+      keep_fnames: false,
+      // properties: {
+      //   // regex: /indexPosition|realPosition|float32buffer/,
+      //   reserved: [
+      //     'indexPosition','realPosition','float32buffer',
+      //     'Z', 'Q', 'A', 'S', 'W', 'D',
+      //     'ArrowLeft','ArrowRight', 'ArrowUp', 'ArrowDown',
+      //   ],
+      //   // keep_quoted: true,
+      //   // builtins: true,
+      // },
+    },
+    keep_classnames: false,
+    keep_fnames: false,
+    compress: {
+      passes: 3,
+    },
+  }));
 }
 
 export default {

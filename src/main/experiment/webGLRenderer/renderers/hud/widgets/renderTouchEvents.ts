@@ -1,6 +1,6 @@
 import { GlobalTouchManager } from '../../../../../browser';
 
-import { IStackRenderers } from '../stackRenderers/StackRenderers';
+import { IStackRenderers } from '../stack-renderers/StackRenderers';
 
 import * as glm from 'gl-matrix';
 

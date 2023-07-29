@@ -256,4 +256,4 @@ export class WebGLRenderer {
   }
 }
 
-export { ILiveGeometry } from './renderers/scene/chunksRenderer/ChunksRenderer';
+export { ILiveGeometry } from './renderers/scene/chunks-renderer/ChunksRenderer';

@@ -1,2 +1,2 @@
-export * from './scene/chunksRenderer/ChunksRenderer';
-export * from './scene/triangleCubesRenderer/TriangleCubesRenderer';
+export * from './scene/chunks-renderer/ChunksRenderer';
+export * from './scene/triangle-cubes-renderer/TriangleCubesRenderer';

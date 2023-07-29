@@ -11,7 +11,7 @@ export interface IShaderProgramOpts {
 }
 
 export class ShaderProgram {
-  private static _isBound: string | null = null;
+  private static _isBound: ShaderProgram | null = null;
 
   private _name: string;
 
@@ -69,11 +69,11 @@ export class ShaderProgram {
   async bind(inCallback: () => void) {
     if (ShaderProgram._isBound !== null) {
       throw new Error(
-        `Double shader binding (bound: ${ShaderProgram._isBound}, binding: ${this._name})`
+        `Double shader binding (bound: ${ShaderProgram._isBound._name}, binding: ${this._name})`
       );
     }
 
-    ShaderProgram._isBound = this._name;
+    ShaderProgram._isBound = this;
     // this.rawBind();
     const gl = WebGLContext.getContext();
     gl.useProgram(this._program);
@@ -81,13 +81,17 @@ export class ShaderProgram {
     inCallback();
 
     ShaderProgram.unbind();
-    ShaderProgram._isBound = null;
   }
 
   static unbind() {
     const gl = WebGLContext.getContext();
 
     gl.useProgram(null);
+    ShaderProgram._isBound = null;
+  }
+
+  isBound(): boolean {
+    return ShaderProgram._isBound === this;
   }
 
   hasAttribute(name: string) {
