@@ -25,7 +25,7 @@ interface IChunkGeneratorDef {
   releaseGeometry: (inGeom: ILiveGeometry) => void;
   onChunkCreated: () => void;
   onChunkDiscarded: () => void;
-};
+}
 
 interface WorkerData {
   geometryFloat32buffer: Float32Array;
@@ -58,59 +58,63 @@ export class ChunkGenerator {
       acquireGeometry: def.acquireGeometry,
       releaseGeometry: def.releaseGeometry,
       onChunkCreated: def.onChunkCreated,
-      onChunkDiscarded: def.onChunkDiscarded,
+      onChunkDiscarded: def.onChunkDiscarded
     });
 
-    const onWorkerResult: OnWorkerResult<WorkerData, IMessage> =
-      (inWorkerData: WorkerData, inMessageData: IMessage) => {
-        //
-        // process response
-        //
+    const onWorkerResult: OnWorkerResult<WorkerData, IMessage> = (
+      inWorkerData: WorkerData,
+      inMessageData: IMessage
+    ) => {
+      //
+      // process response
+      //
 
-        const {
-          indexPosition,
-          realPosition,
-          geometryFloat32buffer, // memory ownership transfer
-          geometryBufferSize,
-          sizeUsed
-        } = inMessageData;
+      const {
+        indexPosition,
+        realPosition,
+        geometryFloat32buffer, // memory ownership transfer
+        geometryBufferSize,
+        sizeUsed
+      } = inMessageData;
 
-        const currTime = Date.now();
-        const delta = currTime - inMessageData.time;
-        this._frameProfiler.pushDelta(delta);
+      const currTime = Date.now();
+      const delta = currTime - inMessageData.time;
+      this._frameProfiler.pushDelta(delta);
 
-        inWorkerData.geometryFloat32buffer = geometryFloat32buffer;
+      inWorkerData.geometryFloat32buffer = geometryFloat32buffer;
 
-        inWorkerData.processing = undefined;
+      inWorkerData.processing = undefined;
 
-        if (!this._running) {
-          return;
-        }
+      if (!this._running) {
+        return;
+      }
 
-        //
-        // process next
-        //
+      //
+      // process next
+      //
 
-        this._chunkManager.pushNew(
-          indexPosition,
-          realPosition,
-          inWorkerData.geometryFloat32buffer,
-          geometryBufferSize,
-          sizeUsed,
-        );
+      this._chunkManager.pushNew(
+        indexPosition,
+        realPosition,
+        inWorkerData.geometryFloat32buffer,
+        geometryBufferSize,
+        sizeUsed
+      );
 
-        // launch again
-        this._launchWorker();
-      };
+      // launch again
+      this._launchWorker();
+    };
 
-    this._workerManager = new WorkerManager<WorkerData, IMessage>(onWorkerResult);
+    this._workerManager = new WorkerManager<WorkerData, IMessage>(
+      onWorkerResult
+    );
 
     this._dataBufferSize = Math.pow(this._def.chunkLogicSize + 1 + 1, 3); // TODO: check size
     this._geometryBufferSize = this._dataBufferSize * 20 * 6 * 3; // 20 triangles (3 vertices, 6 floats each)
 
     for (let ii = 0; ii < this._def.workerTotal; ++ii) {
       this._workerManager.addOneWorker(this._def.workerFile, {
-        geometryFloat32buffer: new Float32Array(this._geometryBufferSize),
+        geometryFloat32buffer: new Float32Array(this._geometryBufferSize)
       });
     }
   }
@@ -176,8 +180,8 @@ export class ChunkGenerator {
         };
 
         const transferable: Transferable[] = [
-          inWorkerData.geometryFloat32buffer.buffer, // memory ownership transfer
-        ]
+          inWorkerData.geometryFloat32buffer.buffer // memory ownership transfer
+        ];
 
         inPushTask(payload, transferable);
       });

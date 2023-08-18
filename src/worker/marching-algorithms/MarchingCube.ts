@@ -36,11 +36,7 @@ export class MarchingCube
           this._marchCubeSingle(iX, iY, iZ);
   }
 
-  private _marchCubeSingle(
-    iX: number,
-    iY: number,
-    iZ: number,
-  ): void {
+  private _marchCubeSingle(iX: number, iY: number, iZ: number): void {
     /// add chunk pos here
     const fX = iX * this._stepSize;
     const fY = iY * this._stepSize;

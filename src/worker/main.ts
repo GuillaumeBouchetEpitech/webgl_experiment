@@ -70,7 +70,7 @@ const onMainScriptMessage = (event: TypedMessageEvent<IMessage>) => {
     indexPosition,
     realPosition,
     geometryFloat32buffer,
-    geometryBufferSize,
+    geometryBufferSize
   } = event.data;
 
   //
@@ -129,12 +129,10 @@ const onMainScriptMessage = (event: TypedMessageEvent<IMessage>) => {
     time: event.data.time
   };
 
-  myself.postMessage(toSend,
-    [
-      // we now transfer the ownership of the vertices buffer
-      geometryFloat32buffer.buffer,
-    ]
-  );
+  myself.postMessage(toSend, [
+    // we now transfer the ownership of the vertices buffer
+    geometryFloat32buffer.buffer
+  ]);
 };
 
 myself.addEventListener('message', onMainScriptMessage, false);

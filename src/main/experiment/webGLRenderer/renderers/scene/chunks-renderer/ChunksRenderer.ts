@@ -23,7 +23,7 @@ export interface ILiveGeometry {
 }
 
 class LiveGeometry implements ILiveGeometry {
-  private _origin: glm.vec3 = glm.vec3.fromValues(0,0,0);
+  private _origin: glm.vec3 = glm.vec3.fromValues(0, 0, 0);
   private _size: number = 0;
   private _geometry: GeometryWrapper.Geometry;
 
@@ -152,7 +152,11 @@ export class ChunksRenderer implements IChunksRenderer {
     this._inUseGeometries.splice(index, 1);
   }
 
-  render(inCamera: ICamera, inFrustumCulling: IFrustumCulling, inChunkSize: number) {
+  render(
+    inCamera: ICamera,
+    inFrustumCulling: IFrustumCulling,
+    inChunkSize: number
+  ) {
     const eyePos = inCamera.getEye();
 
     this._shader.bind(() => {
@@ -187,7 +191,7 @@ export class ChunksRenderer implements IChunksRenderer {
         geometry: LiveGeometry;
         center: glm.ReadonlyVec3;
         distance: number;
-      };
+      }
 
       const toRender: SortableLiveGeometry[] = this._inUseGeometries
         .map((geometry): SortableLiveGeometry => {
@@ -202,15 +206,18 @@ export class ChunksRenderer implements IChunksRenderer {
             distance: 0
           };
         })
-        .filter(({center, geometry}) => inFrustumCulling.cubeInFrustumVec3(center, geometry.getSize()))
+        .filter(({ center, geometry }) =>
+          inFrustumCulling.cubeInFrustumVec3(center, geometry.getSize())
+        )
         .map((sortableGeo): SortableLiveGeometry => {
-          sortableGeo.distance = glm.vec3.distance(sortableGeo.center, inCamera.getEye());
+          sortableGeo.distance = glm.vec3.distance(
+            sortableGeo.center,
+            inCamera.getEye()
+          );
           return sortableGeo;
         })
-        .sort((a, b) => a.distance - b.distance)
-        ;
-
-      toRender.forEach(sortableGeo => sortableGeo.geometry.render());
+        .sort((a, b) => a.distance - b.distance);
+      toRender.forEach((sortableGeo) => sortableGeo.geometry.render());
 
       // this._inUseGeometries.forEach((geometry) => geometry.render());
     });

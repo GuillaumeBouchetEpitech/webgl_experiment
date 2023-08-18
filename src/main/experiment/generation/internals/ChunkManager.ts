@@ -81,7 +81,7 @@ export class ChunkManager {
     geometryFloat32buffer: Readonly<Float32Array>,
     inGeometryBufferSize: number,
     // dataFloat32buffer: Readonly<Float32Array>,
-    geometryBufferSizeUsed: number,
+    geometryBufferSizeUsed: number
   ) {
     const geometry = this._def.acquireGeometry(inGeometryBufferSize);
 
@@ -99,8 +99,10 @@ export class ChunkManager {
         geometry,
         isVisible: false,
         isDirty: true,
-        geometryFloat32buffer: new Float32Array(geometryFloat32buffer.slice(0, geometryBufferSizeUsed)),
-        geometryBufferSizeUsed: geometryBufferSizeUsed,
+        geometryFloat32buffer: new Float32Array(
+          geometryFloat32buffer.slice(0, geometryBufferSizeUsed)
+        ),
+        geometryBufferSizeUsed: geometryBufferSizeUsed
       });
     } else {
       const reused = this._unusedChunks.pop()!;
@@ -108,8 +110,10 @@ export class ChunkManager {
       reused.indexPosition = [...indexPosition];
       reused.isVisible = false;
       reused.isDirty = true;
-      reused.geometryFloat32buffer = new Float32Array(geometryFloat32buffer.slice(0, geometryBufferSizeUsed)),
-      reused.geometryBufferSizeUsed = geometryBufferSizeUsed;
+      (reused.geometryFloat32buffer = new Float32Array(
+        geometryFloat32buffer.slice(0, geometryBufferSizeUsed)
+      )),
+        (reused.geometryBufferSizeUsed = geometryBufferSizeUsed);
       this._usedChunks.push(reused);
     }
 
@@ -131,8 +135,7 @@ export class ChunkManager {
     }
 
     for (const currChunk of this._usedChunks) {
-      if (!currChunk.isVisible || !currChunk.isDirty)
-        continue;
+      if (!currChunk.isVisible || !currChunk.isDirty) continue;
 
       currChunk.geometry.update(
         currChunk.realPosition,
@@ -235,9 +238,21 @@ export class ChunkManager {
     // include in the generation queue the close enough chunks
 
     const currPos: Vec3 = [0, 0, 0];
-    for (currPos[2] = minChunkPos[2]; currPos[2] <= maxChunkPos[2]; ++currPos[2]) {
-      for (currPos[1] = minChunkPos[1]; currPos[1] <= maxChunkPos[1]; ++currPos[1]) {
-        for (currPos[0] = minChunkPos[0]; currPos[0] <= maxChunkPos[0]; ++currPos[0]) {
+    for (
+      currPos[2] = minChunkPos[2];
+      currPos[2] <= maxChunkPos[2];
+      ++currPos[2]
+    ) {
+      for (
+        currPos[1] = minChunkPos[1];
+        currPos[1] <= maxChunkPos[1];
+        ++currPos[1]
+      ) {
+        for (
+          currPos[0] = minChunkPos[0];
+          currPos[0] <= maxChunkPos[0];
+          ++currPos[0]
+        ) {
           {
             const tmpIndex = this._usedChunks.findIndex((currChunk) => {
               return this._usedSet.has(currChunk.indexPosition);
