@@ -5,8 +5,6 @@ export interface IMessage {
   realPosition: Vec3;
   geometryFloat32buffer: Float32Array;
   geometryBufferSize: number;
-  dataFloat32buffer: Float32Array;
-  // dataBufferSize: number;
   sizeUsed: number;
   time: number;
 }

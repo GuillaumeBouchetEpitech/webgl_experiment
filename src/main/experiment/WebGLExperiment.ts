@@ -61,13 +61,14 @@ export class WebGLExperiment {
       // workerBufferSize: configuration.workerBufferSize,
 
       chunkIsVisible: (pos: glm.ReadonlyVec3) => {
-        const hSize = configuration.chunkGraphicSize * 0.5;
+        const k_size = configuration.chunkGraphicSize;
+        const k_hSize = k_size * 0.5;
 
         return this._renderer.frustumCulling.cubeInFrustum(
-          pos[0] + hSize,
-          pos[1] + hSize,
-          pos[2] + hSize,
-          hSize
+          pos[0] + k_hSize,
+          pos[1] + k_hSize,
+          pos[2] + k_hSize,
+          k_size
         );
       },
       acquireGeometry: (inSize: number) => {

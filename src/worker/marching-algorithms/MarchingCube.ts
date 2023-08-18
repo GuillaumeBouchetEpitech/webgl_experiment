@@ -16,75 +16,30 @@ export class MarchingCube
   implements IMarchingAlgorithm
 {
   private _afCubeValue = new Float32Array([0, 0, 0, 0, 0, 0, 0, 0]);
-  // private _asEdgeVertex: Vec3[] = [
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0]
-  // ];
   private _asEdgeVertex = new Float32Array(12 * 3);
-  // private _asEdgeNorm: Vec3[] = [
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0],
-  //   [0, 0, 0]
-  // ];
   private _asEdgeNorm = new Float32Array(12 * 3);
   generate(
     inPos: Vec3,
-    inCubeData: utilities.CubeData,
+    // inCubeData: utilities.CubeData,
     onVertexCallback: OnVertexCallback,
     onSampleCallback: OnSampleCallback
   ): void {
     this._onVertexCallback = onVertexCallback;
     this._onSampleCallback = onSampleCallback;
-    // this._currentPos[0] = inPos[0];
-    // this._currentPos[1] = inPos[1];
-    // this._currentPos[2] = inPos[2];
     this._stepPos[0] = inPos[0] * this._stepSize;
     this._stepPos[1] = inPos[1] * this._stepSize;
     this._stepPos[2] = inPos[2] * this._stepSize;
 
-    for (let iX = 0; iX <= this._chunkSize + 1; ++iX)
-      for (let iY = 0; iY <= this._chunkSize + 1; ++iY)
-        for (let iZ = 0; iZ <= this._chunkSize + 1; ++iZ) {
-          /// add chunk pos here
-          const fX = iX * this._stepSize;
-          const fY = iY * this._stepSize;
-          const fZ = iZ * this._stepSize;
-
-          const currVal = this._getSample(fX, fY, fZ);
-
-          inCubeData.set(iX, iY, iZ, currVal);
-        }
-
     for (let iX = 0; iX <= this._chunkSize; ++iX)
       for (let iY = 0; iY <= this._chunkSize; ++iY)
         for (let iZ = 0; iZ <= this._chunkSize; ++iZ)
-          this._marchCubeSingle(iX, iY, iZ, inCubeData);
+          this._marchCubeSingle(iX, iY, iZ);
   }
 
   private _marchCubeSingle(
     iX: number,
     iY: number,
     iZ: number,
-    inCubeData: utilities.CubeData
   ): void {
     /// add chunk pos here
     const fX = iX * this._stepSize;
@@ -95,17 +50,11 @@ export class MarchingCube
     for (let iVertex = 0; iVertex < 8; ++iVertex) {
       const currOffset = a2fVertexOffset[iVertex];
 
-      this._afCubeValue[iVertex] = inCubeData.get(
-        iX + currOffset[0],
-        iY + currOffset[1],
-        iZ + currOffset[2]
+      this._afCubeValue[iVertex] = this._getSample(
+        fX + currOffset[0] * this._stepSize,
+        fY + currOffset[1] * this._stepSize,
+        fZ + currOffset[2] * this._stepSize
       );
-
-      // this._afCubeValue[iVertex] = this._getSample(
-      //   fX + currOffset[0] * this._stepSize,
-      //   fY + currOffset[1] * this._stepSize,
-      //   fZ + currOffset[2] * this._stepSize
-      // );
     }
 
     //Find which vertices are inside of the surface and which are outside
@@ -158,7 +107,6 @@ export class MarchingCube
           this._asEdgeVertex[iEdge * 3 + 0],
           this._asEdgeVertex[iEdge * 3 + 1],
           this._asEdgeVertex[iEdge * 3 + 2],
-          // this._asEdgeNorm.slice(iEdge),
           this._asEdgeNorm,
           iEdge
         );

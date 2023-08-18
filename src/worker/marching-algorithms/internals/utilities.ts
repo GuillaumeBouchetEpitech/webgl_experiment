@@ -90,24 +90,24 @@ export const computeTriangleNormal = (t1: Vec3, t2: Vec3, t3: Vec3): Vec3 => {
 //   // return _getNormalizeVector(normX, normY, normZ);
 // };
 
-export class CubeData {
-  private _size: number;
-  private _buffer: Float32Array;
+// export class CubeData {
+//   private _size: number;
+//   private _buffer: Float32Array;
 
-  constructor(inBuffer: Float32Array, inSize: number) {
-    this._size = inSize;
-    this._buffer = inBuffer;
-  }
+//   constructor(inBuffer: Float32Array, inSize: number) {
+//     this._size = inSize;
+//     this._buffer = inBuffer;
+//   }
 
-  set(inX: number, inY: number, inZ: number, inValue: number) {
-    this._buffer[this._getIndex(inX, inY, inZ)] = inValue;
-  }
+//   set(inX: number, inY: number, inZ: number, inValue: number) {
+//     this._buffer[this._getIndex(inX, inY, inZ)] = inValue;
+//   }
 
-  get(inX: number, inY: number, inZ: number): number {
-    return this._buffer[this._getIndex(inX, inY, inZ)];
-  }
+//   get(inX: number, inY: number, inZ: number): number {
+//     return this._buffer[this._getIndex(inX, inY, inZ)];
+//   }
 
-  private _getIndex(inX: number, inY: number, inZ: number) {
-    return inZ * this._size * this._size + inY * this._size + inX;
-  }
-}
+//   private _getIndex(inX: number, inY: number, inZ: number) {
+//     return inZ * this._size * this._size + inY * this._size + inX;
+//   }
+// }

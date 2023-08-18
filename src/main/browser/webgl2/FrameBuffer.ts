@@ -88,8 +88,8 @@ export class FrameBuffer {
         const border = 0;
         const format = gl.RGBA;
 
-        let internalFormat = gl.RGBA32F;
-        let type = gl.FLOAT;
+        let internalFormat: number = gl.RGBA32F;
+        let type: number = gl.FLOAT;
 
         if (inTex.type === ColorTextureType.RBGA_UBYTES) {
           internalFormat = gl.RGBA;
@@ -194,8 +194,8 @@ export class FrameBuffer {
       const format = gl.RGBA;
 
       this._colorsTex.forEach((texObj, index) => {
-        let internalFormat = gl.RGBA32F;
-        let type = gl.FLOAT;
+        let internalFormat: number = gl.RGBA32F;
+        let type: number = gl.FLOAT;
 
         if (
           this._def.colorTextures[index].type === ColorTextureType.RBGA_UBYTES

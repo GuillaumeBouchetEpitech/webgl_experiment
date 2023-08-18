@@ -20,7 +20,6 @@ export type OnVertexCallback = (vertex: Vec3, normal: Vec3) => void;
 export interface IMarchingAlgorithm {
   generate(
     inPos: Vec3,
-    inCubeData: utilities.CubeData,
     onVertexCallback: OnVertexCallback,
     onSampleCallback: OnSampleCallback
   ): void;
@@ -32,7 +31,6 @@ export class AbstractMarchingAlgorithm {
   protected _onSampleCallback: OnSampleCallback | undefined;
   protected _stepSize: number;
   protected _onVertexCallback: OnVertexCallback | undefined;
-  // protected _currentPos: Vec3 = [0, 0, 0];
   protected _stepPos: Vec3 = [0, 0, 0];
 
   constructor(inChunkSize: number, inThreshold: number) {

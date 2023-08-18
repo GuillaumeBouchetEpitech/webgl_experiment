@@ -5,7 +5,7 @@ interface IWorkerInstance<T> {
   data: T;
 }
 
-type OnWorkerResult<T, P> = (inWorkerData: T, inMessageData: P) => void;
+export type OnWorkerResult<T, P> = (inWorkerData: T, inMessageData: P) => void;
 
 export interface IWorkerManager<T> {
   areAllWorkerAvailable(): boolean;

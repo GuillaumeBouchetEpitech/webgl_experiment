@@ -9,19 +9,23 @@ import {
 import { ICamera } from '../../../camera/Camera';
 
 import * as glm from 'gl-matrix';
+import { IFrustumCulling } from 'main/experiment/webGLRenderer/camera/FrustumCulling';
 
 export interface ILiveGeometry {
   update(
     inOrigin: glm.ReadonlyVec3,
+    inSize: number,
     inBuffer: Float32Array,
-    inSize: number
+    inBufferLength: number
   ): void;
-  setVisibility(isVisible: boolean): void;
+  getOrigin(): glm.ReadonlyVec3;
+  getSize(): number;
 }
 
 class LiveGeometry implements ILiveGeometry {
+  private _origin: glm.vec3 = glm.vec3.fromValues(0,0,0);
+  private _size: number = 0;
   private _geometry: GeometryWrapper.Geometry;
-  private _isVisible: boolean = false;
 
   constructor(
     inShader: ShaderProgram,
@@ -37,31 +41,30 @@ class LiveGeometry implements ILiveGeometry {
 
   update(
     inOrigin: glm.ReadonlyVec3,
+    inSize: number,
     inBuffer: Float32Array,
-    inSize: number
+    inBufferLength: number
   ): void {
-    this._geometry.updateBuffer(0, inBuffer, inSize);
-    this._geometry.setPrimitiveCount(inSize / 6);
+    glm.vec3.copy(this._origin, inOrigin);
+    this._size = inSize;
+
+    this._geometry.updateBuffer(0, inBuffer, inBufferLength);
+    this._geometry.setPrimitiveCount(inBufferLength / 6);
 
     const newBuffer = new Float32Array([inOrigin[0], inOrigin[1], inOrigin[2]]);
     this._geometry.updateBuffer(1, newBuffer, newBuffer.length);
     this._geometry.setInstancedCount(1);
   }
 
-  // dispose(): void {
-  //   this._geometry.dispose();
-  // }
-
   render() {
-    if (!this._isVisible) {
-      return;
-    }
-
     this._geometry.render();
   }
 
-  setVisibility(isVisible: boolean): void {
-    this._isVisible = isVisible;
+  getOrigin(): glm.ReadonlyVec3 {
+    return this._origin;
+  }
+  getSize(): number {
+    return this._size;
   }
 }
 
@@ -149,7 +152,7 @@ export class ChunksRenderer implements IChunksRenderer {
     this._inUseGeometries.splice(index, 1);
   }
 
-  render(inCamera: ICamera, inChunkSize: number) {
+  render(inCamera: ICamera, inFrustumCulling: IFrustumCulling, inChunkSize: number) {
     const eyePos = inCamera.getEye();
 
     this._shader.bind(() => {
@@ -180,7 +183,36 @@ export class ChunksRenderer implements IChunksRenderer {
         3
       );
 
-      this._inUseGeometries.forEach((geometry) => geometry.render());
+      interface SortableLiveGeometry {
+        geometry: LiveGeometry;
+        center: glm.ReadonlyVec3;
+        distance: number;
+      };
+
+      const toRender: SortableLiveGeometry[] = this._inUseGeometries
+        .map((geometry): SortableLiveGeometry => {
+          const k_size = geometry.getSize();
+          const k_hSize = k_size * 0.5;
+          const centerX = geometry.getOrigin()[0] + k_hSize;
+          const centerY = geometry.getOrigin()[1] + k_hSize;
+          const centerZ = geometry.getOrigin()[2] + k_hSize;
+          return {
+            geometry,
+            center: [centerX, centerY, centerZ],
+            distance: 0
+          };
+        })
+        .filter(({center, geometry}) => inFrustumCulling.cubeInFrustumVec3(center, geometry.getSize()))
+        .map((sortableGeo): SortableLiveGeometry => {
+          sortableGeo.distance = glm.vec3.distance(sortableGeo.center, inCamera.getEye());
+          return sortableGeo;
+        })
+        .sort((a, b) => a.distance - b.distance)
+        ;
+
+      toRender.forEach(sortableGeo => sortableGeo.geometry.render());
+
+      // this._inUseGeometries.forEach((geometry) => geometry.render());
     });
   }
 }

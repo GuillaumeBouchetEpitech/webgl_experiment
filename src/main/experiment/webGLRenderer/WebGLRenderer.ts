@@ -209,7 +209,7 @@ export class WebGLRenderer {
     //
     //
 
-    this._scene.chunksRenderer.render(this._mainCamera, inChunkSize);
+    this._scene.chunksRenderer.render(this._mainCamera, this._frustumCulling, inChunkSize);
 
     //
     //

@@ -2,7 +2,7 @@ import * as glm from 'gl-matrix';
 
 import { ILiveGeometry } from '../../webGLRenderer/WebGLRenderer';
 
-import { Vec3HashSet, CubeData, loop3dimensions, IWorkerManager } from '.';
+import { Vec3HashSet, IWorkerManager } from '.';
 
 type Vec3 = [number, number, number];
 
@@ -16,7 +16,9 @@ interface IChunk {
   indexPosition: Vec3;
   geometry: ILiveGeometry;
   isVisible: boolean;
-  data: CubeData;
+  isDirty: boolean;
+  geometryFloat32buffer: Float32Array;
+  geometryBufferSizeUsed: number;
 }
 
 export type Chunks = ReadonlyArray<IChunk>;
@@ -28,8 +30,8 @@ interface IChunkManagerDef {
   chunkIsVisible: (pos: Readonly<Vec3>) => boolean;
   acquireGeometry: (inSize: number) => ILiveGeometry;
   releaseGeometry: (inGeom: ILiveGeometry) => void;
-  onChunkCreated?: () => void;
-  onChunkDiscarded?: () => void;
+  onChunkCreated: () => void;
+  onChunkDiscarded: () => void;
 }
 
 export class ChunkManager {
@@ -74,47 +76,46 @@ export class ChunkManager {
   }
 
   pushNew(
-    indexPosition: Vec3,
-    realPosition: Vec3,
-    geometryFloat32buffer: Float32Array,
+    indexPosition: Readonly<Vec3>,
+    realPosition: Readonly<Vec3>,
+    geometryFloat32buffer: Readonly<Float32Array>,
+    inGeometryBufferSize: number,
+    // dataFloat32buffer: Readonly<Float32Array>,
     geometryBufferSizeUsed: number,
-    dataFloat32buffer: Float32Array,
-    inGeometryBufferSize: number
   ) {
     const geometry = this._def.acquireGeometry(inGeometryBufferSize);
 
-    geometry.update(
-      realPosition,
-      geometryFloat32buffer,
-      geometryBufferSizeUsed
-    );
+    // geometry.update(
+    //   realPosition,
+    //   geometryFloat32buffer,
+    //   geometryBufferSizeUsed
+    // );
 
     // save
     if (this._unusedChunks.length === 0) {
       this._usedChunks.push({
-        realPosition,
-        indexPosition,
+        realPosition: [...realPosition],
+        indexPosition: [...indexPosition],
         geometry,
         isVisible: false,
-        data: new CubeData(
-          new Float32Array(dataFloat32buffer),
-          this._def.chunkLogicSize + 1 + 1
-        )
+        isDirty: true,
+        geometryFloat32buffer: new Float32Array(geometryFloat32buffer.slice(0, geometryBufferSizeUsed)),
+        geometryBufferSizeUsed: geometryBufferSizeUsed,
       });
     } else {
       const reused = this._unusedChunks.pop()!;
-      reused.realPosition = realPosition;
-      reused.indexPosition = indexPosition;
+      reused.realPosition = [...realPosition];
+      reused.indexPosition = [...indexPosition];
       reused.isVisible = false;
-      reused.data.copy(dataFloat32buffer);
+      reused.isDirty = true;
+      reused.geometryFloat32buffer = new Float32Array(geometryFloat32buffer.slice(0, geometryBufferSizeUsed)),
+      reused.geometryBufferSizeUsed = geometryBufferSizeUsed;
       this._usedChunks.push(reused);
     }
 
     this._usedSet.add(indexPosition);
 
-    if (this._def.onChunkCreated) {
-      this._def.onChunkCreated();
-    }
+    this._def.onChunkCreated();
   }
 
   update(
@@ -127,7 +128,20 @@ export class ChunkManager {
       const isVisible = this._def.chunkIsVisible(currChunk.realPosition);
 
       currChunk.isVisible = isVisible;
-      currChunk.geometry.setVisibility(isVisible);
+    }
+
+    for (const currChunk of this._usedChunks) {
+      if (!currChunk.isVisible || !currChunk.isDirty)
+        continue;
+
+      currChunk.geometry.update(
+        currChunk.realPosition,
+        this._def.chunkGraphicSize,
+        currChunk.geometryFloat32buffer,
+        currChunk.geometryBufferSizeUsed
+      );
+      currChunk.isDirty = false;
+      break;
     }
   }
 
@@ -211,9 +225,7 @@ export class ChunkManager {
         this._unusedChunks.push(removedChunks[0]);
         this._usedSet.delete(indexPosition);
 
-        if (this._def.onChunkDiscarded) {
-          this._def.onChunkDiscarded();
-        }
+        this._def.onChunkDiscarded();
       } else {
         ++ii;
       }
@@ -222,40 +234,45 @@ export class ChunkManager {
     //
     // include in the generation queue the close enough chunks
 
-    loop3dimensions(minChunkPos, maxChunkPos, (inPos) => {
-      {
-        const tmpIndex = this._usedChunks.findIndex((currChunk) => {
-          return this._usedSet.has(currChunk.indexPosition);
-        });
-        if (tmpIndex >= 0) {
-          return; // already processed
-        }
-      }
+    const currPos: Vec3 = [0, 0, 0];
+    for (currPos[2] = minChunkPos[2]; currPos[2] <= maxChunkPos[2]; ++currPos[2]) {
+      for (currPos[1] = minChunkPos[1]; currPos[1] <= maxChunkPos[1]; ++currPos[1]) {
+        for (currPos[0] = minChunkPos[0]; currPos[0] <= maxChunkPos[0]; ++currPos[0]) {
+          {
+            const tmpIndex = this._usedChunks.findIndex((currChunk) => {
+              return this._usedSet.has(currChunk.indexPosition);
+            });
+            if (tmpIndex >= 0) {
+              return; // already processed
+            }
+          }
 
-      {
-        const tmpIndex = inWorkerManager
-          .getInUseWorkersData()
-          .findIndex((currWorker) => {
-            return glm.vec3.exactEquals(
-              currWorker.processing!.indexPosition,
-              inPos
-            );
+          {
+            const tmpIndex = inWorkerManager
+              .getInUseWorkersData()
+              .findIndex((currWorker) => {
+                return glm.vec3.exactEquals(
+                  currWorker.processing!.indexPosition,
+                  currPos
+                );
+              });
+
+            if (tmpIndex >= 0) {
+              return; // already processing
+            }
+          }
+
+          this._chunkPositionQueue.push({
+            indexPosition: [...currPos],
+            realPosition: [
+              currPos[0] * this._def.chunkGraphicSize,
+              currPos[1] * this._def.chunkGraphicSize,
+              currPos[2] * this._def.chunkGraphicSize
+            ]
           });
-
-        if (tmpIndex >= 0) {
-          return; // already processing
         }
       }
-
-      this._chunkPositionQueue.push({
-        indexPosition: [...inPos],
-        realPosition: [
-          inPos[0] * this._def.chunkGraphicSize,
-          inPos[1] * this._def.chunkGraphicSize,
-          inPos[2] * this._def.chunkGraphicSize
-        ]
-      });
-    });
+    }
   }
 
   getBestNextChunkPosition(): IPositionData | undefined {

@@ -14,6 +14,7 @@ export interface IFrustumCulling {
   sphereInFrustum(x: number, y: number, z: number, radius: number): boolean;
   pointInFrustum(x: number, y: number, z: number): boolean;
   cubeInFrustum(inX: number, inY: number, inZ: number, inSize: number): boolean;
+  cubeInFrustumVec3(center: glm.ReadonlyVec3, inSize: number): boolean;
 }
 
 export class FrustumCulling implements IFrustumCulling {
@@ -86,13 +87,18 @@ export class FrustumCulling implements IFrustumCulling {
     return this.sphereInFrustum(x, y, z, 0);
   }
 
+  cubeInFrustumVec3(center: glm.ReadonlyVec3, inSize: number) {
+    return this.cubeInFrustum(center[0], center[1], center[2], inSize);
+  }
+
   cubeInFrustum(inX: number, inY: number, inZ: number, inSize: number) {
-    const minX = inX - inSize;
-    const minY = inY - inSize;
-    const minZ = inZ - inSize;
-    const maxX = inX + inSize;
-    const maxY = inY + inSize;
-    const maxZ = inZ + inSize;
+    const hSize = inSize * 0.5;
+    const minX = inX - hSize;
+    const minY = inY - hSize;
+    const minZ = inZ - hSize;
+    const maxX = inX + hSize;
+    const maxY = inY + hSize;
+    const maxZ = inZ + hSize;
 
     for (let ii = 0; ii < 6; ++ii) {
       const index = ii * 4;

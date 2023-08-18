@@ -5,10 +5,7 @@ import {
   IMarchingAlgorithm,
   OnVertexCallback,
   MarchingCube
-  // MarchingTetrahedron,
 } from './marching-algorithms';
-
-import * as utilities from './marching-algorithms/internals/utilities';
 
 import { ClassicalNoise } from './helpers/ClassicalNoise';
 import { DeterministicRng } from './helpers/DeterministicRng';
@@ -61,60 +58,10 @@ const onOriginSampleCallback = (inX: number, inY: number, inZ: number) => {
   return _lerp(noiseValue, 0, lerpCoef);
 };
 
-// const onOriginSampleCallback2 = (inX: number, inY: number, inZ: number) => {
-//   const noiseValue = onGenericSampleCallback(inX, inY, inZ);
-
-//   let lerpCoef = 1 - _getRadius(inX, inY, inZ, 1.75);
-
-//   //
-//   //
-//   //
-
-//   const k_radius = 0.25;
-//   const k_step = 1.25;
-
-//   for (let zz = -1; zz <= 1; ++zz)
-//   for (let yy = -1; yy <= 1; ++yy)
-//   for (let xx = -1; xx <= 1; ++xx) {
-
-//     const currX = inX - 0.25 + xx;
-//     const currY = inY - 0.25 + yy;
-//     const currZ = inZ - 0.25 + zz;
-
-//     const newX = currX - Math.floor(currX) - k_radius; // [0..1]
-//     const newY = currY - Math.floor(currY) - k_radius; // [0..1]
-//     const newZ = currZ - Math.floor(currZ) - k_radius; // [0..1]
-
-//     const lerpRatioX = 1 - _getRadius(0, newY, newZ, k_radius);
-//     const lerpRatioY = 1 - _getRadius(newX, 0, newZ, k_radius);
-//     const lerpRatioZ = 1 - _getRadius(newX, newY, 0, k_radius);
-
-//     lerpCoef = Math.max(lerpCoef, lerpRatioX, lerpRatioY, lerpRatioZ);
-//   }
-
-//   // const newX = inX - Math.floor(inX / 1) - k_radius; // [0..1]
-//   // const newY = inY - Math.floor(inY / 1) - k_radius; // [0..1]
-//   // const newZ = inZ - Math.floor(inZ / 1) - k_radius; // [0..1]
-
-//   // const lerpRatioX = 1 - _getRadius(0, newY, newZ, k_radius);
-//   // const lerpRatioY = 1 - _getRadius(newX, 0, newZ, k_radius);
-//   // const lerpRatioZ = 1 - _getRadius(newX, newY, 0, k_radius);
-
-//   //
-//   //
-//   //
-
-//   return _lerp(noiseValue, 0, lerpCoef);
-// };
-
 const marchingCubeInstance: IMarchingAlgorithm = new MarchingCube(
   configuration.chunkLogicSize,
   configuration.chunkThreshold
 );
-// const marchingCubeInstance: IMarchingAlgorithm = new MarchingTetrahedron(
-//   configuration.chunkLogicSize,
-//   configuration.chunkThreshold
-// );
 
 const myself = self as unknown as Worker; // well, that's apparently needed...
 
@@ -124,8 +71,6 @@ const onMainScriptMessage = (event: TypedMessageEvent<IMessage>) => {
     realPosition,
     geometryFloat32buffer,
     geometryBufferSize,
-    dataFloat32buffer
-    // dataBufferSize
   } = event.data;
 
   //
@@ -167,35 +112,27 @@ const onMainScriptMessage = (event: TypedMessageEvent<IMessage>) => {
     ? onGenericSampleCallback
     : onOriginSampleCallback;
 
-  // const onSampleCallback = onOriginSampleCallback2;
-
-  const currData = new utilities.CubeData(
-    dataFloat32buffer,
-    configuration.chunkLogicSize + 1 + 1
-  );
-
   marchingCubeInstance.generate(
     logicOrigin,
-    currData,
     onVertexCallback,
     onSampleCallback
   );
 
   //
 
-  myself.postMessage(
-    {
-      indexPosition,
-      realPosition,
-      geometryFloat32buffer,
-      dataFloat32buffer,
-      sizeUsed: bufIndex,
-      time: event.data.time
-    },
+  const toSend: IMessage = {
+    indexPosition,
+    realPosition,
+    geometryFloat32buffer,
+    geometryBufferSize,
+    sizeUsed: bufIndex,
+    time: event.data.time
+  };
+
+  myself.postMessage(toSend,
     [
       // we now transfer the ownership of the vertices buffer
       geometryFloat32buffer.buffer,
-      dataFloat32buffer.buffer
     ]
   );
 };
