@@ -6,24 +6,14 @@
   "main": "index.html",
   "scripts": {
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
-    "build-main-script": "export BUILD_TARGET='MAIN' && rollup --config ./rollup.config.js",
-    "build-worker-script": "export BUILD_TARGET='WORKER' && rollup --config ./rollup.config.js",
-    "build-release": "export BUILD_MODE='RELEASE' && npm run build-main-script && npm run build-worker-script",
-    "build-debug": "export BUILD_MODE='DEBUG' && npm run build-main-script && npm run build-worker-script",
-    "build-debug-fast": "node ./esbuild.js debug",
-    "build": "npm run build-debug-fast"
+    "build-release": "bun run bun-build.js release",
+    "build-debug": "bun run bun-build.js debug",
+    "build": "npm run build-release"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^23.0.2",
-    "@rollup/plugin-terser": "^0.3.0",
-    "@rollup/plugin-typescript": "^9.0.2",
-    "@rollup/plugin-node-resolve": "^15.0.1",
-    "rollup": "^3.2.3",
     "@types/gl-matrix": "^3.2.0",
     "@types/node": "^15.6.1",
     "gl-matrix": "^3.3.0",
-    "prettier": "^2.8.4",
-    "tslib": "^2.5.0",
-    "esbuild": "0.18.17"
+    "prettier": "^2.8.4"
   }
 }

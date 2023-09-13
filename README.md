@@ -35,6 +35,25 @@ Deterministic Procedurally Generated Cave:
     * by doing so the "coordinate 1/2/3" data will be re-generated
     * the now visible again "cave chunks" of the "coordinate 1/2/3" should be the same as before
 
+# How To Build
+
+### Only Once
+```bash
+npm install -g bun # if not already installed
+bun install
+```
+
+### Release Build
+```bash
+npm run build-release # minified
+```
+
+### Debug Build
+```bash
+npm run build debug # inlined sourcemap
+```
+
+
 ---
 
 ## Credits
