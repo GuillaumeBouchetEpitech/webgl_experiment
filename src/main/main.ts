@@ -2,7 +2,7 @@ import {
   isWebGL2Supported,
   isWebWorkerSupported,
   GlobalFullScreenManager
-} from './browser';
+} from '@browser';
 import { WebGLExperiment } from './experiment/WebGLExperiment';
 
 const onPageLoad = async () => {

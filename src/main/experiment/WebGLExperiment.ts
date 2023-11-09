@@ -5,7 +5,7 @@ import {
   GlobalKeyboardManager,
   GlobalMouseManager,
   GlobalTouchManager
-} from '../browser';
+} from '@browser';
 
 import { FreeFlyController } from './controllers/FreeFlyController';
 import { ChunkGenerator } from './generation/ChunkGenerator';

@@ -7,6 +7,10 @@
         "rootDir": ".",
         "strict": true,
         "skipLibCheck": true,
-        "moduleResolution": "node"
+        "moduleResolution": "node",
+        "paths": {
+            "@browser": ["./main/browser"],
+            "@browser/webgl2": ["./main/browser/webgl2"]
+        }
     }
 }

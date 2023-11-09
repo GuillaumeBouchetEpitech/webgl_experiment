@@ -1,6 +1,9 @@
-import { ShaderProgram, GeometryWrapper } from '../../../../../browser/webgl2';
+import { ShaderProgram, GeometryWrapper } from '@browser/webgl2';
 
-import * as shaders from './shaders';
+// @ts-ignore
+import stackRendererVertex from "./shaders/stack-renderer.glsl.vert"
+// @ts-ignore
+import stackRendererFragment from "./shaders/stack-renderer.glsl.frag"
 
 import { WireFramesStackRenderer } from './internals/WireFramesStackRenderer';
 import { TrianglesStackRenderer } from './internals/TrianglesStackRenderer';
@@ -60,8 +63,8 @@ export class StackRenderers implements IStackRenderers {
 
   constructor() {
     this._shader = new ShaderProgram('StackRenderers', {
-      vertexSrc: shaders.stackRenderer.vertex,
-      fragmentSrc: shaders.stackRenderer.fragment,
+      vertexSrc: stackRendererVertex,
+      fragmentSrc: stackRendererFragment,
       attributes: ['a_vertex_position', 'a_vertex_color'],
       uniforms: ['u_composedMatrix']
     });

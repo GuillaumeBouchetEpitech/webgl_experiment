@@ -1,96 +1,116 @@
 import { WebGLContext } from './WebGLContext';
 
-export class Texture {
+export interface IUnboundTexture {
+  initialize(): void;
+  rawBind(): void;
+  bind(inCallback: (bound: IBoundTexture) => void): void;
+  getWidth(): number;
+  getHeight(): number;
+  getRawObject(): WebGLTexture;
+}
+
+export interface IBoundTexture extends IUnboundTexture {
+  load(inImage: HTMLImageElement): void;
+  loadFromMemory(inWidth: number, inHeight: number, inPixels: Uint8Array): void;
+  allocate(inWidth: number, inHeight: number): void;
+  resize(inWidth: number, inHeight: number): void;
+}
+
+export class Texture implements IBoundTexture {
   private _width: number = 0;
   private _height: number = 0;
   private _texture: WebGLTexture | null = null;
 
-  constructor() {}
+  initialize(): void {
+    if (this._texture) throw new Error('texture: already initialized');
 
-  async load(url: string, pixelated: boolean = false): Promise<void> {
     const gl = WebGLContext.getContext();
-
     this._texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, this._texture);
-
-    // Because images have to be download over the internet
-    // they might take a moment until they are ready.
-    // Until then put a single pixel in the texture so we can
-    // use it immediately. When the image has finished downloading
-    // we'll update the texture with the contents of the image.
-    const level = 0;
-    const internalFormat = gl.RGBA;
-    const width = 1;
-    const height = 1;
-    const border = 0;
-    const srcFormat = gl.RGBA;
-    const srcType = gl.UNSIGNED_BYTE;
-    const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      level,
-      internalFormat,
-      width,
-      height,
-      border,
-      srcFormat,
-      srcType,
-      pixel
-    );
-
-    gl.bindTexture(gl.TEXTURE_2D, null);
-
-    return new Promise<void>((resolve, reject) => {
-      const image = new Image();
-      image.onerror = reject;
-      image.onload = () => {
-        this._width = image.width;
-        this._height = image.height;
-
-        gl.bindTexture(gl.TEXTURE_2D, this._texture);
-        gl.texImage2D(
-          gl.TEXTURE_2D,
-          level,
-          internalFormat,
-          srcFormat,
-          srcType,
-          image
-        );
-
-        // wrapping to clamp to edge
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-        const filter = pixelated ? gl.NEAREST : gl.LINEAR;
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-
-        gl.bindTexture(gl.TEXTURE_2D, null);
-
-        resolve();
-      };
-      image.src = url;
-    });
   }
 
-  loadFromMemory(
-    inWidth: number,
-    inHeight: number,
-    inPixels: Uint8Array,
-    inPixelated: boolean = false
-  ): void {
+  rawBind(): void {
+    if (!this._texture) throw new Error('texture: not initialized');
+    const gl = WebGLContext.getContext();
+    gl.bindTexture(gl.TEXTURE_2D, this._texture);
+  }
+
+  bind(inCallback: (bound: IBoundTexture) => void): void {
+    this.rawBind();
+
+    inCallback(this);
+
+    Texture.unbind();
+  }
+
+  static unbind(): void {
     const gl = WebGLContext.getContext();
 
-    this._texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, this._texture);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
+
+  load(inImage: HTMLImageElement): void {
+    if (!this._texture) throw new Error('texture: not initialized');
+
+    const gl = WebGLContext.getContext();
+
+    this._width = inImage.width;
+    this._height = inImage.height;
 
     // wrapping to clamp to edge
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-    const filter = inPixelated ? gl.NEAREST : gl.LINEAR;
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    const level = 0;
+    const internalFormat = gl.RGBA;
+    const srcFormat = gl.RGBA;
+    const srcType = gl.UNSIGNED_BYTE;
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      level,
+      internalFormat,
+      srcFormat,
+      srcType,
+      inImage
+    );
+  }
+
+  loadFromMemory(
+    inWidth: number,
+    inHeight: number,
+    inPixels: Uint8Array
+  ): void {
+    this._allocate(inWidth, inHeight, inPixels);
+  }
+
+  allocate(inWidth: number, inHeight: number): void {
+    this._allocate(inWidth, inHeight);
+  }
+
+  resize(inWidth: number, inHeight: number): void {
+    this._allocate(inWidth, inHeight);
+  }
+
+  private _allocate(
+    inWidth: number,
+    inHeight: number,
+    inPixels: Uint8Array | null = null
+  ): void {
+    if (!this._texture) throw new Error('texture: not initialized');
+
+    const gl = WebGLContext.getContext();
+
+    this._width = inWidth;
+    this._height = inHeight;
+
+    // wrapping to clamp to edge
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
     const level = 0;
     const internalFormat = gl.RGBA;
@@ -108,8 +128,6 @@ export class Texture {
       srcType,
       inPixels
     );
-
-    gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
   getWidth(): number {
@@ -124,17 +142,20 @@ export class Texture {
     return this._height;
   }
 
-  bind(): void {
+  getRawObject() {
     if (!this._texture) throw new Error('texture not initialized');
 
-    const gl = WebGLContext.getContext();
-
-    gl.bindTexture(gl.TEXTURE_2D, this._texture);
+    // TODO: this is ugly
+    return this._texture;
   }
 
-  static unbind(): void {
-    const gl = WebGLContext.getContext();
-
-    gl.bindTexture(gl.TEXTURE_2D, null);
+  static getImageFromUrl(url: string): Promise<HTMLImageElement> {
+    return new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onerror = reject;
+      image.onload = () => { resolve(image); };
+      image.src = url;
+    });
   }
+
 }

@@ -1,7 +1,10 @@
-import { ShaderProgram, GeometryWrapper } from '../../../../../browser/webgl2';
+import { ShaderProgram, GeometryWrapper } from '@browser/webgl2';
 import { ICamera } from '../../../camera/Camera';
 
-import * as shaders from './shaders';
+// @ts-ignore
+import wireFrameCubesRendererVertex from "./shaders/wireFrame-cubes-renderer.glsl.vert"
+// @ts-ignore
+import wireFrameCubesRendererFragment from "./shaders/wireFrame-cubes-renderer.glsl.frag"
 
 import * as glm from 'gl-matrix';
 
@@ -70,8 +73,8 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
 
   constructor() {
     this._shader = new ShaderProgram('WireFrameCubesRenderer', {
-      vertexSrc: shaders.wireFrameCubes.vertex,
-      fragmentSrc: shaders.wireFrameCubes.fragment,
+      vertexSrc: wireFrameCubesRendererVertex,
+      fragmentSrc: wireFrameCubesRendererFragment,
       attributes: [
         'a_vertex_position',
         'a_offset_center',

@@ -2,7 +2,7 @@ import {
   GlobalKeyboardManager,
   GlobalTouchManager,
   GlobalPointerLockManager
-} from '../../../../../browser';
+} from '@browser';
 
 import { IStackRenderers } from '../stack-renderers/StackRenderers';
 import { ITextRenderer } from '../text-renderer/TextRenderer';

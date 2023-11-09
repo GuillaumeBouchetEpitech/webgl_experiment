@@ -1,15 +1,21 @@
-import * as shaders from './shaders';
 
 import {
   GeometryWrapper,
   ShaderProgram,
-  Texture
-} from '../../../../../browser/webgl2';
+  Texture,
+  IUnboundShader,
+  IUnboundTexture
+} from '@browser/webgl2';
 
 import { ICamera } from '../../../camera/Camera';
 
 import * as glm from 'gl-matrix';
 import { IFrustumCulling } from 'main/experiment/webGLRenderer/camera/FrustumCulling';
+
+// @ts-ignore
+import chunksRendererVertex from "./shaders/chunks-renderer.glsl.vert"
+// @ts-ignore
+import chunksRendererFragment from "./shaders/chunks-renderer.glsl.frag"
 
 export interface ILiveGeometry {
   update(
@@ -28,7 +34,7 @@ class LiveGeometry implements ILiveGeometry {
   private _geometry: GeometryWrapper.Geometry;
 
   constructor(
-    inShader: ShaderProgram,
+    inShader: IUnboundShader,
     inGeometryDefinition: GeometryWrapper.GeometryDefinition,
     preAllocatedSize: number
   ) {
@@ -74,11 +80,11 @@ export interface IChunksRenderer {
 }
 
 export class ChunksRenderer implements IChunksRenderer {
-  private _shader: ShaderProgram;
-  private _textureDirt = new Texture();
-  private _textureGrass = new Texture();
-  private _textureStoneWall = new Texture();
-  private _textureStoneWallBump = new Texture();
+  private _shader: IUnboundShader;
+  private _textureDirt: IUnboundTexture = new Texture();
+  private _textureGrass: IUnboundTexture = new Texture();
+  private _textureStoneWall: IUnboundTexture = new Texture();
+  private _textureStoneWallBump: IUnboundTexture = new Texture();
 
   private _geometryDefinition: GeometryWrapper.GeometryDefinition;
 
@@ -87,8 +93,8 @@ export class ChunksRenderer implements IChunksRenderer {
 
   constructor() {
     this._shader = new ShaderProgram('ChunksRenderer', {
-      vertexSrc: shaders.chunksRenderer.vertex,
-      fragmentSrc: shaders.chunksRenderer.fragment,
+      vertexSrc: chunksRendererVertex,
+      fragmentSrc: chunksRendererFragment,
       attributes: ['a_vertex_position', 'a_vertex_normal', 'a_offset_origin'],
       uniforms: [
         'u_composedMatrix',
@@ -120,12 +126,23 @@ export class ChunksRenderer implements IChunksRenderer {
   }
 
   async initialize() {
-    await Promise.all([
-      this._textureDirt.load('assets/dirt.png'),
-      this._textureGrass.load('assets/grass.png'),
-      this._textureStoneWall.load('assets/stone-wall.png'),
-      this._textureStoneWallBump.load('assets/stone-wall-bump.png')
+
+    const images = await Promise.all([
+      Texture.getImageFromUrl('assets/dirt.png'),
+      Texture.getImageFromUrl('assets/grass.png'),
+      Texture.getImageFromUrl('assets/stone-wall.png'),
+      Texture.getImageFromUrl('assets/stone-wall-bump.png')
     ]);
+
+    this._textureDirt.initialize();
+    this._textureGrass.initialize();
+    this._textureStoneWall.initialize();
+    this._textureStoneWallBump.initialize();
+
+    this._textureDirt.bind((bound) => bound.load(images[0]));
+    this._textureGrass.bind((bound) => bound.load(images[1]));
+    this._textureStoneWall.bind((bound) => bound.load(images[2]));
+    this._textureStoneWallBump.bind((bound) => bound.load(images[3]));
   }
 
   acquireGeometry(inSize: number): ILiveGeometry {
@@ -159,29 +176,29 @@ export class ChunksRenderer implements IChunksRenderer {
   ) {
     const eyePos = inCamera.getEye();
 
-    this._shader.bind(() => {
-      this._shader.setMatrix4Uniform(
+    this._shader.bind((boundShader) => {
+      boundShader.setMatrix4Uniform(
         'u_composedMatrix',
         inCamera.getComposedMatrix()
       );
-      this._shader.setFloat3Uniform(
+      boundShader.setFloat3Uniform(
         'u_eyePosition',
         eyePos[0],
         eyePos[1],
         eyePos[2]
       );
 
-      this._shader.setFloat1Uniform('u_sceneScale', inChunkSize);
-      this._shader.setFloat1Uniform('u_tileRepeat', 2);
+      boundShader.setFloat1Uniform('u_sceneScale', inChunkSize);
+      boundShader.setFloat1Uniform('u_tileRepeat', 2);
 
-      this._shader.setTextureUniform('u_texture_dirt', this._textureDirt, 0);
-      this._shader.setTextureUniform('u_texture_grass', this._textureGrass, 1);
-      this._shader.setTextureUniform(
+      boundShader.setTextureUniform('u_texture_dirt', this._textureDirt, 0);
+      boundShader.setTextureUniform('u_texture_grass', this._textureGrass, 1);
+      boundShader.setTextureUniform(
         'u_texture_stoneWall',
         this._textureStoneWall,
         2
       );
-      this._shader.setTextureUniform(
+      boundShader.setTextureUniform(
         'u_texture_stoneWallBump',
         this._textureStoneWallBump,
         3

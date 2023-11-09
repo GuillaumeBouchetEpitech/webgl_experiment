@@ -2,10 +2,14 @@ import {
   ShaderProgram,
   Texture,
   GeometryWrapper,
-  WebGLContext
-} from '../../../../../browser/webgl2';
+  IUnboundShader,
+  IUnboundTexture
+} from '@browser/webgl2';
 
-import * as shaders from './shaders';
+// @ts-ignore
+import textRendererVertex from "./shaders/text-renderer.glsl.vert"
+// @ts-ignore
+import textRendererFragment from "./shaders/text-renderer.glsl.frag"
 
 import { asciiTextureHex } from './internals/asciiTextureHex';
 
@@ -34,9 +38,9 @@ export interface ITextRenderer {
 }
 
 export class TextRenderer implements ITextRenderer {
-  private _shader: ShaderProgram;
+  private _shader: IUnboundShader;
   private _geometry: GeometryWrapper.Geometry;
-  private _texture = new Texture();
+  private _texture: IUnboundTexture = new Texture();
   private _texCoordMap: Map<string, glm.ReadonlyVec2>;
 
   private _buffer = new Float32Array(k_bufferSize);
@@ -50,8 +54,8 @@ export class TextRenderer implements ITextRenderer {
 
   constructor() {
     this._shader = new ShaderProgram('TextRenderer', {
-      vertexSrc: shaders.textRenderer.vertex,
-      fragmentSrc: shaders.textRenderer.fragment,
+      vertexSrc: textRendererVertex,
+      fragmentSrc: textRendererFragment,
       attributes: [
         'a_vertex_position',
         'a_vertex_texCoord',
@@ -251,7 +255,10 @@ export class TextRenderer implements ITextRenderer {
       }
     }
 
-    this._texture.loadFromMemory(width, height, imagePixels, true);
+    this._texture.initialize();
+    this._texture.bind((boundTexture) => {
+      boundTexture.loadFromMemory(width, height, imagePixels);
+    })
   }
 
   setTextAlign(
@@ -420,9 +427,9 @@ export class TextRenderer implements ITextRenderer {
       return this;
     }
 
-    this._shader.bind(() => {
-      this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
-      this._shader.setTextureUniform('u_texture', this._texture, 0);
+    this._shader.bind((boundShader) => {
+      boundShader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
+      boundShader.setTextureUniform('u_texture', this._texture, 0);
 
       this._geometry.updateBuffer(1, this._buffer, this._currentSize);
       this._geometry.setInstancedCount(this._currentSize / 9);

@@ -1,4 +1,4 @@
-import { WebGLContext } from '../../../../../browser/webgl2';
+import { WebGLContext } from '@browser/webgl2';
 import { Camera, ICamera } from '../../../camera/Camera';
 
 import { Chunks } from '../../../../generation/internals';

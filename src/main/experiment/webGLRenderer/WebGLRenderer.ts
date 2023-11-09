@@ -4,7 +4,7 @@ import { Camera, ICamera } from './camera/Camera';
 import * as scene from './renderers/scene';
 import * as hud from './renderers/hud';
 
-import { GlobalMouseManager, GlobalTouchManager, webgl2 } from '../../browser';
+import { GlobalMouseManager, GlobalTouchManager, webgl2 } from '@browser';
 const { WebGLContext, ShaderProgram } = webgl2;
 
 import * as glm from 'gl-matrix';

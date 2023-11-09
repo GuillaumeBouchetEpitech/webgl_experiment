@@ -8,12 +8,14 @@
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
     "build-release": "bun run bun-build.js release",
     "build-debug": "bun run bun-build.js debug",
-    "build": "npm run build-release"
+    "build": "npm run build-release",
+    "watch": "bun run node_modules/.bin/nodemon --exec 'npm run build-debug' --watch ./src"
   },
   "devDependencies": {
     "@types/gl-matrix": "^3.2.0",
     "@types/node": "^15.6.1",
     "gl-matrix": "^3.3.0",
-    "prettier": "^2.8.4"
+    "prettier": "^2.8.4",
+    "nodemon": "^3.0.1"
   }
 }

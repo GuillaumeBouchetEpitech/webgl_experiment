@@ -1,5 +1,5 @@
 import { WebGLContext } from './WebGLContext';
-import { ShaderProgram } from './ShaderProgram';
+import { IUnboundShader } from './ShaderProgram';
 
 export namespace GeometryWrapper {
   export const BytesPerPixel = 4; // float (float32 = 4 bytes)
@@ -64,7 +64,7 @@ export namespace GeometryWrapper {
     private _instanceCount: number = 0;
     private _isInstanced: boolean = false;
 
-    constructor(shader: ShaderProgram, def: GeometryDefinition) {
+    constructor(shader: IUnboundShader, def: GeometryDefinition) {
       const gl = WebGLContext.getContext();
 
       if (def.vbos.length === 0) {

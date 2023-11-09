@@ -1,7 +1,10 @@
-import { ShaderProgram, GeometryWrapper } from '../../../../../browser/webgl2';
+import { ShaderProgram, GeometryWrapper } from '@browser/webgl2';
 import { ICamera } from '../../../camera/Camera';
 
-import * as shaders from './shaders';
+// @ts-ignore
+import triangleCubesRendererVertex from "./shaders/triangle-cubes-renderer.glsl.vert"
+// @ts-ignore
+import triangleCubesRendererFragment from "./shaders/triangle-cubes-renderer.glsl.frag"
 
 import * as glm from 'gl-matrix';
 
@@ -153,8 +156,8 @@ export class TriangleCubesRenderer implements ITriangleCubesRenderer {
 
   constructor() {
     this._shader = new ShaderProgram('TriangleCubesRenderer', {
-      vertexSrc: shaders.triangleCubes.vertex,
-      fragmentSrc: shaders.triangleCubes.fragment,
+      vertexSrc: triangleCubesRendererVertex,
+      fragmentSrc: triangleCubesRendererFragment,
       attributes: [
         'a_vertex_position',
         'a_offset_center',
