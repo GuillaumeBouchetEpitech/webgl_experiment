@@ -2,9 +2,9 @@ import { ShaderProgram, GeometryWrapper } from '@browser/webgl2';
 import { ICamera } from '../../../camera/Camera';
 
 // @ts-ignore
-import wireFrameCubesRendererVertex from "./shaders/wireFrame-cubes-renderer.glsl.vert"
+import wireFrameCubesRendererVertex from './shaders/wireFrame-cubes-renderer.glsl.vert';
 // @ts-ignore
-import wireFrameCubesRendererFragment from "./shaders/wireFrame-cubes-renderer.glsl.frag"
+import wireFrameCubesRendererFragment from './shaders/wireFrame-cubes-renderer.glsl.frag';
 
 import * as glm from 'gl-matrix';
 

@@ -1,4 +1,3 @@
-
 import { WebGLContext } from './WebGLContext';
 
 export enum CubeMapType {
@@ -7,7 +6,7 @@ export enum CubeMapType {
   positiveY,
   negativeY,
   positiveZ,
-  negativeZ,
+  negativeZ
 }
 
 export interface IUnboundCubeMap {
@@ -21,7 +20,6 @@ export interface IBoundCubeMap extends IUnboundCubeMap {
 }
 
 export class CubeMap implements IBoundCubeMap {
-
   private _width: number = 0;
   private _height: number = 0;
   private _minBufferSize: number = 0;
@@ -29,7 +27,8 @@ export class CubeMap implements IBoundCubeMap {
 
   initialize(width: number, height: number): void {
     if (width < 1) throw new Error(`cube map: width is < 1, input: ${width}`);
-    if (height < 1) throw new Error(`cube map: height is < 1, input: ${height}`);
+    if (height < 1)
+      throw new Error(`cube map: height is < 1, input: ${height}`);
     const gl = WebGLContext.getContext();
     this._texture = gl.createTexture();
     this._width = width;
@@ -57,14 +56,12 @@ export class CubeMap implements IBoundCubeMap {
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
   }
 
-
-
-  loadFromMemory(
-    inType: CubeMapType,
-    inPixels: Uint8Array,
-  ): void {
+  loadFromMemory(inType: CubeMapType, inPixels: Uint8Array): void {
     if (!this._texture) throw new Error('cube map: not initialized');
-    if (inPixels.length < this._minBufferSize) throw new Error(`cube map: miss-matching pixels buffer size, input: ${inPixels.length}`);
+    if (inPixels.length < this._minBufferSize)
+      throw new Error(
+        `cube map: miss-matching pixels buffer size, input: ${inPixels.length}`
+      );
 
     const gl = WebGLContext.getContext();
 
@@ -91,7 +88,11 @@ export class CubeMap implements IBoundCubeMap {
     const gl = WebGLContext.getContext();
 
     gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(
+      gl.TEXTURE_CUBE_MAP,
+      gl.TEXTURE_MIN_FILTER,
+      gl.LINEAR_MIPMAP_LINEAR
+    );
   }
 
   getWidth(): number {
@@ -106,18 +107,22 @@ export class CubeMap implements IBoundCubeMap {
     return this._height;
   }
 
-
   private static _getType(inType: CubeMapType): number {
     const gl = WebGLContext.getContext();
-    switch(inType) {
-      case CubeMapType.positiveX: return gl.TEXTURE_CUBE_MAP_POSITIVE_X;
-      case CubeMapType.negativeX: return gl.TEXTURE_CUBE_MAP_NEGATIVE_X;
-      case CubeMapType.positiveY: return gl.TEXTURE_CUBE_MAP_POSITIVE_Y;
-      case CubeMapType.negativeY: return gl.TEXTURE_CUBE_MAP_NEGATIVE_Y;
-      case CubeMapType.positiveZ: return gl.TEXTURE_CUBE_MAP_POSITIVE_Z;
-      case CubeMapType.negativeZ: return gl.TEXTURE_CUBE_MAP_NEGATIVE_Z;
+    switch (inType) {
+      case CubeMapType.positiveX:
+        return gl.TEXTURE_CUBE_MAP_POSITIVE_X;
+      case CubeMapType.negativeX:
+        return gl.TEXTURE_CUBE_MAP_NEGATIVE_X;
+      case CubeMapType.positiveY:
+        return gl.TEXTURE_CUBE_MAP_POSITIVE_Y;
+      case CubeMapType.negativeY:
+        return gl.TEXTURE_CUBE_MAP_NEGATIVE_Y;
+      case CubeMapType.positiveZ:
+        return gl.TEXTURE_CUBE_MAP_POSITIVE_Z;
+      case CubeMapType.negativeZ:
+        return gl.TEXTURE_CUBE_MAP_NEGATIVE_Z;
     }
     // throw new Error('cube map: invalid type');
   }
-
-};
+}

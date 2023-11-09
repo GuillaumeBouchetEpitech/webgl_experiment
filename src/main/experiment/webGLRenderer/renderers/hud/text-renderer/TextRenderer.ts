@@ -7,9 +7,9 @@ import {
 } from '@browser/webgl2';
 
 // @ts-ignore
-import textRendererVertex from "./shaders/text-renderer.glsl.vert"
+import textRendererVertex from './shaders/text-renderer.glsl.vert';
 // @ts-ignore
-import textRendererFragment from "./shaders/text-renderer.glsl.frag"
+import textRendererFragment from './shaders/text-renderer.glsl.frag';
 
 import { asciiTextureHex } from './internals/asciiTextureHex';
 
@@ -258,7 +258,7 @@ export class TextRenderer implements ITextRenderer {
     this._texture.initialize();
     this._texture.bind((boundTexture) => {
       boundTexture.loadFromMemory(width, height, imagePixels);
-    })
+    });
   }
 
   setTextAlign(

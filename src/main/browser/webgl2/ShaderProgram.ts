@@ -20,7 +20,11 @@ export interface IUnboundShader {
 }
 
 export interface IBoundShader {
-  setTextureUniform(inName: string, inTexture: IUnboundTexture | IUnboundCubeMap, inIndex: number): void;
+  setTextureUniform(
+    inName: string,
+    inTexture: IUnboundTexture | IUnboundCubeMap,
+    inIndex: number
+  ): void;
   setInteger1Uniform(inName: string, inValue: number): void;
   setInteger2Uniform(inName: string, inValueX: number, inValueY: number): void;
   setInteger3Uniform(
@@ -141,7 +145,11 @@ export class ShaderProgram {
     return uniform;
   }
 
-  setTextureUniform(inName: string, inTexture: IUnboundTexture | IUnboundCubeMap, inIndex: number) {
+  setTextureUniform(
+    inName: string,
+    inTexture: IUnboundTexture | IUnboundCubeMap,
+    inIndex: number
+  ) {
     const gl = WebGLContext.getContext();
 
     gl.activeTexture(gl.TEXTURE0 + inIndex);

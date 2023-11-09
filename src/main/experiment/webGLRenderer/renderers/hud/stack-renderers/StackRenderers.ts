@@ -1,9 +1,9 @@
 import { ShaderProgram, GeometryWrapper } from '@browser/webgl2';
 
 // @ts-ignore
-import stackRendererVertex from "./shaders/stack-renderer.glsl.vert"
+import stackRendererVertex from './shaders/stack-renderer.glsl.vert';
 // @ts-ignore
-import stackRendererFragment from "./shaders/stack-renderer.glsl.frag"
+import stackRendererFragment from './shaders/stack-renderer.glsl.frag';
 
 import { WireFramesStackRenderer } from './internals/WireFramesStackRenderer';
 import { TrianglesStackRenderer } from './internals/TrianglesStackRenderer';

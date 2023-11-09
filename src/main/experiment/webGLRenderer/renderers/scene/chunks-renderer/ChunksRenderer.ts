@@ -1,4 +1,3 @@
-
 import {
   GeometryWrapper,
   ShaderProgram,
@@ -13,9 +12,9 @@ import * as glm from 'gl-matrix';
 import { IFrustumCulling } from 'main/experiment/webGLRenderer/camera/FrustumCulling';
 
 // @ts-ignore
-import chunksRendererVertex from "./shaders/chunks-renderer.glsl.vert"
+import chunksRendererVertex from './shaders/chunks-renderer.glsl.vert';
 // @ts-ignore
-import chunksRendererFragment from "./shaders/chunks-renderer.glsl.frag"
+import chunksRendererFragment from './shaders/chunks-renderer.glsl.frag';
 
 export interface ILiveGeometry {
   update(
@@ -126,7 +125,6 @@ export class ChunksRenderer implements IChunksRenderer {
   }
 
   async initialize() {
-
     const images = await Promise.all([
       Texture.getImageFromUrl('assets/dirt.png'),
       Texture.getImageFromUrl('assets/grass.png'),

@@ -1,4 +1,3 @@
-
 import { WebGLContext } from './WebGLContext';
 import { IUnboundTexture, Texture } from './Texture';
 
@@ -9,7 +8,13 @@ export interface IUnboundFrameBuffer {
 
 export interface IBoundFrameBuffer extends IUnboundFrameBuffer {
   attachTexture(texture: IUnboundTexture): void;
-  getPixels(x: number, y: number, width: number, height: number, outDst: Uint8Array): void;
+  getPixels(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    outDst: Uint8Array
+  ): void;
 }
 
 export class FrameBuffer {
@@ -58,11 +63,16 @@ export class FrameBuffer {
       texture.getRawObject(),
       mipmapLevel
     );
-
   }
 
-  getPixels(x: number, y: number, width: number, height: number, outDst: Uint8Array): void {
+  getPixels(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    outDst: Uint8Array
+  ): void {
     const gl = WebGLContext.getContext();
-    gl.readPixels(x,y, width, height, gl.RGBA, gl.UNSIGNED_BYTE, outDst);
+    gl.readPixels(x, y, width, height, gl.RGBA, gl.UNSIGNED_BYTE, outDst);
   }
 }

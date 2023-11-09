@@ -2,9 +2,9 @@ import { ShaderProgram, GeometryWrapper } from '@browser/webgl2';
 import { ICamera } from '../../../camera/Camera';
 
 // @ts-ignore
-import triangleCubesRendererVertex from "./shaders/triangle-cubes-renderer.glsl.vert"
+import triangleCubesRendererVertex from './shaders/triangle-cubes-renderer.glsl.vert';
 // @ts-ignore
-import triangleCubesRendererFragment from "./shaders/triangle-cubes-renderer.glsl.frag"
+import triangleCubesRendererFragment from './shaders/triangle-cubes-renderer.glsl.frag';
 
 import * as glm from 'gl-matrix';
 
