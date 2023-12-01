@@ -114,9 +114,9 @@ export class Camera implements ICamera {
     inTarget: glm.ReadonlyVec3,
     inUpAxis: glm.ReadonlyVec3
   ) {
-    glm.vec3.copy(this._eye, inEye);
-    glm.vec3.copy(this._target, inTarget);
-    glm.vec3.copy(this._upAxis, inUpAxis);
+    this.setEye(inEye);
+    this.setTarget(inTarget);
+    this.setUpAxis(inUpAxis);
   }
 
   //

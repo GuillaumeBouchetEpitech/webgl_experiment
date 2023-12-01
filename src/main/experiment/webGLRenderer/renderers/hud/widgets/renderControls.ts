@@ -1,13 +1,11 @@
-import {
-  GlobalKeyboardManager,
-  GlobalTouchManager,
-  GlobalPointerLockManager
-} from '@browser';
+import { system } from '@local-framework';
 
 import { IStackRenderers } from '../stack-renderers/StackRenderers';
 import { ITextRenderer } from '../text-renderer/TextRenderer';
 
 import * as glm from 'gl-matrix';
+
+const { GlobalKeyboardManager, GlobalTouchManager, GlobalPointerLockManager } = system.browser;
 
 interface Indicator {
   center: glm.ReadonlyVec2;

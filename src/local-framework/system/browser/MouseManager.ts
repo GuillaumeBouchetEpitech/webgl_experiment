@@ -46,7 +46,9 @@ class MouseManager {
   }
 
   activate() {
-    if (this._activated) return;
+    if (this._activated) {
+      return;
+    }
 
     this._pressedButtonsSet.clear();
 
@@ -58,7 +60,9 @@ class MouseManager {
   }
 
   deactivate() {
-    if (!this._activated) return;
+    if (!this._activated) {
+      return;
+    }
 
     this._pressedButtonsSet.clear();
 
@@ -79,7 +83,7 @@ class MouseManager {
   deltaY(): number {
     return this._deltaY;
   }
-  resetDelta() {
+  resetDeltas() {
     this._deltaX = 0;
     this._deltaY = 0;
   }

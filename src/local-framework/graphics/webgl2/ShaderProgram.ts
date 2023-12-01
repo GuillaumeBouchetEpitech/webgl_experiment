@@ -94,11 +94,11 @@ export class ShaderProgram {
     // ShaderProgram.unbind();
   }
 
-  rawBind() {
-    const gl = WebGLContext.getContext();
+  // rawBind() {
+  //   const gl = WebGLContext.getContext();
 
-    gl.useProgram(this._program);
-  }
+  //   gl.useProgram(this._program);
+  // }
 
   bind(inCallback: (bound: IBoundShader) => void) {
     if (ShaderProgram._isBound !== null) {
@@ -108,7 +108,9 @@ export class ShaderProgram {
     }
 
     ShaderProgram._isBound = this;
-    this.rawBind();
+    // this.rawBind();
+    const gl = WebGLContext.getContext();
+    gl.useProgram(this._program);
 
     inCallback(this);
 

@@ -1,12 +1,10 @@
-import { system } from '@local-framework';
+import {
+  GlobalKeyboardManager,
+  GlobalMouseManager,
+  GlobalTouchManager
+} from '../browser';
 
 import * as glm from 'gl-matrix';
-
-const {
-  GlobalMouseManager,
-  GlobalTouchManager,
-  GlobalKeyboardManager,
-} = system.browser;
 
 const AllAxises = {
   X: 0,
@@ -70,14 +68,14 @@ export class FreeFlyController {
     return this._isActivated;
   }
 
-  update(
-    elapsedTime: number,
-    inCollideCallback: (inX: number, inY: number, inZ: number) => boolean
-  ) {
+  update(deltaMsTime: number) {
     let moveForward = false;
     let moveBackward = false;
     let strafeLeft = false;
     let strafeRight = false;
+    let isRunning = false;
+    let isDiving = false;
+    let isRising = false;
     let lookDeltaX = 0;
     let lookDeltaY = 0;
 
@@ -91,8 +89,8 @@ export class FreeFlyController {
       const deltaX = GlobalMouseManager.deltaX() * this._mouseSensibility;
       const deltaY = GlobalMouseManager.deltaY() * this._mouseSensibility;
 
-      lookDeltaX -= deltaX * toRadians;
-      lookDeltaY -= deltaY * toRadians;
+      lookDeltaX -= deltaX * toRadians * deltaMsTime;
+      lookDeltaY -= deltaY * toRadians * deltaMsTime;
     }
 
     //
@@ -121,8 +119,8 @@ export class FreeFlyController {
       const deltaX = firstTouch.deltaX * this._touchSensibility;
       const deltaY = firstTouch.deltaY * this._touchSensibility;
 
-      lookDeltaX -= deltaX * toRadians;
-      lookDeltaY -= deltaY * toRadians;
+      lookDeltaX -= deltaX * toRadians * deltaMsTime;
+      lookDeltaY -= deltaY * toRadians * deltaMsTime;
     } else {
       this._touchMoveForward = false;
     }
@@ -140,13 +138,6 @@ export class FreeFlyController {
     //
     // keyboard
     //
-
-    const currentLinearSpeed = this._movingSpeed * elapsedTime;
-
-    const scaledForward = glm.vec3.fromValues(0, 0, 0);
-    glm.vec3.scale(scaledForward, this._forwardAxis, currentLinearSpeed);
-    const scaledLeft = glm.vec3.fromValues(0, 0, 0);
-    glm.vec3.scale(scaledLeft, this._leftAxis, currentLinearSpeed);
 
     // forward
     if (GlobalKeyboardManager.isPressed('Z', 'W')) {
@@ -168,10 +159,35 @@ export class FreeFlyController {
       strafeRight = true;
     }
 
+    // run
+    if (GlobalKeyboardManager.isPressed('Shift')) {
+      isRunning = true;
+    }
+
+    // dive
+    if (GlobalKeyboardManager.isPressed('C')) {
+      isDiving = true;
+    }
+
+    // rise
+    if (GlobalKeyboardManager.isPressed('Space')) {
+      isRising = true;
+    }
+
+    const currentLinearSpeed = (this._movingSpeed * (isRunning ? 4 : 1)) * deltaMsTime;
+
+    const scaledForward = glm.vec3.fromValues(0, 0, 0);
+    glm.vec3.scale(scaledForward, this._forwardAxis, currentLinearSpeed);
+    const scaledLeft = glm.vec3.fromValues(0, 0, 0);
+    glm.vec3.scale(scaledLeft, this._leftAxis, currentLinearSpeed);
+    const scaledUp = glm.vec3.fromValues(0, 0, 0);
+    glm.vec3.scale(scaledUp, this._upAxis, currentLinearSpeed);
+
+
     //
     //
 
-    const currentAngularSpeed = this._keyboardSensibility * elapsedTime;
+    const currentAngularSpeed = this._keyboardSensibility * deltaMsTime;
 
     if (GlobalKeyboardManager.isPressed('ArrowUp')) {
       lookDeltaY += currentAngularSpeed;
@@ -218,141 +234,24 @@ export class FreeFlyController {
 
     glm.vec3.cross(this._leftAxis, this._upAxis, this._forwardAxis);
 
-    if (true) {
-      if (moveForward) {
-        glm.vec3.add(this._position, this._position, scaledForward);
-      } else if (moveBackward) {
-        glm.vec3.sub(this._position, this._position, scaledForward);
-      }
-
-      if (strafeLeft) {
-        glm.vec3.add(this._position, this._position, scaledLeft);
-      } else if (strafeRight) {
-        glm.vec3.sub(this._position, this._position, scaledLeft);
-      }
-    } else {
-      // const noNeg = (inVal: number) => inVal < 0 ? -inVal : inVal;
-      // const forwardAxis: number[] = [0,1,2].sort((a, b) => noNeg(scaledForward[a]) - noNeg(scaledForward[b]));
-      // const strafeAxis: number[] = [0,1,2].sort((a, b) => noNeg(scaledLeft[a]) - noNeg(scaledLeft[b]));
-
-      if (moveForward) {
-        if (
-          !inCollideCallback(
-            this._position[0] + scaledForward[0],
-            this._position[1],
-            this._position[2]
-          )
-        ) {
-          this._position[0] += scaledForward[0];
-        }
-        if (
-          !inCollideCallback(
-            this._position[0],
-            this._position[1] + scaledForward[1],
-            this._position[2]
-          )
-        ) {
-          this._position[1] += scaledForward[1];
-        }
-        if (
-          !inCollideCallback(
-            this._position[0],
-            this._position[1],
-            this._position[2] + scaledForward[2]
-          )
-        ) {
-          this._position[2] += scaledForward[2];
-        }
-      } else if (moveBackward) {
-        if (
-          !inCollideCallback(
-            this._position[0] - scaledForward[0],
-            this._position[1],
-            this._position[2]
-          )
-        ) {
-          this._position[0] -= scaledForward[0];
-        }
-        if (
-          !inCollideCallback(
-            this._position[0],
-            this._position[1] - scaledForward[1],
-            this._position[2]
-          )
-        ) {
-          this._position[1] -= scaledForward[1];
-        }
-        if (
-          !inCollideCallback(
-            this._position[0],
-            this._position[1],
-            this._position[2] - scaledForward[2]
-          )
-        ) {
-          this._position[2] -= scaledForward[2];
-        }
-      }
-
-      if (strafeLeft) {
-        if (
-          !inCollideCallback(
-            this._position[0] + scaledLeft[0],
-            this._position[1],
-            this._position[2]
-          )
-        ) {
-          this._position[0] += scaledLeft[0];
-        }
-        if (
-          !inCollideCallback(
-            this._position[0],
-            this._position[1] + scaledLeft[1],
-            this._position[2]
-          )
-        ) {
-          this._position[1] += scaledLeft[1];
-        }
-        if (
-          !inCollideCallback(
-            this._position[0],
-            this._position[1],
-            this._position[2] + scaledLeft[2]
-          )
-        ) {
-          this._position[2] += scaledLeft[2];
-        }
-      } else if (strafeRight) {
-        if (
-          !inCollideCallback(
-            this._position[0] - scaledLeft[0],
-            this._position[1],
-            this._position[2]
-          )
-        ) {
-          this._position[0] -= scaledLeft[0];
-        }
-        if (
-          !inCollideCallback(
-            this._position[0],
-            this._position[1] - scaledLeft[1],
-            this._position[2]
-          )
-        ) {
-          this._position[1] -= scaledLeft[1];
-        }
-        if (
-          !inCollideCallback(
-            this._position[0],
-            this._position[1],
-            this._position[2] - scaledLeft[2]
-          )
-        ) {
-          this._position[2] -= scaledLeft[2];
-        }
-      }
+    if (moveForward) {
+      glm.vec3.add(this._position, this._position, scaledForward);
+    } else if (moveBackward) {
+      glm.vec3.sub(this._position, this._position, scaledForward);
     }
 
-    // update target
+    if (strafeLeft) {
+      glm.vec3.add(this._position, this._position, scaledLeft);
+    } else if (strafeRight) {
+      glm.vec3.sub(this._position, this._position, scaledLeft);
+    }
+
+    if (isRising) {
+      glm.vec3.add(this._position, this._position, scaledUp);
+    } else if (isDiving) {
+      glm.vec3.sub(this._position, this._position, scaledUp);
+    }
+
     glm.vec3.add(this._target, this._position, this._forwardAxis);
 
     //
@@ -370,14 +269,6 @@ export class FreeFlyController {
 
   getTarget(): glm.ReadonlyVec3 {
     return this._target;
-  }
-
-  getForwardAxis(): glm.ReadonlyVec3 {
-    return this._forwardAxis;
-  }
-
-  getLeftAxis(): glm.ReadonlyVec3 {
-    return this._leftAxis;
   }
 
   getUpAxis(): glm.ReadonlyVec3 {

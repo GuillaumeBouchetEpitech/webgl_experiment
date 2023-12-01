@@ -1,11 +1,6 @@
 import * as configuration from '../configuration';
 
-import {
-  GlobalPointerLockManager,
-  GlobalKeyboardManager,
-  GlobalMouseManager,
-  GlobalTouchManager
-} from '@browser';
+import { system } from '@local-framework';
 
 import { FreeFlyController } from './controllers/FreeFlyController';
 import { ChunkGenerator } from './generation/ChunkGenerator';
@@ -15,6 +10,13 @@ import { FrameProfiler } from './utils/FrameProfiler';
 import * as widgets from './webGLRenderer/renderers/hud/widgets';
 
 import * as glm from 'gl-matrix';
+
+const {
+  GlobalKeyboardManager,
+  GlobalTouchManager,
+  GlobalMouseManager,
+  GlobalPointerLockManager,
+} = system.browser;
 
 export class WebGLExperiment {
   private _canvasElement: HTMLCanvasElement;

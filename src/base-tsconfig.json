@@ -9,8 +9,7 @@
         "skipLibCheck": true,
         "moduleResolution": "node",
         "paths": {
-            "@browser": ["./main/browser"],
-            "@browser/webgl2": ["./main/browser/webgl2"]
+            "@local-framework": ["./local-framework/index.ts"]
         }
     }
 }

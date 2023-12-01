@@ -1,4 +1,4 @@
-import { WebGLContext } from '@browser/webgl2';
+import { graphics } from '@local-framework';
 import { Camera, ICamera } from '../../../camera/Camera';
 
 import { Chunks } from '../../../../generation/internals';
@@ -8,6 +8,8 @@ import * as hud from '../../hud';
 import { renderPerspectiveFrustum } from './utils';
 
 import * as glm from 'gl-matrix';
+
+const {WebGLContext} = graphics.webgl2;
 
 export const renderMiniMap = (
   inCamera: ICamera,

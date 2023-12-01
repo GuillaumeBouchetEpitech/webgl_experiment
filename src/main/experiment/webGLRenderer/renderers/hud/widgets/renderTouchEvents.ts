@@ -1,8 +1,10 @@
-import { GlobalTouchManager } from '@browser';
+import { system } from '@local-framework';
 
 import { IStackRenderers } from '../stack-renderers/StackRenderers';
 
 import * as glm from 'gl-matrix';
+
+const { GlobalTouchManager } = system.browser;
 
 const _touchesAngleMap = new Map<number, number>();
 

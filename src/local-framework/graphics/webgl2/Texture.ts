@@ -3,20 +3,22 @@ import { WebGLContext } from './WebGLContext';
 export interface IUnboundTexture {
   initialize(): void;
   rawBind(): void;
+  preBind(inCallback: (bound: IBoundTexture) => void): void;
   bind(inCallback: (bound: IBoundTexture) => void): void;
   getWidth(): number;
   getHeight(): number;
   getRawObject(): WebGLTexture;
 }
 
-export interface IBoundTexture extends IUnboundTexture {
+export interface IBoundTexture {
   load(inImage: HTMLImageElement): void;
   loadFromMemory(inWidth: number, inHeight: number, inPixels: Uint8Array): void;
   allocate(inWidth: number, inHeight: number): void;
   resize(inWidth: number, inHeight: number): void;
+  getRawObject(): WebGLTexture;
 }
 
-export class Texture implements IBoundTexture {
+export class Texture implements IUnboundTexture, IBoundTexture {
   private _width: number = 0;
   private _height: number = 0;
   private _texture: WebGLTexture | null = null;
@@ -34,11 +36,13 @@ export class Texture implements IBoundTexture {
     gl.bindTexture(gl.TEXTURE_2D, this._texture);
   }
 
-  bind(inCallback: (bound: IBoundTexture) => void): void {
+  preBind(inCallback: (bound: IBoundTexture) => void): void {
     this.rawBind();
-
     inCallback(this);
+  }
 
+  bind(inCallback: (bound: IBoundTexture) => void): void {
+    this.preBind(inCallback);
     Texture.unbind();
   }
 

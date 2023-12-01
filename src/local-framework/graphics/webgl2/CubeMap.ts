@@ -9,17 +9,40 @@ export enum CubeMapType {
   negativeZ
 }
 
+export const getCubeMapType = (inType: CubeMapType): number => {
+  const gl = WebGLContext.getContext();
+  switch (inType) {
+    case CubeMapType.positiveX:
+      return gl.TEXTURE_CUBE_MAP_POSITIVE_X;
+    case CubeMapType.negativeX:
+      return gl.TEXTURE_CUBE_MAP_NEGATIVE_X;
+    case CubeMapType.positiveY:
+      return gl.TEXTURE_CUBE_MAP_POSITIVE_Y;
+    case CubeMapType.negativeY:
+      return gl.TEXTURE_CUBE_MAP_NEGATIVE_Y;
+    case CubeMapType.positiveZ:
+      return gl.TEXTURE_CUBE_MAP_POSITIVE_Z;
+    case CubeMapType.negativeZ:
+      return gl.TEXTURE_CUBE_MAP_NEGATIVE_Z;
+  }
+  // throw new Error('cube map: invalid type');
+};
+
 export interface IUnboundCubeMap {
+  initialize(width: number, height: number): void;
   rawBind(): void;
   bind(inCallback: (bound: IBoundCubeMap) => void): void;
+  getRawObject(): WebGLTexture;
 }
 
-export interface IBoundCubeMap extends IUnboundCubeMap {
+export interface IBoundCubeMap {
+  allocate(): void;
   loadFromMemory(inType: CubeMapType, inPixels: Uint8Array): void;
   complete(): void;
+  getRawObject(): WebGLTexture;
 }
 
-export class CubeMap implements IBoundCubeMap {
+export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
   private _width: number = 0;
   private _height: number = 0;
   private _minBufferSize: number = 0;
@@ -72,7 +95,7 @@ export class CubeMap implements IBoundCubeMap {
     const srcType = gl.UNSIGNED_BYTE;
 
     gl.texImage2D(
-      CubeMap._getType(inType),
+      getCubeMapType(inType),
       level,
       internalFormat,
       this._width,
@@ -82,6 +105,42 @@ export class CubeMap implements IBoundCubeMap {
       srcType,
       inPixels
     );
+  }
+
+  allocate(): void {
+
+    const gl = WebGLContext.getContext();
+
+    const level = 0;
+    const internalFormat = gl.RGBA;
+    const border = 0;
+    const srcFormat = gl.RGBA;
+    const srcType = gl.UNSIGNED_BYTE;
+
+    const pixels = new Uint8Array(this._width * this._height * 4);
+
+    [
+      CubeMapType.negativeX,
+      CubeMapType.negativeY,
+      CubeMapType.negativeZ,
+      CubeMapType.positiveX,
+      CubeMapType.positiveY,
+      CubeMapType.positiveZ,
+    ].forEach((type) => {
+
+      gl.texImage2D(
+        getCubeMapType(type),
+        level,
+        internalFormat,
+        this._width,
+        this._height,
+        border,
+        srcFormat,
+        srcType,
+        pixels
+      );
+
+    });
   }
 
   complete() {
@@ -107,22 +166,11 @@ export class CubeMap implements IBoundCubeMap {
     return this._height;
   }
 
-  private static _getType(inType: CubeMapType): number {
-    const gl = WebGLContext.getContext();
-    switch (inType) {
-      case CubeMapType.positiveX:
-        return gl.TEXTURE_CUBE_MAP_POSITIVE_X;
-      case CubeMapType.negativeX:
-        return gl.TEXTURE_CUBE_MAP_NEGATIVE_X;
-      case CubeMapType.positiveY:
-        return gl.TEXTURE_CUBE_MAP_POSITIVE_Y;
-      case CubeMapType.negativeY:
-        return gl.TEXTURE_CUBE_MAP_NEGATIVE_Y;
-      case CubeMapType.positiveZ:
-        return gl.TEXTURE_CUBE_MAP_POSITIVE_Z;
-      case CubeMapType.negativeZ:
-        return gl.TEXTURE_CUBE_MAP_NEGATIVE_Z;
-    }
-    // throw new Error('cube map: invalid type');
+  getRawObject() {
+    if (!this._texture) throw new Error('texture not initialized');
+
+    // TODO: this is ugly
+    return this._texture;
   }
+
 }

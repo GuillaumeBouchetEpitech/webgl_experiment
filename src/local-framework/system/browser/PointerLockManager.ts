@@ -57,7 +57,9 @@ class PointerLockManager {
   // constructor() {}
 
   private _initialize() {
-    if (this._isInitialized) return;
+    if (this._isInitialized) {
+      return;
+    }
     this._isInitialized = true;
 
     const onLockChange = () => {
@@ -92,44 +94,52 @@ class PointerLockManager {
   //
 
   canBePointerLocked(inTargetElement: HTMLElement) {
-    for (const currEvent of allRequestEvents)
-      if (currEvent in inTargetElement) return true;
+    for (const currEvent of allRequestEvents) {
+      if (currEvent in inTargetElement) {
+        return true;
+      }
+    }
     return false;
   }
 
   //
 
   isPointerLocked(inTargetElement: HTMLElement) {
-    for (const currEvent of allStateEvents)
-      if (currEvent in document)
+    for (const currEvent of allStateEvents) {
+      if (currEvent in document) {
         return (document as any)[currEvent] === inTargetElement;
+      }
+    }
     return false;
   }
 
   //
 
   async requestPointerLock(inTargetElement: HTMLElement): Promise<IResult> {
-    if (this.isPointerLocked(inTargetElement))
+    if (this.isPointerLocked(inTargetElement)) {
       return { success: false, message: 'element already locked' };
+    }
 
     this._initialize();
 
     if (this._timeSinceLastLockChange > 0) {
-      const elapsedTime = (Date.now() - this._timeSinceLastLockChange) / 1000;
+      const elapsedSecTime =
+        (Date.now() - this._timeSinceLastLockChange) / 1000;
 
-      // console.log("elapsedTime 1", elapsedTime);
+      // console.log("elapsedSecTime 1", elapsedSecTime);
 
-      if (elapsedTime < 1.1)
+      if (elapsedSecTime < 1.1) {
         return {
           success: false,
-          message: `request for lock was too early, time to wait: ${elapsedTime.toFixed(
+          message: `request for lock was too early, time to wait: ${elapsedSecTime.toFixed(
             2
           )}sec`
         };
+      }
     }
     this._timeSinceLastLockChange = Date.now();
 
-    for (const currEvent of allRequestEvents)
+    for (const currEvent of allRequestEvents) {
       if (currEvent in inTargetElement) {
         const options = {
           // more accurate by disabling OS-level adjusted mouse movements
@@ -143,14 +153,14 @@ class PointerLockManager {
         } catch (err) {
           // console.log("ERR", err);
 
-          const elapsedTime =
+          const elapsedSecTime =
             (Date.now() - this._timeSinceLastLockChange) / 1000;
 
-          // console.log("elapsedTime 2", elapsedTime);
+          // console.log("elapsedSecTime 2", elapsedSecTime);
 
           return {
             success: false,
-            message: `request for lock was too early, time to wait: ${elapsedTime.toFixed(
+            message: `request for lock was too early, time to wait: ${elapsedSecTime.toFixed(
               2
             )}sec`
           };
@@ -161,6 +171,7 @@ class PointerLockManager {
 
         return { success: true, message: 'request for lock done' };
       }
+    }
 
     return { success: false, message: 'unsupported request for lock' };
   }
@@ -168,7 +179,9 @@ class PointerLockManager {
   //
 
   allowPointerLockedOnClickEvent(inTargetElement: HTMLElement) {
-    if (inTargetElement === this._latestRequestHtmlElement) return;
+    if (inTargetElement === this._latestRequestHtmlElement) {
+      return;
+    }
 
     this._latestRequestHtmlElement = inTargetElement;
 
@@ -179,7 +192,9 @@ class PointerLockManager {
 
       this._latestRequestHtmlElement = undefined;
 
-      if (!result.success) this.allowPointerLockedOnClickEvent(inTargetElement);
+      if (!result.success) {
+        this.allowPointerLockedOnClickEvent(inTargetElement);
+      }
     };
 
     inTargetElement.addEventListener('click', onClick);
@@ -188,11 +203,12 @@ class PointerLockManager {
   //
 
   exitPointerLock() {
-    for (const currEvent of allExitEvents)
+    for (const currEvent of allExitEvents) {
       if (currEvent in document) {
         (document as any)[currEvent]();
         break;
       }
+    }
   }
 
   //
@@ -202,7 +218,9 @@ class PointerLockManager {
   }
   removeOnLockChange(inCallback: OnChangeCallback) {
     const index = this._onLockChangeCallbacks.indexOf(inCallback);
-    if (index < 0) return;
+    if (index < 0) {
+      return;
+    }
     this._onLockChangeCallbacks.splice(index, 1);
   }
 
@@ -213,11 +231,18 @@ class PointerLockManager {
   }
   removeOnLockError(inCallback: OnErrorCallback) {
     const index = this._onLockErrorCallbacks.indexOf(inCallback);
-    if (index < 0) return;
+    if (index < 0) {
+      return;
+    }
     this._onLockErrorCallbacks.splice(index, 1);
   }
 
   //
+
+  removeAllCallbacks() {
+    this._onLockChangeCallbacks.length = 0;
+    this._onLockErrorCallbacks.length = 0;
+  }
 }
 
 const GlobalPointerLockManager = new PointerLockManager();

@@ -1,10 +1,6 @@
-import {
-  GeometryWrapper,
-  ShaderProgram,
-  Texture,
-  IUnboundShader,
-  IUnboundTexture
-} from '@browser/webgl2';
+import { graphics } from '@local-framework';
+
+
 
 import { ICamera } from '../../../camera/Camera';
 
@@ -15,6 +11,17 @@ import { IFrustumCulling } from 'main/experiment/webGLRenderer/camera/FrustumCul
 import chunksRendererVertex from './shaders/chunks-renderer.glsl.vert';
 // @ts-ignore
 import chunksRendererFragment from './shaders/chunks-renderer.glsl.frag';
+
+const {
+  GeometryWrapper,
+  ShaderProgram,
+  Texture,
+} = graphics.webgl2;
+
+type IUnboundShader = graphics.webgl2.IUnboundShader
+type IUnboundTexture = graphics.webgl2.IUnboundTexture
+type Geometry = graphics.webgl2.GeometryWrapper.Geometry
+type GeometryDefinition = graphics.webgl2.GeometryWrapper.GeometryDefinition
 
 export interface ILiveGeometry {
   update(
@@ -30,11 +37,11 @@ export interface ILiveGeometry {
 class LiveGeometry implements ILiveGeometry {
   private _origin: glm.vec3 = glm.vec3.fromValues(0, 0, 0);
   private _size: number = 0;
-  private _geometry: GeometryWrapper.Geometry;
+  private _geometry: Geometry;
 
   constructor(
     inShader: IUnboundShader,
-    inGeometryDefinition: GeometryWrapper.GeometryDefinition,
+    inGeometryDefinition: GeometryDefinition,
     preAllocatedSize: number
   ) {
     this._geometry = new GeometryWrapper.Geometry(
@@ -85,7 +92,7 @@ export class ChunksRenderer implements IChunksRenderer {
   private _textureStoneWall: IUnboundTexture = new Texture();
   private _textureStoneWallBump: IUnboundTexture = new Texture();
 
-  private _geometryDefinition: GeometryWrapper.GeometryDefinition;
+  private _geometryDefinition: GeometryDefinition;
 
   private _unusedGeometries: LiveGeometry[] = [];
   private _inUseGeometries: LiveGeometry[] = [];

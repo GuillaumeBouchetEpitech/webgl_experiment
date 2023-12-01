@@ -25,7 +25,9 @@ class FullScreenManager {
   private _isInitialized: boolean = false;
 
   private _initialize() {
-    if (this._isInitialized) return;
+    if (this._isInitialized) {
+      return;
+    }
     this._isInitialized = true;
 
     const onLockChange = () => {
@@ -39,8 +41,11 @@ class FullScreenManager {
   //
 
   isCompatible(inTargetElement: HTMLElement) {
-    for (const currEvent of allRequestEvents)
-      if (currEvent in inTargetElement) return true;
+    for (const currEvent of allRequestEvents) {
+      if (currEvent in inTargetElement) {
+        return true;
+      }
+    }
     return false;
   }
 
@@ -53,17 +58,19 @@ class FullScreenManager {
   //
 
   async requestFullScreen(inTargetElement: HTMLElement): Promise<IResult> {
-    if (this.isFullScreen(inTargetElement))
+    if (this.isFullScreen(inTargetElement)) {
       return { success: false, message: 'element already in full screen' };
+    }
 
     this._initialize();
 
-    for (const currEvent of allRequestEvents)
+    for (const currEvent of allRequestEvents) {
       if (currEvent in inTargetElement) {
         (inTargetElement as any)[currEvent]();
 
         return { success: true, message: 'request for full screen done' };
       }
+    }
 
     return { success: false, message: 'unsupported request for full screen' };
   }
@@ -75,8 +82,13 @@ class FullScreenManager {
   }
   removeOnFullScreenChange(inCallback: OnChangeCallback) {
     const index = this._onFullScreenChangeCallbacks.indexOf(inCallback);
-    if (index < 0) return;
+    if (index < 0) {
+      return;
+    }
     this._onFullScreenChangeCallbacks.splice(index, 1);
+  }
+  removeAllCallbacks() {
+    this._onFullScreenChangeCallbacks.length = 0;
   }
 }
 

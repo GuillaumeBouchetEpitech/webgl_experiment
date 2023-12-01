@@ -1,4 +1,4 @@
-import { ShaderProgram, GeometryWrapper } from '@browser/webgl2';
+import { graphics } from '@local-framework';
 import { ICamera } from '../../../camera/Camera';
 
 // @ts-ignore
@@ -7,6 +7,11 @@ import triangleCubesRendererVertex from './shaders/triangle-cubes-renderer.glsl.
 import triangleCubesRendererFragment from './shaders/triangle-cubes-renderer.glsl.frag';
 
 import * as glm from 'gl-matrix';
+
+type IUnboundShader = graphics.webgl2.IUnboundShader
+type Geometry = graphics.webgl2.GeometryWrapper.Geometry
+
+const {ShaderProgram, GeometryWrapper} = graphics.webgl2;
 
 const generateCubeVertices = (
   inOrigin: glm.ReadonlyVec3,
@@ -148,8 +153,8 @@ export interface ITriangleCubesRenderer {
 const k_bufferSize = 8 * 1024 * 4;
 
 export class TriangleCubesRenderer implements ITriangleCubesRenderer {
-  private _shader: ShaderProgram;
-  private _geometry: GeometryWrapper.Geometry;
+  private _shader: IUnboundShader;
+  private _geometry: Geometry;
 
   private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
@@ -238,8 +243,8 @@ export class TriangleCubesRenderer implements ITriangleCubesRenderer {
       return;
     }
 
-    this._shader.bind(() => {
-      this._shader.setMatrix4Uniform(
+    this._shader.bind((boundShader) => {
+      boundShader.setMatrix4Uniform(
         'u_composedMatrix',
         inCamera.getComposedMatrix()
       );

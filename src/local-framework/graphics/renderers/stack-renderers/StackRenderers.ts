@@ -1,4 +1,6 @@
-import { graphics } from '@local-framework';
+import {
+  graphics
+} from '../../..';
 
 // @ts-ignore
 import stackRendererVertex from './shaders/stack-renderer.glsl.vert';
@@ -10,13 +12,6 @@ import { TrianglesStackRenderer } from './internals/TrianglesStackRenderer';
 
 import * as glm from 'gl-matrix';
 
-const {
-  ShaderProgram,
-  GeometryWrapper,
-} = graphics.webgl2;
-
-type IUnboundShader = graphics.webgl2.IUnboundShader;
-
 export interface IStackRenderers {
   pushTriangle(
     inPosA: glm.ReadonlyVec3,
@@ -25,9 +20,21 @@ export interface IStackRenderers {
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ): void;
 
+  pushQuad(
+    inPos: glm.ReadonlyVec3,
+    inSize: glm.ReadonlyVec2,
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  ): void;
+
   pushLine(
     inPointA: glm.ReadonlyVec3,
     inPointB: glm.ReadonlyVec3,
+    inColor: glm.ReadonlyVec3
+  ): void;
+
+  pushCross(
+    inCenter: glm.ReadonlyVec3,
+    inSize: number,
     inColor: glm.ReadonlyVec3
   ): void;
 
@@ -63,27 +70,27 @@ export interface IStackRenderers {
 }
 
 export class StackRenderers implements IStackRenderers {
-  private _shader: IUnboundShader;
+  private _shader: graphics.webgl2.IUnboundShader;
 
   private _wireFramesStackRenderer: WireFramesStackRenderer;
   private _trianglesStackRenderer: TrianglesStackRenderer;
 
   constructor() {
-    this._shader = new ShaderProgram('StackRenderers', {
+    this._shader = new graphics.webgl2.ShaderProgram('StackRenderers', {
       vertexSrc: stackRendererVertex,
       fragmentSrc: stackRendererFragment,
       attributes: ['a_vertex_position', 'a_vertex_color'],
       uniforms: ['u_composedMatrix']
     });
 
-    const geoBuilder = new GeometryWrapper.GeometryBuilder();
+    const geoBuilder = new graphics.webgl2.GeometryWrapper.GeometryBuilder();
     geoBuilder
       .reset()
       .setPrimitiveType('lines')
       .addVbo()
+      .setVboAsDynamic()
       .addVboAttribute('a_vertex_position', 'vec3f')
-      .addVboAttribute('a_vertex_color', 'vec4f')
-      .setStride(7 * 4);
+      .addVboAttribute('a_vertex_color', 'vec4f');
 
     this._wireFramesStackRenderer = new WireFramesStackRenderer(
       this._shader,
@@ -188,7 +195,26 @@ export class StackRenderers implements IStackRenderers {
     this._trianglesStackRenderer.pushTriangle(inPosA, inPosB, inPosC, inColor);
   }
 
-  flush(composedMatrix: glm.ReadonlyMat4): void {
+  pushQuad(
+    inPos: glm.ReadonlyVec3,
+    inSize: glm.ReadonlyVec2,
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  ) {
+    this.pushTriangle(
+      [inPos[0] + inSize[0] * 0, inPos[1] + inSize[1] * 0, inPos[2]],
+      [inPos[0] + inSize[0] * 1, inPos[1] + inSize[1] * 1, inPos[2]],
+      [inPos[0] + inSize[0] * 1, inPos[1] + inSize[1] * 0, inPos[2]],
+      inColor
+    );
+    this.pushTriangle(
+      [inPos[0] + inSize[0] * 0, inPos[1] + inSize[1] * 0, inPos[2]],
+      [inPos[0] + inSize[0] * 1, inPos[1] + inSize[1] * 1, inPos[2]],
+      [inPos[0] + inSize[0] * 0, inPos[1] + inSize[1] * 1, inPos[2]],
+      inColor
+    );
+  }
+
+  flush(inComposedMatrix: glm.ReadonlyMat4) {
     if (
       !this._wireFramesStackRenderer.canRender() &&
       !this._trianglesStackRenderer.canRender()
@@ -196,8 +222,19 @@ export class StackRenderers implements IStackRenderers {
       return;
     }
 
-    this._shader.bind((boundShader) => {
-      boundShader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
+    this._shader.bind((bound) => {
+      bound.setMatrix4Uniform('u_composedMatrix', inComposedMatrix);
+
+      this._wireFramesStackRenderer.flush();
+      this._trianglesStackRenderer.flush();
+    });
+  }
+
+  safeRender(inComposedMatrix: glm.ReadonlyMat4, inCallback: () => void) {
+    this._shader.bind((bound) => {
+      bound.setMatrix4Uniform('u_composedMatrix', inComposedMatrix);
+
+      inCallback();
 
       this._wireFramesStackRenderer.flush();
       this._trianglesStackRenderer.flush();

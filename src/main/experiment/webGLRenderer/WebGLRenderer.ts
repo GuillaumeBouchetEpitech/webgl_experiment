@@ -4,10 +4,18 @@ import { Camera, ICamera } from './camera/Camera';
 import * as scene from './renderers/scene';
 import * as hud from './renderers/hud';
 
-import { GlobalMouseManager, GlobalTouchManager, webgl2 } from '@browser';
-const { WebGLContext, ShaderProgram } = webgl2;
+import { system, graphics } from '@local-framework';
 
 import * as glm from 'gl-matrix';
+
+const {
+  GlobalMouseManager,
+  GlobalTouchManager,
+} = system.browser;
+const {
+  WebGLContext,
+  ShaderProgram,
+} = graphics.webgl2;
 
 //
 
@@ -186,7 +194,7 @@ export class WebGLRenderer {
   }
 
   update() {
-    GlobalMouseManager.resetDelta();
+    GlobalMouseManager.resetDeltas();
     GlobalTouchManager.resetDeltas();
 
     this._frustumCulling.calculateFrustum(

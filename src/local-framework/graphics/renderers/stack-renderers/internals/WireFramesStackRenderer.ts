@@ -1,33 +1,27 @@
-import { graphics } from '@local-framework';
+import { graphics } from '../../../..';
 
 import * as glm from 'gl-matrix';
-
-const {
-  GeometryWrapper,
-} = graphics.webgl2;
-
-type IUnboundShader = graphics.webgl2.IUnboundShader;
-type Geometry = graphics.webgl2.GeometryWrapper.Geometry;
-type GeometryDefinition = graphics.webgl2.GeometryWrapper.GeometryDefinition;
 
 const k_bufferSize = 14 * 1024;
 
 export class WireFramesStackRenderer {
-  private _geometry: Geometry;
+  private _shader: graphics.webgl2.IUnboundShader;
+  private _geometry: graphics.webgl2.GeometryWrapper.Geometry;
 
   private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
 
   constructor(
-    inShader: IUnboundShader,
-    inGeometryDef: GeometryDefinition
+    inShader: graphics.webgl2.IUnboundShader,
+    inGeometryDef: graphics.webgl2.GeometryWrapper.GeometryDefinition
   ) {
-    const geometryDef: GeometryDefinition = {
+    this._shader = inShader;
+    const geometryDef: graphics.webgl2.GeometryWrapper.GeometryDefinition = {
       ...inGeometryDef,
-      primitiveType: GeometryWrapper.PrimitiveType.lines
+      primitiveType: graphics.webgl2.GeometryWrapper.PrimitiveType.lines
     };
 
-    this._geometry = new GeometryWrapper.Geometry(inShader, geometryDef);
+    this._geometry = new graphics.webgl2.GeometryWrapper.Geometry(inShader, geometryDef);
     this._geometry.setFloatBufferSize(0, k_bufferSize);
   }
 
@@ -36,7 +30,13 @@ export class WireFramesStackRenderer {
     inPointB: glm.ReadonlyVec3,
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
-    if (this._currentSize + 7 * 2 >= this._buffer.length) return;
+    if (this._currentSize + 7 * 2 >= this._buffer.length) {
+      if (this._shader.isBound()) {
+        this.flush();
+      } else {
+        return;
+      }
+    }
 
     const alphaValue = inColor[3] ?? 1;
 

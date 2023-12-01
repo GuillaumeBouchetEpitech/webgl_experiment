@@ -1,5 +1,4 @@
-import { ShaderProgram, GeometryWrapper } from '@browser/webgl2';
-import { ICamera } from '../../../camera/Camera';
+import { graphics } from '@local-framework';
 
 // @ts-ignore
 import wireFrameCubesRendererVertex from './shaders/wireFrame-cubes-renderer.glsl.vert';
@@ -7,6 +6,11 @@ import wireFrameCubesRendererVertex from './shaders/wireFrame-cubes-renderer.gls
 import wireFrameCubesRendererFragment from './shaders/wireFrame-cubes-renderer.glsl.frag';
 
 import * as glm from 'gl-matrix';
+
+const { ShaderProgram, GeometryWrapper } = graphics.webgl2;
+
+type IUnboundShader = graphics.webgl2.IUnboundShader
+type Geometry = graphics.webgl2.GeometryWrapper.Geometry
 
 const generateWireFrameCubeVertices = (inSize: number): number[] => {
   const hSize = inSize * 0.5;
@@ -65,8 +69,8 @@ export interface IWireFrameCubesRenderer {
 const k_bufferSize = 8 * 1024 * 4;
 
 export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
-  private _shader: ShaderProgram;
-  private _geometry: GeometryWrapper.Geometry;
+  private _shader: IUnboundShader;
+  private _geometry: Geometry;
 
   private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
@@ -155,8 +159,8 @@ export class WireFrameCubesRenderer implements IWireFrameCubesRenderer {
       return;
     }
 
-    this._shader.bind(() => {
-      this._shader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
+    this._shader.bind((boundShader) => {
+      boundShader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
 
       this._geometry.updateBuffer(1, this._buffer, this._currentSize);
       this._geometry.setInstancedCount(this._currentSize / 8);

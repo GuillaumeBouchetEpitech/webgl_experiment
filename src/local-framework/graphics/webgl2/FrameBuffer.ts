@@ -1,13 +1,15 @@
 import { WebGLContext } from './WebGLContext';
-import { IUnboundTexture, Texture } from './Texture';
+import { IBoundTexture } from './Texture';
+import { CubeMapType, IBoundCubeMap, getCubeMapType } from './CubeMap';
 
 export interface IUnboundFrameBuffer {
   rawBind(): void;
   bind(inCallback: (bound: IBoundFrameBuffer) => void): void;
 }
 
-export interface IBoundFrameBuffer extends IUnboundFrameBuffer {
-  attachTexture(texture: IUnboundTexture): void;
+export interface IBoundFrameBuffer {
+  attachTexture(texture: IBoundTexture): void;
+  attachCubeMap(texture: IBoundCubeMap, type: CubeMapType): void;
   getPixels(
     x: number,
     y: number,
@@ -17,7 +19,7 @@ export interface IBoundFrameBuffer extends IUnboundFrameBuffer {
   ): void;
 }
 
-export class FrameBuffer {
+export class FrameBuffer implements IUnboundFrameBuffer, IBoundFrameBuffer {
   private _frameBuffer: WebGLFramebuffer;
 
   constructor() {
@@ -47,12 +49,12 @@ export class FrameBuffer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
-  attachTexture(texture: IUnboundTexture) {
+  attachTexture(texture: IBoundTexture) {
     const gl = WebGLContext.getContext();
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this._frameBuffer);
+    // gl.bindFramebuffer(gl.FRAMEBUFFER, this._frameBuffer);
 
-    texture.rawBind();
+    // texture.rawBind();
 
     const mipmapLevel = 0;
 
@@ -60,6 +62,24 @@ export class FrameBuffer {
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
       gl.TEXTURE_2D,
+      texture.getRawObject(),
+      mipmapLevel
+    );
+  }
+
+  attachCubeMap(texture: IBoundCubeMap, type: CubeMapType) {
+    const gl = WebGLContext.getContext();
+
+    // gl.bindFramebuffer(gl.FRAMEBUFFER, this._frameBuffer);
+
+    // texture.rawBind();
+
+    const mipmapLevel = 0;
+
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      getCubeMapType(type),
       texture.getRawObject(),
       mipmapLevel
     );

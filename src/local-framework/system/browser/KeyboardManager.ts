@@ -29,8 +29,11 @@ class KeyboardManager {
   }
 
   isPressed(...inKeys: (keyof typeof AllKeyCodes)[]) {
-    for (const key of inKeys)
-      if (this._pressedKeysSet.has(AllKeyCodes[key])) return true;
+    for (const key of inKeys) {
+      if (this._pressedKeysSet.has(AllKeyCodes[key])) {
+        return true;
+      }
+    }
     return false;
   }
 
@@ -43,7 +46,9 @@ class KeyboardManager {
   }
 
   activate() {
-    if (this._activated) return;
+    if (this._activated) {
+      return;
+    }
 
     this._pressedKeysSet.clear();
 
@@ -54,7 +59,9 @@ class KeyboardManager {
   }
 
   deactivate() {
-    if (!this._activated) return;
+    if (!this._activated) {
+      return;
+    }
 
     this._pressedKeysSet.clear();
 
