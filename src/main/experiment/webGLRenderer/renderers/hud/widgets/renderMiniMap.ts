@@ -9,7 +9,7 @@ import { renderPerspectiveFrustum } from './utils';
 
 import * as glm from 'gl-matrix';
 
-const {WebGLContext} = graphics.webgl2;
+const { WebGLContext } = graphics.webgl2;
 
 export const renderMiniMap = (
   inCamera: ICamera,

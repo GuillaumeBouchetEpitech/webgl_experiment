@@ -1,6 +1,4 @@
-import {
-  graphics
-} from '../../..';
+import { graphics } from '../../..';
 
 // import * as shaders from './shaders';
 
@@ -38,7 +36,8 @@ export interface ITextRenderer {
 export class TextRenderer implements ITextRenderer {
   private _shader: graphics.webgl2.IUnboundShader;
   private _geometry: graphics.webgl2.GeometryWrapper.Geometry;
-  private _texture: graphics.webgl2.IUnboundTexture = new graphics.webgl2.Texture();
+  private _texture: graphics.webgl2.IUnboundTexture =
+    new graphics.webgl2.Texture();
   private _texCoordMap: Map<string, glm.ReadonlyVec2>;
 
   private _buffer = new Float32Array(k_bufferSize);

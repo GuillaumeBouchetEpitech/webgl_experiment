@@ -11,9 +11,9 @@ import * as glm from 'gl-matrix';
 
 const { GeometryWrapper, ShaderProgram, Texture } = graphics.webgl2;
 
-type IUnboundShader = graphics.webgl2.IUnboundShader
-type IUnboundTexture = graphics.webgl2.IUnboundTexture
-type Geometry = graphics.webgl2.GeometryWrapper.Geometry
+type IUnboundShader = graphics.webgl2.IUnboundShader;
+type IUnboundTexture = graphics.webgl2.IUnboundTexture;
+type Geometry = graphics.webgl2.GeometryWrapper.Geometry;
 
 const k_gridSize: glm.ReadonlyVec2 = [16, 6];
 const k_texCoord: glm.ReadonlyVec2 = [1 / k_gridSize[0], 1 / k_gridSize[1]];

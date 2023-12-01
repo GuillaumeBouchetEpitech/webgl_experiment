@@ -1,6 +1,6 @@
 import * as glm from 'gl-matrix';
 
-const _degreeToRad = (angle: number) => angle * Math.PI / 180;
+const _degreeToRad = (angle: number) => (angle * Math.PI) / 180;
 
 enum ProjectionType {
   perspective = 0,

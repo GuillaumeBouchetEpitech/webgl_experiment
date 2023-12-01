@@ -8,10 +8,10 @@ import triangleCubesRendererFragment from './shaders/triangle-cubes-renderer.gls
 
 import * as glm from 'gl-matrix';
 
-type IUnboundShader = graphics.webgl2.IUnboundShader
-type Geometry = graphics.webgl2.GeometryWrapper.Geometry
+type IUnboundShader = graphics.webgl2.IUnboundShader;
+type Geometry = graphics.webgl2.GeometryWrapper.Geometry;
 
-const {ShaderProgram, GeometryWrapper} = graphics.webgl2;
+const { ShaderProgram, GeometryWrapper } = graphics.webgl2;
 
 const generateCubeVertices = (
   inOrigin: glm.ReadonlyVec3,

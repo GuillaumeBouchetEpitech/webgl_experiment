@@ -2,9 +2,7 @@ import { graphics } from '@local-framework';
 
 import * as glm from 'gl-matrix';
 
-const {
-  GeometryWrapper,
-} = graphics.webgl2;
+const { GeometryWrapper } = graphics.webgl2;
 
 type IUnboundShader = graphics.webgl2.IUnboundShader;
 type Geometry = graphics.webgl2.GeometryWrapper.Geometry;
@@ -18,10 +16,7 @@ export class TrianglesStackRenderer {
   private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
 
-  constructor(
-    inShader: IUnboundShader,
-    inGeometryDef: GeometryDefinition
-  ) {
+  constructor(inShader: IUnboundShader, inGeometryDef: GeometryDefinition) {
     const geometryDef: GeometryDefinition = {
       ...inGeometryDef,
       primitiveType: GeometryWrapper.PrimitiveType.triangles

@@ -15,7 +15,7 @@ const {
   GlobalKeyboardManager,
   GlobalTouchManager,
   GlobalMouseManager,
-  GlobalPointerLockManager,
+  GlobalPointerLockManager
 } = system.browser;
 
 export class WebGLExperiment {

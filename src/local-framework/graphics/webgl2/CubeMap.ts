@@ -108,7 +108,6 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
   }
 
   allocate(): void {
-
     const gl = WebGLContext.getContext();
 
     const level = 0;
@@ -125,9 +124,8 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
       CubeMapType.negativeZ,
       CubeMapType.positiveX,
       CubeMapType.positiveY,
-      CubeMapType.positiveZ,
+      CubeMapType.positiveZ
     ].forEach((type) => {
-
       gl.texImage2D(
         getCubeMapType(type),
         level,
@@ -139,7 +137,6 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
         srcType,
         pixels
       );
-
     });
   }
 
@@ -172,5 +169,4 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
     // TODO: this is ugly
     return this._texture;
   }
-
 }

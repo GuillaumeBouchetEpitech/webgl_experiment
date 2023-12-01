@@ -9,8 +9,8 @@ import * as glm from 'gl-matrix';
 
 const { ShaderProgram, GeometryWrapper } = graphics.webgl2;
 
-type IUnboundShader = graphics.webgl2.IUnboundShader
-type Geometry = graphics.webgl2.GeometryWrapper.Geometry
+type IUnboundShader = graphics.webgl2.IUnboundShader;
+type Geometry = graphics.webgl2.GeometryWrapper.Geometry;
 
 const generateWireFrameCubeVertices = (inSize: number): number[] => {
   const hSize = inSize * 0.5;

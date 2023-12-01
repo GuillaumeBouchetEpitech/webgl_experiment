@@ -8,14 +8,8 @@ import { system, graphics } from '@local-framework';
 
 import * as glm from 'gl-matrix';
 
-const {
-  GlobalMouseManager,
-  GlobalTouchManager,
-} = system.browser;
-const {
-  WebGLContext,
-  ShaderProgram,
-} = graphics.webgl2;
+const { GlobalMouseManager, GlobalTouchManager } = system.browser;
+const { WebGLContext, ShaderProgram } = graphics.webgl2;
 
 //
 

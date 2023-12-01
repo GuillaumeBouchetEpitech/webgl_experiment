@@ -10,10 +10,7 @@ import { TrianglesStackRenderer } from './internals/TrianglesStackRenderer';
 
 import * as glm from 'gl-matrix';
 
-const {
-  ShaderProgram,
-  GeometryWrapper,
-} = graphics.webgl2;
+const { ShaderProgram, GeometryWrapper } = graphics.webgl2;
 
 type IUnboundShader = graphics.webgl2.IUnboundShader;
 

@@ -21,7 +21,10 @@ export class WireFramesStackRenderer {
       primitiveType: graphics.webgl2.GeometryWrapper.PrimitiveType.lines
     };
 
-    this._geometry = new graphics.webgl2.GeometryWrapper.Geometry(inShader, geometryDef);
+    this._geometry = new graphics.webgl2.GeometryWrapper.Geometry(
+      inShader,
+      geometryDef
+    );
     this._geometry.setFloatBufferSize(0, k_bufferSize);
   }
 

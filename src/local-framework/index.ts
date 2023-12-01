@@ -1,3 +1,2 @@
-
-export * as system from "./system"
-export * as graphics from "./graphics"
+export * as system from './system';
+export * as graphics from './graphics';

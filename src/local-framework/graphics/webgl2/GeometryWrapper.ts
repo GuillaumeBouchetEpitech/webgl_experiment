@@ -267,9 +267,7 @@ export class Geometry {
     const gl = WebGLContext.getContext();
 
     const buffer =
-      vertices instanceof Float32Array
-        ? vertices
-        : new Float32Array(vertices);
+      vertices instanceof Float32Array ? vertices : new Float32Array(vertices);
 
     const currVbo = this._vbos[index];
 
@@ -348,9 +346,7 @@ export class GeometryBuilder {
     return this._def;
   }
 
-  setPrimitiveType(
-    inPrimitive: 'lines' | 'triangles' | 'triangleStrip'
-  ): this {
+  setPrimitiveType(inPrimitive: 'lines' | 'triangles' | 'triangleStrip'): this {
     this._def.primitiveType = PrimitiveType[inPrimitive];
     return this;
   }
@@ -381,9 +377,7 @@ export class GeometryBuilder {
   ): this {
     const currVbo = this._getLastVbo();
     const lastAttr =
-      currVbo.attrs.length > 0
-        ? currVbo.attrs[currVbo.attrs.length - 1]
-        : null;
+      currVbo.attrs.length > 0 ? currVbo.attrs[currVbo.attrs.length - 1] : null;
     currVbo.attrs.push({
       name: inName,
       type: AttributeType[inType],

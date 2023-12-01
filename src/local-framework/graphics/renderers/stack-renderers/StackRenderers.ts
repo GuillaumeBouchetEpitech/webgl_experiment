@@ -1,6 +1,4 @@
-import {
-  graphics
-} from '../../..';
+import { graphics } from '../../..';
 
 // @ts-ignore
 import stackRendererVertex from './shaders/stack-renderer.glsl.vert';

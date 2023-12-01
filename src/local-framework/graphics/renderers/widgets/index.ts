@@ -1,3 +1,2 @@
-
-export * from "./renderControls"
-export * from "./renderFpsMeter"
+export * from './renderControls';
+export * from './renderFpsMeter';

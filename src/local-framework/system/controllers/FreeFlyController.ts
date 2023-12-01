@@ -174,7 +174,8 @@ export class FreeFlyController {
       isRising = true;
     }
 
-    const currentLinearSpeed = (this._movingSpeed * (isRunning ? 4 : 1)) * deltaMsTime;
+    const currentLinearSpeed =
+      this._movingSpeed * (isRunning ? 4 : 1) * deltaMsTime;
 
     const scaledForward = glm.vec3.fromValues(0, 0, 0);
     glm.vec3.scale(scaledForward, this._forwardAxis, currentLinearSpeed);
@@ -182,7 +183,6 @@ export class FreeFlyController {
     glm.vec3.scale(scaledLeft, this._leftAxis, currentLinearSpeed);
     const scaledUp = glm.vec3.fromValues(0, 0, 0);
     glm.vec3.scale(scaledUp, this._upAxis, currentLinearSpeed);
-
 
     //
     //

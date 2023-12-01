@@ -1,2 +1,1 @@
-
-export * from "./FrameProfiler"
+export * from './FrameProfiler';

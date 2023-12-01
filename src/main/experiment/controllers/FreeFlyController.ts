@@ -2,11 +2,8 @@ import { system } from '@local-framework';
 
 import * as glm from 'gl-matrix';
 
-const {
-  GlobalMouseManager,
-  GlobalTouchManager,
-  GlobalKeyboardManager,
-} = system.browser;
+const { GlobalMouseManager, GlobalTouchManager, GlobalKeyboardManager } =
+  system.browser;
 
 const AllAxises = {
   X: 0,

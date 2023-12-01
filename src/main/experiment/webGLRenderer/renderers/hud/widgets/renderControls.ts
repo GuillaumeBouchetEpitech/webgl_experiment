@@ -5,7 +5,8 @@ import { ITextRenderer } from '../text-renderer/TextRenderer';
 
 import * as glm from 'gl-matrix';
 
-const { GlobalKeyboardManager, GlobalTouchManager, GlobalPointerLockManager } = system.browser;
+const { GlobalKeyboardManager, GlobalTouchManager, GlobalPointerLockManager } =
+  system.browser;
 
 interface Indicator {
   center: glm.ReadonlyVec2;

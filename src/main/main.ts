@@ -1,13 +1,8 @@
-import {
-  system,
-} from '@local-framework';
+import { system } from '@local-framework';
 import { WebGLExperiment } from './experiment/WebGLExperiment';
 
-const {
-  isWebGL2Supported,
-  isWebWorkerSupported,
-  GlobalFullScreenManager
-} = system.browser;
+const { isWebGL2Supported, isWebWorkerSupported, GlobalFullScreenManager } =
+  system.browser;
 
 const onPageLoad = async () => {
   let mainDemo: WebGLExperiment | null = null;

@@ -1,7 +1,5 @@
 import { graphics } from '@local-framework';
 
-
-
 import { ICamera } from '../../../camera/Camera';
 
 import * as glm from 'gl-matrix';
@@ -12,16 +10,12 @@ import chunksRendererVertex from './shaders/chunks-renderer.glsl.vert';
 // @ts-ignore
 import chunksRendererFragment from './shaders/chunks-renderer.glsl.frag';
 
-const {
-  GeometryWrapper,
-  ShaderProgram,
-  Texture,
-} = graphics.webgl2;
+const { GeometryWrapper, ShaderProgram, Texture } = graphics.webgl2;
 
-type IUnboundShader = graphics.webgl2.IUnboundShader
-type IUnboundTexture = graphics.webgl2.IUnboundTexture
-type Geometry = graphics.webgl2.GeometryWrapper.Geometry
-type GeometryDefinition = graphics.webgl2.GeometryWrapper.GeometryDefinition
+type IUnboundShader = graphics.webgl2.IUnboundShader;
+type IUnboundTexture = graphics.webgl2.IUnboundTexture;
+type Geometry = graphics.webgl2.GeometryWrapper.Geometry;
+type GeometryDefinition = graphics.webgl2.GeometryWrapper.GeometryDefinition;
 
 export interface ILiveGeometry {
   update(

@@ -23,7 +23,6 @@ const _renderIndicator = (
   stackRenderers: graphics.renderers.IStackRenderers,
   textRenderer: graphics.renderers.ITextRenderer
 ) => {
-
   const { center } = currIndicator;
 
   stackRenderers.pushCenteredRectangle(
@@ -63,37 +62,57 @@ export const addKeyStrokesWidgets = (
   stackRenderers: graphics.renderers.IStackRenderers,
   textRenderer: graphics.renderers.ITextRenderer
 ) => {
-  _renderIndicator({
-    center: [inPos[0], inPos[1]],
-    size: [40, 40],
-    text: 'A\nQ',
-    color: system.browser.GlobalKeyboardManager.isPressed('A', 'Q')
-      ? activatedColor
-      : defaultColor
-  }, stackRenderers, textRenderer);
+  _renderIndicator(
+    {
+      center: [inPos[0], inPos[1]],
+      size: [40, 40],
+      text: 'A\nQ',
+      color: system.browser.GlobalKeyboardManager.isPressed('A', 'Q')
+        ? activatedColor
+        : defaultColor
+    },
+    stackRenderers,
+    textRenderer
+  );
 
-  _renderIndicator({
-    center: [inPos[0] + 45 * 1, inPos[1]],
-    size: [40, 40],
-    text: 'S',
-    color: system.browser.GlobalKeyboardManager.isPressed('S') ? activatedColor : defaultColor
-  }, stackRenderers, textRenderer);
+  _renderIndicator(
+    {
+      center: [inPos[0] + 45 * 1, inPos[1]],
+      size: [40, 40],
+      text: 'S',
+      color: system.browser.GlobalKeyboardManager.isPressed('S')
+        ? activatedColor
+        : defaultColor
+    },
+    stackRenderers,
+    textRenderer
+  );
 
-  _renderIndicator({
-    center: [inPos[0] + 45 * 1, inPos[1] + 45],
-    size: [40, 40],
-    text: 'W\nZ',
-    color: system.browser.GlobalKeyboardManager.isPressed('W', 'Z')
-      ? activatedColor
-      : defaultColor
-  }, stackRenderers, textRenderer);
+  _renderIndicator(
+    {
+      center: [inPos[0] + 45 * 1, inPos[1] + 45],
+      size: [40, 40],
+      text: 'W\nZ',
+      color: system.browser.GlobalKeyboardManager.isPressed('W', 'Z')
+        ? activatedColor
+        : defaultColor
+    },
+    stackRenderers,
+    textRenderer
+  );
 
-  _renderIndicator({
-    center: [inPos[0] + 45 * 2, inPos[1]],
-    size: [40, 40],
-    text: 'D',
-    color: system.browser.GlobalKeyboardManager.isPressed('D') ? activatedColor : defaultColor
-  }, stackRenderers, textRenderer);
+  _renderIndicator(
+    {
+      center: [inPos[0] + 45 * 2, inPos[1]],
+      size: [40, 40],
+      text: 'D',
+      color: system.browser.GlobalKeyboardManager.isPressed('D')
+        ? activatedColor
+        : defaultColor
+    },
+    stackRenderers,
+    textRenderer
+  );
 };
 
 export const addArrowStrokesWidgets = (
@@ -102,60 +121,76 @@ export const addArrowStrokesWidgets = (
   textRenderer: graphics.renderers.ITextRenderer
 ) => {
   // arrow left
-  _renderIndicator({
-    center: [inPos[0], inPos[1]],
-    size: [40, 40],
-    lines: [
-      { a: [15, 0], b: [-8, 0], thickness: 6, color: [1, 1, 1] },
-      { a: [0, 10], b: [-12, -2], thickness: 6, color: [1, 1, 1] },
-      { a: [0, -10], b: [-12, 2], thickness: 6, color: [1, 1, 1] }
-    ],
-    color: system.browser.GlobalKeyboardManager.isPressed('ArrowLeft')
-      ? activatedColor
-      : defaultColor
-  }, stackRenderers, textRenderer);
+  _renderIndicator(
+    {
+      center: [inPos[0], inPos[1]],
+      size: [40, 40],
+      lines: [
+        { a: [15, 0], b: [-8, 0], thickness: 6, color: [1, 1, 1] },
+        { a: [0, 10], b: [-12, -2], thickness: 6, color: [1, 1, 1] },
+        { a: [0, -10], b: [-12, 2], thickness: 6, color: [1, 1, 1] }
+      ],
+      color: system.browser.GlobalKeyboardManager.isPressed('ArrowLeft')
+        ? activatedColor
+        : defaultColor
+    },
+    stackRenderers,
+    textRenderer
+  );
 
   // arrow down
-  _renderIndicator({
-    center: [inPos[0] + 45, inPos[1]],
-    size: [40, 40],
-    lines: [
-      { a: [0, 15], b: [0, -8], thickness: 6, color: [1, 1, 1] },
-      { a: [10, 0], b: [-2, -12], thickness: 6, color: [1, 1, 1] },
-      { a: [-10, 0], b: [2, -12], thickness: 6, color: [1, 1, 1] }
-    ],
-    color: system.browser.GlobalKeyboardManager.isPressed('ArrowDown')
-      ? activatedColor
-      : defaultColor
-  }, stackRenderers, textRenderer);
+  _renderIndicator(
+    {
+      center: [inPos[0] + 45, inPos[1]],
+      size: [40, 40],
+      lines: [
+        { a: [0, 15], b: [0, -8], thickness: 6, color: [1, 1, 1] },
+        { a: [10, 0], b: [-2, -12], thickness: 6, color: [1, 1, 1] },
+        { a: [-10, 0], b: [2, -12], thickness: 6, color: [1, 1, 1] }
+      ],
+      color: system.browser.GlobalKeyboardManager.isPressed('ArrowDown')
+        ? activatedColor
+        : defaultColor
+    },
+    stackRenderers,
+    textRenderer
+  );
 
   // arrow up
-  _renderIndicator({
-    center: [inPos[0] + 45, inPos[1] + 45],
-    size: [40, 40],
-    lines: [
-      { a: [0, -15], b: [0, 8], thickness: 6, color: [1, 1, 1] },
-      { a: [10, 0], b: [-2, 12], thickness: 6, color: [1, 1, 1] },
-      { a: [-10, 0], b: [2, 12], thickness: 6, color: [1, 1, 1] }
-    ],
-    color: system.browser.GlobalKeyboardManager.isPressed('ArrowUp')
-      ? activatedColor
-      : defaultColor
-  }, stackRenderers, textRenderer);
+  _renderIndicator(
+    {
+      center: [inPos[0] + 45, inPos[1] + 45],
+      size: [40, 40],
+      lines: [
+        { a: [0, -15], b: [0, 8], thickness: 6, color: [1, 1, 1] },
+        { a: [10, 0], b: [-2, 12], thickness: 6, color: [1, 1, 1] },
+        { a: [-10, 0], b: [2, 12], thickness: 6, color: [1, 1, 1] }
+      ],
+      color: system.browser.GlobalKeyboardManager.isPressed('ArrowUp')
+        ? activatedColor
+        : defaultColor
+    },
+    stackRenderers,
+    textRenderer
+  );
 
   // arrow right
-  _renderIndicator({
-    center: [inPos[0] + 45 * 2, inPos[1]],
-    size: [40, 40],
-    lines: [
-      { a: [-15, 0], b: [8, 0], thickness: 6, color: [1, 1, 1] },
-      { a: [0, 10], b: [12, -2], thickness: 6, color: [1, 1, 1] },
-      { a: [0, -10], b: [12, 2], thickness: 6, color: [1, 1, 1] }
-    ],
-    color: system.browser.GlobalKeyboardManager.isPressed('ArrowRight')
-      ? activatedColor
-      : defaultColor
-  }, stackRenderers, textRenderer);
+  _renderIndicator(
+    {
+      center: [inPos[0] + 45 * 2, inPos[1]],
+      size: [40, 40],
+      lines: [
+        { a: [-15, 0], b: [8, 0], thickness: 6, color: [1, 1, 1] },
+        { a: [0, 10], b: [12, -2], thickness: 6, color: [1, 1, 1] },
+        { a: [0, -10], b: [12, 2], thickness: 6, color: [1, 1, 1] }
+      ],
+      color: system.browser.GlobalKeyboardManager.isPressed('ArrowRight')
+        ? activatedColor
+        : defaultColor
+    },
+    stackRenderers,
+    textRenderer
+  );
 };
 
 export const addKeysTouchesWidgets = (
@@ -165,35 +200,53 @@ export const addKeysTouchesWidgets = (
   textRenderer: graphics.renderers.ITextRenderer
 ) => {
   if (system.browser.GlobalTouchManager.isSupported(inCanvasElement)) {
-    _renderIndicator({
-      center: [inPos[0] + 115, inPos[1]],
-      size: [230, 60],
-      text: 'Touch Events\nSupported\n(double tap)',
-      color: [0, 0.5, 0]
-    }, stackRenderers, textRenderer);
+    _renderIndicator(
+      {
+        center: [inPos[0] + 115, inPos[1]],
+        size: [230, 60],
+        text: 'Touch Events\nSupported\n(double tap)',
+        color: [0, 0.5, 0]
+      },
+      stackRenderers,
+      textRenderer
+    );
   } else {
-    _renderIndicator({
-      center: [inPos[0] + 115, inPos[1]],
-      size: [230, 60],
-      text: 'Touch Events\nNot Supported',
-      color: [0.5, 0, 0]
-    }, stackRenderers, textRenderer);
+    _renderIndicator(
+      {
+        center: [inPos[0] + 115, inPos[1]],
+        size: [230, 60],
+        text: 'Touch Events\nNot Supported',
+        color: [0.5, 0, 0]
+      },
+      stackRenderers,
+      textRenderer
+    );
   }
 
-  if (system.browser.GlobalPointerLockManager.canBePointerLocked(inCanvasElement)) {
-    _renderIndicator({
-      center: [inPos[0] + 105, inPos[1] + 70],
-      size: [210, 60],
-      text: 'Mouse\nSupported',
-      color: [0, 0.5, 0]
-    }, stackRenderers, textRenderer);
+  if (
+    system.browser.GlobalPointerLockManager.canBePointerLocked(inCanvasElement)
+  ) {
+    _renderIndicator(
+      {
+        center: [inPos[0] + 105, inPos[1] + 70],
+        size: [210, 60],
+        text: 'Mouse\nSupported',
+        color: [0, 0.5, 0]
+      },
+      stackRenderers,
+      textRenderer
+    );
   } else {
-    _renderIndicator({
-      center: [inPos[0] + 105, inPos[1] + 70],
-      size: [210, 60],
-      text: 'Mouse Events\nNot Supported',
-      color: [0.5, 0, 0]
-    }, stackRenderers, textRenderer);
+    _renderIndicator(
+      {
+        center: [inPos[0] + 105, inPos[1] + 70],
+        size: [210, 60],
+        text: 'Mouse Events\nNot Supported',
+        color: [0.5, 0, 0]
+      },
+      stackRenderers,
+      textRenderer
+    );
   }
 };
 
