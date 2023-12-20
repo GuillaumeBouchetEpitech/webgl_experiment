@@ -224,9 +224,7 @@ export const addKeysTouchesWidgets = (
     );
   }
 
-  if (
-    browser.GlobalPointerLockManager.canBePointerLocked(inCanvasElement)
-  ) {
+  if (browser.GlobalPointerLockManager.canBePointerLocked(inCanvasElement)) {
     _renderIndicator(
       {
         center: [inPos[0] + 105, inPos[1] + 70],

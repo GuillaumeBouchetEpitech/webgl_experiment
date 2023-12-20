@@ -21,10 +21,7 @@ export class TrianglesStackRenderer {
       primitiveType: webgl2.GeometryWrapper.PrimitiveType.triangles
     };
 
-    this._geometry = new webgl2.GeometryWrapper.Geometry(
-      inShader,
-      geometryDef
-    );
+    this._geometry = new webgl2.GeometryWrapper.Geometry(inShader, geometryDef);
     this._geometry.setFloatBufferSize(0, k_bufferSize);
   }
 

@@ -36,8 +36,7 @@ export interface ITextRenderer {
 export class TextRenderer implements ITextRenderer {
   private _shader: webgl2.IUnboundShader;
   private _geometry: webgl2.GeometryWrapper.Geometry;
-  private _texture: webgl2.IUnboundTexture =
-    new webgl2.Texture();
+  private _texture: webgl2.IUnboundTexture = new webgl2.Texture();
   private _texCoordMap: Map<string, glm.ReadonlyVec2>;
 
   private _buffer = new Float32Array(k_bufferSize);
