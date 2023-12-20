@@ -1,4 +1,4 @@
-import { graphics } from '../../..';
+import * as webgl2 from '../../../graphics/webgl2';
 
 // @ts-ignore
 import stackRendererVertex from './shaders/stack-renderer.glsl.vert';
@@ -68,20 +68,20 @@ export interface IStackRenderers {
 }
 
 export class StackRenderers implements IStackRenderers {
-  private _shader: graphics.webgl2.IUnboundShader;
+  private _shader: webgl2.IUnboundShader;
 
   private _wireFramesStackRenderer: WireFramesStackRenderer;
   private _trianglesStackRenderer: TrianglesStackRenderer;
 
   constructor() {
-    this._shader = new graphics.webgl2.ShaderProgram('StackRenderers', {
+    this._shader = new webgl2.ShaderProgram('StackRenderers', {
       vertexSrc: stackRendererVertex,
       fragmentSrc: stackRendererFragment,
       attributes: ['a_vertex_position', 'a_vertex_color'],
       uniforms: ['u_composedMatrix']
     });
 
-    const geoBuilder = new graphics.webgl2.GeometryWrapper.GeometryBuilder();
+    const geoBuilder = new webgl2.GeometryWrapper.GeometryBuilder();
     geoBuilder
       .reset()
       .setPrimitiveType('lines')

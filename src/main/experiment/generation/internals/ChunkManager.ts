@@ -2,7 +2,9 @@ import * as glm from 'gl-matrix';
 
 import { ILiveGeometry } from '../../webGLRenderer/WebGLRenderer';
 
-import { Vec3HashSet, IWorkerManager } from '.';
+// import { Vec3HashSet, IWorkerManager } from '.';
+import { Vec3HashSet } from './Vec3HashSet';
+import { IWorkerManager } from './WorkerManager';
 
 type Vec3 = [number, number, number];
 

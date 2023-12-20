@@ -1,27 +1,27 @@
-import { graphics } from '../../../..';
+import * as webgl2 from '../../../../graphics/webgl2';
 
 import * as glm from 'gl-matrix';
 
 const k_bufferSize = 7 * 1024;
 
 export class TrianglesStackRenderer {
-  private _shader: graphics.webgl2.IUnboundShader;
-  private _geometry: graphics.webgl2.GeometryWrapper.Geometry;
+  private _shader: webgl2.IUnboundShader;
+  private _geometry: webgl2.GeometryWrapper.Geometry;
 
   private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
 
   constructor(
-    inShader: graphics.webgl2.IUnboundShader,
-    inGeometryDef: graphics.webgl2.GeometryWrapper.GeometryDefinition
+    inShader: webgl2.IUnboundShader,
+    inGeometryDef: webgl2.GeometryWrapper.GeometryDefinition
   ) {
     this._shader = inShader;
-    const geometryDef: graphics.webgl2.GeometryWrapper.GeometryDefinition = {
+    const geometryDef: webgl2.GeometryWrapper.GeometryDefinition = {
       ...inGeometryDef,
-      primitiveType: graphics.webgl2.GeometryWrapper.PrimitiveType.triangles
+      primitiveType: webgl2.GeometryWrapper.PrimitiveType.triangles
     };
 
-    this._geometry = new graphics.webgl2.GeometryWrapper.Geometry(
+    this._geometry = new webgl2.GeometryWrapper.Geometry(
       inShader,
       geometryDef
     );

@@ -1,4 +1,4 @@
-import { graphics } from '../../..';
+import * as webgl2 from '../../../graphics/webgl2';
 
 // import * as shaders from './shaders';
 
@@ -34,10 +34,10 @@ export interface ITextRenderer {
 }
 
 export class TextRenderer implements ITextRenderer {
-  private _shader: graphics.webgl2.IUnboundShader;
-  private _geometry: graphics.webgl2.GeometryWrapper.Geometry;
-  private _texture: graphics.webgl2.IUnboundTexture =
-    new graphics.webgl2.Texture();
+  private _shader: webgl2.IUnboundShader;
+  private _geometry: webgl2.GeometryWrapper.Geometry;
+  private _texture: webgl2.IUnboundTexture =
+    new webgl2.Texture();
   private _texCoordMap: Map<string, glm.ReadonlyVec2>;
 
   private _buffer = new Float32Array(k_bufferSize);
@@ -50,7 +50,7 @@ export class TextRenderer implements ITextRenderer {
   private _verticalTextAlign: VerticalTextAlign = 'top';
 
   constructor() {
-    this._shader = new graphics.webgl2.ShaderProgram('TextRenderer', {
+    this._shader = new webgl2.ShaderProgram('TextRenderer', {
       vertexSrc: textRendererVertex,
       fragmentSrc: textRendererFragment,
       attributes: [
@@ -64,7 +64,7 @@ export class TextRenderer implements ITextRenderer {
       uniforms: ['u_composedMatrix', 'u_texture']
     });
 
-    const geoBuilder = new graphics.webgl2.GeometryWrapper.GeometryBuilder();
+    const geoBuilder = new webgl2.GeometryWrapper.GeometryBuilder();
     geoBuilder
       .reset()
       .setPrimitiveType('triangles')
@@ -81,7 +81,7 @@ export class TextRenderer implements ITextRenderer {
       .addVboAttribute('a_offset_scale', 'float')
       .setStride(9 * 4);
 
-    this._geometry = new graphics.webgl2.GeometryWrapper.Geometry(
+    this._geometry = new webgl2.GeometryWrapper.Geometry(
       this._shader,
       geoBuilder.getDef()
     );
@@ -433,7 +433,7 @@ export class TextRenderer implements ITextRenderer {
       this._geometry.render();
     });
 
-    graphics.webgl2.Texture.unbind();
+    webgl2.Texture.unbind();
 
     this.clear();
 

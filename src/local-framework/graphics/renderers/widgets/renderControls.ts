@@ -1,4 +1,5 @@
-import { system, graphics } from '../../..';
+import * as browser from '../../../system/browser';
+import * as renderers from '../../../graphics/renderers';
 
 import * as glm from 'gl-matrix';
 
@@ -20,8 +21,8 @@ const activatedColor: glm.ReadonlyVec3 = [0.2, 0.6, 0.2];
 
 const _renderIndicator = (
   currIndicator: Indicator,
-  stackRenderers: graphics.renderers.IStackRenderers,
-  textRenderer: graphics.renderers.ITextRenderer
+  stackRenderers: renderers.IStackRenderers,
+  textRenderer: renderers.ITextRenderer
 ) => {
   const { center } = currIndicator;
 
@@ -59,15 +60,15 @@ const _renderIndicator = (
 
 export const addKeyStrokesWidgets = (
   inPos: glm.ReadonlyVec2,
-  stackRenderers: graphics.renderers.IStackRenderers,
-  textRenderer: graphics.renderers.ITextRenderer
+  stackRenderers: renderers.IStackRenderers,
+  textRenderer: renderers.ITextRenderer
 ) => {
   _renderIndicator(
     {
       center: [inPos[0], inPos[1]],
       size: [40, 40],
       text: 'A\nQ',
-      color: system.browser.GlobalKeyboardManager.isPressed('A', 'Q')
+      color: browser.GlobalKeyboardManager.isPressed('A', 'Q')
         ? activatedColor
         : defaultColor
     },
@@ -80,7 +81,7 @@ export const addKeyStrokesWidgets = (
       center: [inPos[0] + 45 * 1, inPos[1]],
       size: [40, 40],
       text: 'S',
-      color: system.browser.GlobalKeyboardManager.isPressed('S')
+      color: browser.GlobalKeyboardManager.isPressed('S')
         ? activatedColor
         : defaultColor
     },
@@ -93,7 +94,7 @@ export const addKeyStrokesWidgets = (
       center: [inPos[0] + 45 * 1, inPos[1] + 45],
       size: [40, 40],
       text: 'W\nZ',
-      color: system.browser.GlobalKeyboardManager.isPressed('W', 'Z')
+      color: browser.GlobalKeyboardManager.isPressed('W', 'Z')
         ? activatedColor
         : defaultColor
     },
@@ -106,7 +107,7 @@ export const addKeyStrokesWidgets = (
       center: [inPos[0] + 45 * 2, inPos[1]],
       size: [40, 40],
       text: 'D',
-      color: system.browser.GlobalKeyboardManager.isPressed('D')
+      color: browser.GlobalKeyboardManager.isPressed('D')
         ? activatedColor
         : defaultColor
     },
@@ -117,8 +118,8 @@ export const addKeyStrokesWidgets = (
 
 export const addArrowStrokesWidgets = (
   inPos: glm.ReadonlyVec2,
-  stackRenderers: graphics.renderers.IStackRenderers,
-  textRenderer: graphics.renderers.ITextRenderer
+  stackRenderers: renderers.IStackRenderers,
+  textRenderer: renderers.ITextRenderer
 ) => {
   // arrow left
   _renderIndicator(
@@ -130,7 +131,7 @@ export const addArrowStrokesWidgets = (
         { a: [0, 10], b: [-12, -2], thickness: 6, color: [1, 1, 1] },
         { a: [0, -10], b: [-12, 2], thickness: 6, color: [1, 1, 1] }
       ],
-      color: system.browser.GlobalKeyboardManager.isPressed('ArrowLeft')
+      color: browser.GlobalKeyboardManager.isPressed('ArrowLeft')
         ? activatedColor
         : defaultColor
     },
@@ -148,7 +149,7 @@ export const addArrowStrokesWidgets = (
         { a: [10, 0], b: [-2, -12], thickness: 6, color: [1, 1, 1] },
         { a: [-10, 0], b: [2, -12], thickness: 6, color: [1, 1, 1] }
       ],
-      color: system.browser.GlobalKeyboardManager.isPressed('ArrowDown')
+      color: browser.GlobalKeyboardManager.isPressed('ArrowDown')
         ? activatedColor
         : defaultColor
     },
@@ -166,7 +167,7 @@ export const addArrowStrokesWidgets = (
         { a: [10, 0], b: [-2, 12], thickness: 6, color: [1, 1, 1] },
         { a: [-10, 0], b: [2, 12], thickness: 6, color: [1, 1, 1] }
       ],
-      color: system.browser.GlobalKeyboardManager.isPressed('ArrowUp')
+      color: browser.GlobalKeyboardManager.isPressed('ArrowUp')
         ? activatedColor
         : defaultColor
     },
@@ -184,7 +185,7 @@ export const addArrowStrokesWidgets = (
         { a: [0, 10], b: [12, -2], thickness: 6, color: [1, 1, 1] },
         { a: [0, -10], b: [12, 2], thickness: 6, color: [1, 1, 1] }
       ],
-      color: system.browser.GlobalKeyboardManager.isPressed('ArrowRight')
+      color: browser.GlobalKeyboardManager.isPressed('ArrowRight')
         ? activatedColor
         : defaultColor
     },
@@ -196,10 +197,10 @@ export const addArrowStrokesWidgets = (
 export const addKeysTouchesWidgets = (
   inCanvasElement: HTMLCanvasElement,
   inPos: glm.ReadonlyVec2,
-  stackRenderers: graphics.renderers.IStackRenderers,
-  textRenderer: graphics.renderers.ITextRenderer
+  stackRenderers: renderers.IStackRenderers,
+  textRenderer: renderers.ITextRenderer
 ) => {
-  if (system.browser.GlobalTouchManager.isSupported(inCanvasElement)) {
+  if (browser.GlobalTouchManager.isSupported(inCanvasElement)) {
     _renderIndicator(
       {
         center: [inPos[0] + 115, inPos[1]],
@@ -224,7 +225,7 @@ export const addKeysTouchesWidgets = (
   }
 
   if (
-    system.browser.GlobalPointerLockManager.canBePointerLocked(inCanvasElement)
+    browser.GlobalPointerLockManager.canBePointerLocked(inCanvasElement)
   ) {
     _renderIndicator(
       {
@@ -252,8 +253,8 @@ export const addKeysTouchesWidgets = (
 
 // export const renderControls = (
 //   inCanvasElement: HTMLCanvasElement,
-//   stackRenderers: graphics.renderers.IStackRenderers,
-//   textRenderer: graphics.renderers.ITextRenderer
+//   stackRenderers: renderers.IStackRenderers,
+//   textRenderer: renderers.ITextRenderer
 // ) => {
 //   // const allIndicator: Indicator[] = [];
 
