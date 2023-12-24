@@ -1,4 +1,4 @@
-import {graphics} from '@local-framework';
+import { graphics } from '@local-framework';
 
 import * as glm from 'gl-matrix';
 
