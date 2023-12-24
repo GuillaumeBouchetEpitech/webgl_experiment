@@ -1,10 +1,7 @@
-import { IFrustumCulling, FrustumCulling } from './camera/FrustumCulling';
-import { Camera, ICamera } from './camera/Camera';
+import { system, graphics } from '@local-framework';
 
 import * as scene from './renderers/scene';
 import * as hud from './renderers/hud';
-
-import { system, graphics } from '@local-framework';
 
 import * as glm from 'gl-matrix';
 
@@ -23,8 +20,8 @@ interface IScene {
 }
 
 interface IHud {
-  textRenderer: hud.TextRenderer;
-  stackRenderers: hud.StackRenderers;
+  textRenderer: graphics.renderers.ITextRenderer;
+  stackRenderers: graphics.renderers.IStackRenderers;
   wireFrameCubesRenderer: hud.WireFrameCubesRenderer;
 }
 
@@ -33,10 +30,10 @@ export class WebGLRenderer {
 
   private _viewportSize = glm.vec2.create();
 
-  private _frustumCulling = new FrustumCulling();
+  private _frustumCulling = new graphics.camera.FrustumCulling();
 
-  private _mainCamera = new Camera();
-  private _mainHudCamera = new Camera();
+  private _mainCamera = new graphics.camera.Camera();
+  private _mainHudCamera = new graphics.camera.Camera();
 
   private onContextLost: (() => void) | null = null;
   private onContextRestored: (() => void) | null = null;
@@ -90,8 +87,8 @@ export class WebGLRenderer {
     };
 
     this._hud = {
-      textRenderer: new hud.TextRenderer(),
-      stackRenderers: new hud.StackRenderers(),
+      textRenderer: new graphics.renderers.TextRenderer(),
+      stackRenderers: new graphics.renderers.StackRenderers(),
       wireFrameCubesRenderer: new hud.WireFrameCubesRenderer()
     };
   }
@@ -236,10 +233,10 @@ export class WebGLRenderer {
     ShaderProgram.unbind();
   }
 
-  get mainCamera(): Readonly<ICamera> {
+  get mainCamera(): Readonly<graphics.camera.ICamera> {
     return this._mainCamera;
   }
-  get hudCamera(): Readonly<ICamera> {
+  get hudCamera(): Readonly<graphics.camera.ICamera> {
     return this._mainHudCamera;
   }
   get wireFrameCubesRenderer(): hud.IWireFrameCubesRenderer {
@@ -248,13 +245,13 @@ export class WebGLRenderer {
   get triangleCubesRenderer(): scene.ITriangleCubesRenderer {
     return this._scene.triangleCubesRenderer;
   }
-  get stackRenderers(): hud.IStackRenderers {
+  get stackRenderers(): graphics.renderers.IStackRenderers {
     return this._hud.stackRenderers;
   }
-  get textRenderer(): hud.ITextRenderer {
+  get textRenderer(): graphics.renderers.ITextRenderer {
     return this._hud.textRenderer;
   }
-  get frustumCulling(): IFrustumCulling {
+  get frustumCulling(): graphics.camera.IFrustumCulling {
     return this._frustumCulling;
   }
   get chunksRenderer(): scene.IChunksRenderer {

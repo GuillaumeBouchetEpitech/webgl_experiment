@@ -1,3 +1,5 @@
+import { system } from '@local-framework';
+
 import * as glm from 'gl-matrix';
 
 import {
@@ -9,7 +11,6 @@ import {
 } from './internals';
 
 import { ILiveGeometry } from '../webGLRenderer/WebGLRenderer';
-import { FrameProfiler } from '../utils/FrameProfiler';
 import { IMessage } from '../../../_common';
 
 type Vec3 = [number, number, number];
@@ -45,7 +46,7 @@ export class ChunkGenerator {
 
   private _workerManager: WorkerManager<WorkerData, IMessage>;
 
-  private _frameProfiler = new FrameProfiler();
+  private _frameProfiler = new system.metrics.FrameProfiler();
 
   constructor(def: IChunkGeneratorDef) {
     this._def = def;
@@ -192,7 +193,7 @@ export class ChunkGenerator {
     return this._chunkManager.getChunks();
   }
 
-  getFrameProfiler(): Readonly<FrameProfiler> {
+  getFrameProfiler(): Readonly<system.metrics.FrameProfiler> {
     return this._frameProfiler;
   }
 

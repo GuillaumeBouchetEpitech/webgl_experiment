@@ -1,4 +1,4 @@
-import * as hud from '../../../renderers/hud';
+import {graphics} from '@local-framework';
 
 import * as glm from 'gl-matrix';
 
@@ -6,7 +6,7 @@ export const renderCurrentCoordinates = (
   inViewportSize: glm.ReadonlyVec2,
   inChunkSize: number,
   inEyePos: glm.ReadonlyVec3,
-  inTextRenderer: hud.ITextRenderer
+  inTextRenderer: graphics.renderers.ITextRenderer
 ) => {
   const chunkCoord: glm.ReadonlyVec3 = [
     Math.floor(inEyePos[0] / inChunkSize),

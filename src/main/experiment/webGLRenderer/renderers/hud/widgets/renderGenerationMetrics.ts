@@ -1,4 +1,4 @@
-import * as hud from '../../../renderers/hud';
+import { graphics } from '@local-framework';
 
 import * as glm from 'gl-matrix';
 
@@ -7,7 +7,7 @@ export const renderGenerationMetrics = (
   inChunksCreated: number,
   inChunksDiscarded: number,
   inVisibleChunks: number,
-  inTextRenderer: hud.ITextRenderer
+  inTextRenderer: graphics.renderers.ITextRenderer
 ) => {
   const textsOrigin: glm.ReadonlyVec2 = [
     inViewportSize[0] - 10,

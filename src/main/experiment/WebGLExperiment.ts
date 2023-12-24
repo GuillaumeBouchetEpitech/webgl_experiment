@@ -1,11 +1,9 @@
 import * as configuration from '../configuration';
 
-import { system } from '@local-framework';
+import { graphics, system } from '@local-framework';
 
-import { FreeFlyController } from './controllers/FreeFlyController';
 import { ChunkGenerator } from './generation/ChunkGenerator';
 import { ILiveGeometry, WebGLRenderer } from './webGLRenderer/WebGLRenderer';
-import { FrameProfiler } from './utils/FrameProfiler';
 
 import * as widgets from './webGLRenderer/renderers/hud/widgets';
 
@@ -21,7 +19,7 @@ const {
 export class WebGLExperiment {
   private _canvasElement: HTMLCanvasElement;
 
-  private _freeFlyController: FreeFlyController;
+  private _freeFlyController: system.controllers.FreeFlyController;
 
   private _renderer: WebGLRenderer;
   private _chunkGenerator: ChunkGenerator;
@@ -33,12 +31,12 @@ export class WebGLExperiment {
   private _chunksDiscarded: number = 0;
 
   private _currFrameTime: number = 0;
-  private _frameProfiler = new FrameProfiler();
+  private _frameProfiler = new system.metrics.FrameProfiler();
 
   constructor(canvasElement: HTMLCanvasElement) {
     this._canvasElement = canvasElement;
 
-    this._freeFlyController = new FreeFlyController({
+    this._freeFlyController = new system.controllers.FreeFlyController({
       position: glm.vec3.fromValues(0, 0, 0),
       coordinates: ['X', 'Y', 'Z'],
       theta: 0,
@@ -60,7 +58,6 @@ export class WebGLExperiment {
 
       workerTotal: configuration.workerTotal,
       workerFile: configuration.workerFile,
-      // workerBufferSize: configuration.workerBufferSize,
 
       chunkIsVisible: (pos: glm.ReadonlyVec3) => {
         const k_size = configuration.chunkGraphicSize;
@@ -214,16 +211,7 @@ export class WebGLExperiment {
     //
     //
 
-    this._freeFlyController.update(
-      elapsedTime / 1000,
-      (inX: number, inY: number, inZ: number) => {
-        // return this._chunkGenerator.isColliding(
-        //   glm.vec3.fromValues(inX, inY, inZ),
-        //   () => {}
-        // );
-        return false;
-      }
-    );
+    this._freeFlyController.update(elapsedTime / 1000);
 
     this._renderer.lookAt(
       this._freeFlyController.getPosition(),
@@ -268,17 +256,6 @@ export class WebGLExperiment {
     this._renderer.stackRenderers.clear();
     this._renderer.textRenderer.clear();
 
-    // const allMsgs: string[] = [];
-    // const isColliding = this._chunkGenerator.isColliding(this._freeFlyController.getPosition(), (...args) => {
-    //   allMsgs.push(args.join(' '));
-    // });
-    // this._renderer.textRenderer
-    //   .setTextScale(14)
-    //   .setTextAlign('left', 'top')
-    //   .pushText(`isColliding=${isColliding}`, [250,400])
-    //   .pushText(allMsgs.join("\n"), [250,385]);
-    // this._renderer.textRenderer.flush();
-
     // top right text
     widgets.renderGenerationMetrics(
       this._renderer.getSize(),
@@ -296,13 +273,17 @@ export class WebGLExperiment {
       this._renderer.textRenderer
     );
 
-    widgets.renderControls(
-      this._canvasElement,
-      this._renderer.stackRenderers,
-      this._renderer.textRenderer
-    );
+    {
+      const keyEventsPos: glm.ReadonlyVec2 = [7 + 20, 165];
+      const touchEventsPos: glm.ReadonlyVec2 = [7 + 20, 260];
+      const boardPos: glm.ReadonlyVec2 = [7, 35];
 
-    widgets.renderFpsMeter(
+      graphics.renderers.addKeyStrokesWidgets(keyEventsPos, this._renderer.stackRenderers, this._renderer.textRenderer);
+      graphics.renderers.addArrowStrokesWidgets(touchEventsPos, this._renderer.stackRenderers, this._renderer.textRenderer);
+      graphics.renderers.addKeysTouchesWidgets(this._canvasElement, boardPos, this._renderer.stackRenderers, this._renderer.textRenderer);
+    }
+
+    graphics.renderers.renderFpsMeter(
       [10, this._canvasElement.height - 60, 0],
       [100, 50],
       this._frameProfiler,
@@ -311,7 +292,7 @@ export class WebGLExperiment {
       true
     );
 
-    widgets.renderFpsMeter(
+    graphics.renderers.renderFpsMeter(
       [10, this._canvasElement.height - 150, 0],
       [100, 50],
       this._chunkGenerator.getFrameProfiler(),

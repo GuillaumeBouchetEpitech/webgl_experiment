@@ -1,5 +1,5 @@
 import * as glm from 'gl-matrix';
-import { IStackRenderers } from '../../../hud';
+import { graphics } from '@local-framework';
 
 export const renderPerspectiveFrustum = (
   inFovY: number,
@@ -9,7 +9,7 @@ export const renderPerspectiveFrustum = (
   eyePos: glm.ReadonlyVec3,
   theta: number,
   phi: number,
-  inStackRenderers: IStackRenderers
+  inStackRenderers: graphics.renderers.IStackRenderers
 ): void => {
   const fH = Math.tan((inFovY / 360.0) * Math.PI) * inNear;
   const fW = fH * inAspect;

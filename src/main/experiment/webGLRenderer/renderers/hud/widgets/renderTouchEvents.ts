@@ -1,6 +1,4 @@
-import { system } from '@local-framework';
-
-import { IStackRenderers } from '../stack-renderers/StackRenderers';
+import { system, graphics } from '@local-framework';
 
 import * as glm from 'gl-matrix';
 
@@ -10,7 +8,7 @@ const _touchesAngleMap = new Map<number, number>();
 
 export const renderTouchEvents = (
   viewportSize: glm.ReadonlyVec2,
-  stackRenderers: IStackRenderers,
+  stackRenderers: graphics.renderers.IStackRenderers,
   isMovingForward: boolean
 ) => {
   // touches

@@ -1,5 +1,4 @@
 import { graphics } from '@local-framework';
-import { ICamera } from '../../../camera/Camera';
 
 // @ts-ignore
 import triangleCubesRendererVertex from './shaders/triangle-cubes-renderer.glsl.vert';
@@ -238,7 +237,7 @@ export class TriangleCubesRenderer implements ITriangleCubesRenderer {
     this._buffer[this._currentSize++] = inColor[3] || 1;
   }
 
-  flush(inCamera: ICamera) {
+  flush(inCamera: graphics.camera.ICamera) {
     if (this._currentSize <= 0) {
       return;
     }

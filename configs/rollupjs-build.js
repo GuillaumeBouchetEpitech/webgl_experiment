@@ -17,7 +17,7 @@ const _getBuildOptions = () => {
       continue;
     }
 
-    return { buildType: capture[0] };
+    return { isRelease: capture[1] === 'release' };
   }
 
   throw new Error('missing build options argument, stopping now');
@@ -51,19 +51,24 @@ const _handleGlslFilesPlugin = {
 //
 //
 
-const asyncBuild = async (folderName, outputFile) => {
+const asyncBuild = async ({
+  name,
+  tsConfigFilePath,
+  inputFilePath,
+  outputFilePath,
+}) => {
 
-  console.log(` -> BUILDING ${folderName}`);
+  console.log(` -> BUILDING ${name}`);
   const startTime = Date.now();
 
   const plugins = [
-    typescript({ tsconfig: `./src/${folderName}/tsconfig.json` }),
+    typescript({ tsconfig: tsConfigFilePath }),
     commonjs(),
     nodeResolve(),
     _handleGlslFilesPlugin
   ];
 
-  if (buildOptions.buildType === 'debug') {
+  if (buildOptions.isRelease) {
     plugins.push(terser({
       format: { comments: false },
       compress: { passes: 3 },
@@ -71,11 +76,11 @@ const asyncBuild = async (folderName, outputFile) => {
   }
 
   const inputOptions = {
-    input: `./src/${folderName}/main.ts`,
+    input: inputFilePath,
     plugins,
   };
   const outputOptions = {
-    file: `./dist/${outputFile}`,
+    file: outputFilePath,
     format: 'cjs',
   };
 
@@ -100,15 +105,25 @@ const asyncBuild = async (folderName, outputFile) => {
   const endTime = Date.now();
   const elapsedTime = ((endTime - startTime) / 1000).toFixed(3);
 
-  console.log(`    -> BUILT ${folderName} (${elapsedTime}sec)`);
-  const statData = fs.statSync(outputOptions.file);
+  console.log(`    -> BUILT ${name} (${elapsedTime}sec)`);
+  const statData = fs.statSync(outputFilePath);
   console.log(`      -> SIZE ${Math.ceil(statData.size / 1024)}ko`);
 }
 
 const asyncRun = async () => {
   await Promise.all([
-    asyncBuild('main', 'bundle.js'),
-    asyncBuild('worker', 'worker.js'),
+    asyncBuild({
+      name: 'main',
+      tsConfigFilePath: `./src/main/tsconfig.json`,
+      inputFilePath: `./src/main/main.ts`,
+      outputFilePath: `./dist/bundle.js`,
+    }),
+    asyncBuild({
+      name: 'worker',
+      tsConfigFilePath: `./src/worker/tsconfig.json`,
+      inputFilePath: `./src/worker/main.ts`,
+      outputFilePath: `./dist/worker.js`,
+    }),
   ]);
 };
 asyncRun();

@@ -1,9 +1,6 @@
 import { graphics } from '@local-framework';
 
-import { ICamera } from '../../../camera/Camera';
-
 import * as glm from 'gl-matrix';
-import { IFrustumCulling } from 'main/experiment/webGLRenderer/camera/FrustumCulling';
 
 // @ts-ignore
 import chunksRendererVertex from './shaders/chunks-renderer.glsl.vert';
@@ -169,8 +166,8 @@ export class ChunksRenderer implements IChunksRenderer {
   }
 
   render(
-    inCamera: ICamera,
-    inFrustumCulling: IFrustumCulling,
+    inCamera: graphics.camera.ICamera,
+    inFrustumCulling: graphics.camera.IFrustumCulling,
     inChunkSize: number
   ) {
     const eyePos = inCamera.getEye();
@@ -234,8 +231,6 @@ export class ChunksRenderer implements IChunksRenderer {
         })
         .sort((a, b) => a.distance - b.distance);
       toRender.forEach((sortableGeo) => sortableGeo.geometry.render());
-
-      // this._inUseGeometries.forEach((geometry) => geometry.render());
     });
   }
 }

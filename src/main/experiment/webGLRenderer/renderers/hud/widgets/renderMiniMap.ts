@@ -1,5 +1,4 @@
 import { graphics } from '@local-framework';
-import { Camera, ICamera } from '../../../camera/Camera';
 
 import { Chunks } from '../../../../generation/internals';
 
@@ -12,7 +11,7 @@ import * as glm from 'gl-matrix';
 const { WebGLContext } = graphics.webgl2;
 
 export const renderMiniMap = (
-  inCamera: ICamera,
+  inCamera: graphics.camera.ICamera,
   inMinScreenSize: number,
   inMinViewSize: number,
   inChunks: Chunks,
@@ -20,7 +19,7 @@ export const renderMiniMap = (
   inViewportSize: glm.ReadonlyVec2,
   inProcessingPos: glm.ReadonlyVec3[],
   inWireFrameCubesRenderer: hud.IWireFrameCubesRenderer,
-  inStackRenderers: hud.IStackRenderers
+  inStackRenderers: graphics.renderers.IStackRenderers
 ): void => {
   const gl = WebGLContext.getContext();
 
@@ -29,7 +28,7 @@ export const renderMiniMap = (
 
   const [width, height] = inViewportSize;
 
-  const miniMapHudCamera = new Camera();
+  const miniMapHudCamera = new graphics.camera.Camera();
 
   const minViewportSize = Math.min(width, height) * 0.5;
 
