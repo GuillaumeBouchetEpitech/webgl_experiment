@@ -10,7 +10,9 @@
     "rollupjs-build-debug": "node ./configs/rollupjs-build.js build-options-debug",
     "bunjs-build-release": "npx bun run ./configs/bunjs-build.js build-options-release",
     "bunjs-build-debug": "npx bun run ./configs/bunjs-build.js build-options-debug",
-    "watch": "npx nodemon --config ./configs/nodemon-config.json --exec 'npm run bunjs-build-debug' --watch ./src"
+    "watch": "npx nodemon --config ./configs/nodemon-config.json --exec 'npm run bunjs-build-debug' --watch ./src",
+    "release": "npm run rollupjs-build-release",
+    "debug": "npm run rollupjs-build-debug"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^23.0.2",

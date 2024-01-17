@@ -133,7 +133,9 @@ export class ChunkGenerator {
   }
 
   update(cameraPosition: glm.ReadonlyVec3) {
-    if (!this._running) return;
+    if (!this._running) {
+      return
+    };
 
     //
     //

@@ -7,19 +7,18 @@ import chunksRendererVertex from './shaders/chunks-renderer.glsl.vert';
 // @ts-ignore
 import chunksRendererFragment from './shaders/chunks-renderer.glsl.frag';
 
-const { GeometryWrapper, ShaderProgram, Texture } = graphics.webgl2;
+const { GeometryWrapper, ShaderProgram, TextureArray } = graphics.webgl2;
 
 type IUnboundShader = graphics.webgl2.IUnboundShader;
-type IUnboundTexture = graphics.webgl2.IUnboundTexture;
+type IUnboundTextureArray = graphics.webgl2.IUnboundTextureArray;
 type Geometry = graphics.webgl2.GeometryWrapper.Geometry;
 type GeometryDefinition = graphics.webgl2.GeometryWrapper.GeometryDefinition;
 
 export interface ILiveGeometry {
   update(
     inOrigin: glm.ReadonlyVec3,
-    inSize: number,
+    inBufferLength: number,
     inBuffer: Float32Array,
-    inBufferLength: number
   ): void;
   getOrigin(): glm.ReadonlyVec3;
   getSize(): number;
@@ -29,33 +28,31 @@ class LiveGeometry implements ILiveGeometry {
   private _origin: glm.vec3 = glm.vec3.fromValues(0, 0, 0);
   private _size: number = 0;
   private _geometry: Geometry;
+  private _isVisible: boolean = false;
 
   constructor(
     inShader: IUnboundShader,
-    inGeometryDefinition: GeometryDefinition,
-    preAllocatedSize: number
+    inGeometryDefinition: GeometryDefinition
   ) {
     this._geometry = new GeometryWrapper.Geometry(
       inShader,
       inGeometryDefinition
     );
-    this._geometry.setFloatBufferSize(0, preAllocatedSize);
   }
 
   update(
     inOrigin: glm.ReadonlyVec3,
-    inSize: number,
+    inBufferLength: number,
     inBuffer: Float32Array,
-    inBufferLength: number
   ): void {
     glm.vec3.copy(this._origin, inOrigin);
-    this._size = inSize;
+    this._size = inBufferLength;
 
-    this._geometry.updateBuffer(0, inBuffer, inBufferLength);
+    this._geometry.allocateBuffer(0, inBuffer, inBufferLength);
     this._geometry.setPrimitiveCount(inBufferLength / 6);
 
     const newBuffer = new Float32Array([inOrigin[0], inOrigin[1], inOrigin[2]]);
-    this._geometry.updateBuffer(1, newBuffer, newBuffer.length);
+    this._geometry.allocateBuffer(1, newBuffer, newBuffer.length);
     this._geometry.setInstancedCount(1);
   }
 
@@ -78,10 +75,7 @@ export interface IChunksRenderer {
 
 export class ChunksRenderer implements IChunksRenderer {
   private _shader: IUnboundShader;
-  private _textureDirt: IUnboundTexture = new Texture();
-  private _textureGrass: IUnboundTexture = new Texture();
-  private _textureStoneWall: IUnboundTexture = new Texture();
-  private _textureStoneWallBump: IUnboundTexture = new Texture();
+  private _textureArray: IUnboundTextureArray = new TextureArray();
 
   private _geometryDefinition: GeometryDefinition;
 
@@ -98,10 +92,7 @@ export class ChunksRenderer implements IChunksRenderer {
         'u_eyePosition',
         'u_sceneScale',
         'u_tileRepeat',
-        'u_texture_dirt',
-        'u_texture_grass',
-        'u_texture_stoneWall',
-        'u_texture_stoneWallBump'
+        "u_textureArray"
       ]
     });
 
@@ -114,7 +105,6 @@ export class ChunksRenderer implements IChunksRenderer {
       .addVboAttribute('a_vertex_normal', 'vec3f')
       .setStride(6 * 4)
       .addVbo()
-      .setVboAsDynamic()
       .setVboAsInstanced()
       .addVboAttribute('a_offset_origin', 'vec3f')
       .setStride(3 * 4);
@@ -123,25 +113,19 @@ export class ChunksRenderer implements IChunksRenderer {
   }
 
   async initialize() {
-    const images = await Promise.all([
-      Texture.getImageFromUrl('assets/dirt.png'),
-      Texture.getImageFromUrl('assets/grass.png'),
-      Texture.getImageFromUrl('assets/stone-wall.png'),
-      Texture.getImageFromUrl('assets/stone-wall-bump.png')
-    ]);
+    const image = await graphics.images.getImageFromUrl('assets/composed.png');
 
-    this._textureDirt.initialize();
-    this._textureGrass.initialize();
-    this._textureStoneWall.initialize();
-    this._textureStoneWallBump.initialize();
+    this._textureArray.initialize();
+    this._textureArray.bind((bound) => {
+      bound.load(512, 512, 4, image);
+    });
 
-    this._textureDirt.bind((bound) => bound.load(images[0]));
-    this._textureGrass.bind((bound) => bound.load(images[1]));
-    this._textureStoneWall.bind((bound) => bound.load(images[2]));
-    this._textureStoneWallBump.bind((bound) => bound.load(images[3]));
+    this._shader.bind((boundShader) => {
+      boundShader.setTextureUniform('u_textureArray', this._textureArray, 1);
+    });
   }
 
-  acquireGeometry(inSize: number): ILiveGeometry {
+  acquireGeometry(): ILiveGeometry {
     if (this._unusedGeometries.length > 0) {
       const reusedGeom = this._unusedGeometries.pop()!;
       this._inUseGeometries.push(reusedGeom);
@@ -150,8 +134,7 @@ export class ChunksRenderer implements IChunksRenderer {
 
     const newGeom = new LiveGeometry(
       this._shader,
-      this._geometryDefinition,
-      inSize
+      this._geometryDefinition
     );
     this._inUseGeometries.push(newGeom);
     return newGeom;
@@ -186,19 +169,6 @@ export class ChunksRenderer implements IChunksRenderer {
 
       boundShader.setFloat1Uniform('u_sceneScale', inChunkSize);
       boundShader.setFloat1Uniform('u_tileRepeat', 2);
-
-      boundShader.setTextureUniform('u_texture_dirt', this._textureDirt, 0);
-      boundShader.setTextureUniform('u_texture_grass', this._textureGrass, 1);
-      boundShader.setTextureUniform(
-        'u_texture_stoneWall',
-        this._textureStoneWall,
-        2
-      );
-      boundShader.setTextureUniform(
-        'u_texture_stoneWallBump',
-        this._textureStoneWallBump,
-        3
-      );
 
       interface SortableLiveGeometry {
         geometry: LiveGeometry;

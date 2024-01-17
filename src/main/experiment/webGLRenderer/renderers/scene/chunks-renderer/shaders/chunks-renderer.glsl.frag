@@ -2,14 +2,13 @@
 #version 300 es
 
 precision lowp float;
+precision highp sampler2DArray;
 
 const float k_ambiantCoef = 0.1;
 const vec3 k_specColor = vec3(1.0, 1.0, 1.0);
 
-uniform sampler2D u_texture_dirt;
-uniform sampler2D u_texture_grass;
-uniform sampler2D u_texture_stoneWall;
-uniform sampler2D u_texture_stoneWallBump;
+uniform sampler2DArray u_textureArray;
+
 uniform vec3 u_eyePosition;
 
 in vec3 v_chunkSpacePosition;
@@ -40,22 +39,22 @@ vec4 _getColorValue()
   vec2 texCoordZ = vec2(flooredPos.x, flooredPos.y);
 
   // horizontal color
-  vec3 texColorX = texture( u_texture_stoneWall, texCoordX ).rgb;
-  vec3 texColorY = texture( u_texture_stoneWall, texCoordY ).rgb;
+  vec3 texColorX = texture( u_textureArray, vec3(texCoordX, 2) ).rgb;
+  vec3 texColorY = texture( u_textureArray, vec3(texCoordY, 2) ).rgb;
 
-  float specularRatioX = texture( u_texture_stoneWallBump, texCoordX ).r * blendWeights.x;
-  float specularRatioY = texture( u_texture_stoneWallBump, texCoordY ).r * blendWeights.y;
+  float specularRatioX = texture( u_textureArray, vec3(texCoordX, 3) ).r * blendWeights.x;
+  float specularRatioY = texture( u_textureArray, vec3(texCoordY, 3) ).r * blendWeights.y;
   float specularRatio = max( specularRatioX, specularRatioY );
 
   // vertical color
   vec3 texColorZ = vec3(0.0);
   if (v_worldSpaceNormal.z < 0.0)
   {
-    texColorZ = texture( u_texture_dirt, texCoordZ ).rgb;
+    texColorZ = texture( u_textureArray, vec3(texCoordZ, 0) ).rgb;
   }
   else
   {
-    texColorZ = texture( u_texture_grass, texCoordZ ).rgb;
+    texColorZ = texture( u_textureArray, vec3(texCoordZ, 1) ).rgb;
   }
 
   return vec4(

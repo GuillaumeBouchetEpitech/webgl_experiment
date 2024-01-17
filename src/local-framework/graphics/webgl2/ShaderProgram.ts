@@ -1,3 +1,4 @@
+import { IUnboundTextureArray } from './TextureArray';
 import { IUnboundCubeMap } from './CubeMap';
 import { IUnboundTexture } from './Texture';
 import { WebGLContext } from './WebGLContext';
@@ -22,7 +23,7 @@ export interface IUnboundShader {
 export interface IBoundShader {
   setTextureUniform(
     inName: string,
-    inTexture: IUnboundTexture | IUnboundCubeMap,
+    inTexture: IUnboundTexture | IUnboundTextureArray | IUnboundCubeMap,
     inIndex: number
   ): void;
   setInteger1Uniform(inName: string, inValue: number): void;

@@ -22,7 +22,6 @@ export class TrianglesStackRenderer {
     };
 
     this._geometry = new webgl2.GeometryWrapper.Geometry(inShader, geometryDef);
-    this._geometry.setFloatBufferSize(0, k_bufferSize);
   }
 
   pushTriangle(
@@ -178,7 +177,7 @@ export class TrianglesStackRenderer {
       return;
     }
 
-    this._geometry.updateBuffer(0, this._buffer, this._currentSize);
+    this._geometry.allocateBuffer(0, this._buffer, this._currentSize);
     this._geometry.setPrimitiveCount(this._currentSize / 7);
 
     this._geometry.render();

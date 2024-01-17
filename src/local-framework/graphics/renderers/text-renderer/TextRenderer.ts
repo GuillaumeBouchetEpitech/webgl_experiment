@@ -119,9 +119,8 @@ export class TextRenderer implements ITextRenderer {
       );
     }
 
-    this._geometry.updateBuffer(0, letterVertices, letterVertices.length);
+    this._geometry.allocateBuffer(0, letterVertices, letterVertices.length);
     this._geometry.setPrimitiveCount(letterVertices.length / 4);
-    this._geometry.setFloatBufferSize(1, k_bufferSize);
 
     this._texCoordMap = new Map<string, glm.ReadonlyVec2>([
       [' ', [0 * k_texCoord[0], 0 * k_texCoord[1]]],
@@ -427,7 +426,7 @@ export class TextRenderer implements ITextRenderer {
       boundShader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
       boundShader.setTextureUniform('u_texture', this._texture, 0);
 
-      this._geometry.updateBuffer(1, this._buffer, this._currentSize);
+      this._geometry.allocateBuffer(1, this._buffer, this._currentSize);
       this._geometry.setInstancedCount(this._currentSize / 9);
       this._geometry.render();
     });

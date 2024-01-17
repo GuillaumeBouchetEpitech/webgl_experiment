@@ -78,48 +78,39 @@ export class ChunkManager {
   }
 
   pushNew(
-    indexPosition: Readonly<Vec3>,
-    realPosition: Readonly<Vec3>,
-    geometryFloat32buffer: Readonly<Float32Array>,
-    inGeometryBufferSize: number,
-    // dataFloat32buffer: Readonly<Float32Array>,
-    geometryBufferSizeUsed: number
+    inIndexPosition: Readonly<Vec3>,
+    inRealPosition: Readonly<Vec3>,
+    inGeometryDataBuffer: Readonly<Float32Array>,
+    inGeometryDataLength: number,
+    inGeometryUsedLength: number
   ) {
-    const geometry = this._def.acquireGeometry(inGeometryBufferSize);
+    const geometry = this._def.acquireGeometry(inGeometryDataLength);
 
-    // geometry.update(
-    //   realPosition,
-    //   geometryFloat32buffer,
-    //   geometryBufferSizeUsed
-    // );
+    const subBuffer = inGeometryDataBuffer.slice(0, inGeometryUsedLength);
 
     // save
     if (this._unusedChunks.length === 0) {
       this._usedChunks.push({
-        realPosition: [...realPosition],
-        indexPosition: [...indexPosition],
+        realPosition: [...inRealPosition],
+        indexPosition: [...inIndexPosition],
         geometry,
         isVisible: false,
         isDirty: true,
-        geometryFloat32buffer: new Float32Array(
-          geometryFloat32buffer.slice(0, geometryBufferSizeUsed)
-        ),
-        geometryBufferSizeUsed: geometryBufferSizeUsed
+        geometryFloat32buffer: new Float32Array(subBuffer),
+        geometryBufferSizeUsed: inGeometryUsedLength
       });
     } else {
       const reused = this._unusedChunks.pop()!;
-      reused.realPosition = [...realPosition];
-      reused.indexPosition = [...indexPosition];
+      reused.realPosition = [...inRealPosition];
+      reused.indexPosition = [...inIndexPosition];
       reused.isVisible = false;
       reused.isDirty = true;
-      (reused.geometryFloat32buffer = new Float32Array(
-        geometryFloat32buffer.slice(0, geometryBufferSizeUsed)
-      )),
-        (reused.geometryBufferSizeUsed = geometryBufferSizeUsed);
+      reused.geometryFloat32buffer = new Float32Array(subBuffer);
+      reused.geometryBufferSizeUsed = inGeometryUsedLength;
       this._usedChunks.push(reused);
     }
 
-    this._usedSet.add(indexPosition);
+    this._usedSet.add(inIndexPosition);
 
     this._def.onChunkCreated();
   }
@@ -137,14 +128,16 @@ export class ChunkManager {
     }
 
     for (const currChunk of this._usedChunks) {
-      if (!currChunk.isVisible || !currChunk.isDirty) continue;
+      if (!currChunk.isVisible || !currChunk.isDirty) {
+        continue;
+      }
 
       currChunk.geometry.update(
         currChunk.realPosition,
-        this._def.chunkGraphicSize,
+        currChunk.geometryBufferSizeUsed,
         currChunk.geometryFloat32buffer,
-        currChunk.geometryBufferSizeUsed
       );
+
       currChunk.isDirty = false;
       break;
     }

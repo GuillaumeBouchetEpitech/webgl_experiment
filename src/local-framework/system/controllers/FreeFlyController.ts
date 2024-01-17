@@ -1,8 +1,11 @@
+
 import {
   GlobalKeyboardManager,
   GlobalMouseManager,
   GlobalTouchManager
 } from '../browser';
+
+import { degreeToRad } from '../math/angles';
 
 import * as glm from 'gl-matrix';
 
@@ -83,14 +86,12 @@ export class FreeFlyController {
     // mouse
     //
 
-    const toRadians = Math.PI / 180;
-
     {
       const deltaX = GlobalMouseManager.deltaX() * this._mouseSensibility;
       const deltaY = GlobalMouseManager.deltaY() * this._mouseSensibility;
 
-      lookDeltaX -= deltaX * toRadians * deltaMsTime;
-      lookDeltaY -= deltaY * toRadians * deltaMsTime;
+      lookDeltaX -= degreeToRad(deltaX) * deltaMsTime;
+      lookDeltaY -= degreeToRad(deltaY) * deltaMsTime;
     }
 
     //
@@ -119,8 +120,8 @@ export class FreeFlyController {
       const deltaX = firstTouch.deltaX * this._touchSensibility;
       const deltaY = firstTouch.deltaY * this._touchSensibility;
 
-      lookDeltaX -= deltaX * toRadians * deltaMsTime;
-      lookDeltaY -= deltaY * toRadians * deltaMsTime;
+      lookDeltaX -= degreeToRad(deltaX) * deltaMsTime;
+      lookDeltaY -= degreeToRad(deltaY) * deltaMsTime;
     } else {
       this._touchMoveForward = false;
     }

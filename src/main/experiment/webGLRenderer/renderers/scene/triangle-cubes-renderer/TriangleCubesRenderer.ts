@@ -192,7 +192,7 @@ export class TriangleCubesRenderer implements ITriangleCubesRenderer {
       this._shader,
       geoBuilder.getDef()
     );
-    this._geometry.updateBuffer(0, vertices, vertices.length);
+    this._geometry.allocateBuffer(0, vertices, vertices.length);
     this._geometry.setPrimitiveCount(vertices.length / 3);
     this._geometry.setFloatBufferSize(1, k_bufferSize);
   }

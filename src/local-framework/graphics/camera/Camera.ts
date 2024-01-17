@@ -1,6 +1,6 @@
 import * as glm from 'gl-matrix';
 
-const _degreeToRad = (angle: number) => (angle * Math.PI) / 180;
+import { degreeToRad } from '../../system/math/angles';
 
 enum ProjectionType {
   perspective = 0,
@@ -148,7 +148,7 @@ export class Camera implements ICamera {
       const { fovy, aspectRatio, near, far } = this._perspectiveData!;
       glm.mat4.perspective(
         this._projectionMatrix,
-        _degreeToRad(fovy),
+        degreeToRad(fovy),
         aspectRatio!,
         near,
         far

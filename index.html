@@ -19,6 +19,30 @@
                 font-family: arial;
             }
 
+            #main-canvas {
+                border: none;
+                position:relative;
+                left:0px;
+                top:0px;
+                width:800px;
+                height:600px;
+            }
+
+            #error-text {
+                position: relative;
+                left: 10px;
+                top: 10px;
+                margin: 0px auto; /* horizontally centered */
+                padding: 0px none;
+                border: 0px none;
+                font-size: 20px;
+                color: white;
+                font-family: 'Lucida Console', Monaco, monospace;
+                text-align: center;
+                outline: none;
+                display: none;
+            }
+
             #main_table {
                 margin: auto;
             }
@@ -70,13 +94,8 @@
             <tr>
 
                 <td colspan="5">
-                    <canvas
-                        id="main-canvas"
-                        style="border: none; position:relative; left:0px; top:0px; width:800px; height:600px"
-                        width="800"
-                        height="600"
-                        >
-                    </canvas>
+                    <canvas id="main-canvas" width="800" height="600"></canvas>
+                    <p id="error-text">Loading</p>
                 </td>
 
             </tr>

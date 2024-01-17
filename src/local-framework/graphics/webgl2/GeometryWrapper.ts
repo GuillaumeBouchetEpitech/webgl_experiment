@@ -45,7 +45,7 @@ export interface VboDefinition {
   attrs: VboAttr[];
   stride?: number;
   instanced: boolean;
-  dynamic?: boolean;
+  mode?: 'static' | 'dynamic' | 'streaming';
 }
 
 export interface GeometryDefinition {
@@ -53,10 +53,39 @@ export interface GeometryDefinition {
   primitiveType: PrimitiveType;
 }
 
+const _ensureFloatBuffer = (
+  vertices: ReadonlyArray<number> | Readonly<Float32Array>
+): Readonly<Float32Array> => {
+  if (vertices instanceof Float32Array) {
+    return vertices
+  }
+  return new Float32Array(vertices);
+};
+
+interface IVboData {
+  object: WebGLBuffer;
+  maxSize: number;
+  mode: 'static' | 'dynamic' | 'streaming';
+};
+
+
+const _getBufferUsage = (inMode: 'static' | 'dynamic' | 'streaming') => {
+  const gl = WebGLContext.getContext();
+
+  if (inMode === 'dynamic') {
+    return gl.DYNAMIC_DRAW;
+  }
+  if (inMode === 'streaming') {
+    return gl.STREAM_DRAW;
+  }
+  return gl.STATIC_DRAW;
+};
+
+
 export class Geometry {
   private _def: GeometryDefinition;
   private _vao: WebGLVertexArrayObjectOES;
-  private _vbos: { object: WebGLBuffer; maxSize: number; dynamic: boolean }[];
+  private _vbos: IVboData[];
   private _primitiveType: number;
   private _primitiveStart: number = 0;
   private _primitiveCount: number = 0;
@@ -118,7 +147,7 @@ export class Geometry {
       this._vbos.push({
         object: newVbo,
         maxSize: 0,
-        dynamic: vboDef.dynamic || false
+        mode: vboDef.mode || 'static'
       });
 
       gl.bindBuffer(gl.ARRAY_BUFFER, newVbo);
@@ -215,22 +244,24 @@ export class Geometry {
   dispose() {
     const gl = WebGLContext.getContext();
 
-    for (const vbo of this._vbos) gl.deleteBuffer(vbo.object);
+    for (const vbo of this._vbos) {
+      gl.deleteBuffer(vbo.object);
+    }
     this._vbos.length = 0;
 
     gl.deleteVertexArray(this._vao);
   }
 
-  setBufferSize(index: number, inSize: number) {
-    if (index < 0 || index >= this._vbos.length) {
-      throw new Error('no buffer available to that index');
+  setBufferSize(inIndex: number, inSize: number) {
+    if (inIndex < 0 || inIndex >= this._vbos.length) {
+      throw new Error(`no vbo available to that index (input: ${inIndex})`);
     }
 
     if (inSize <= 0) {
-      return;
+      throw new Error(`vbo must be > 0 (input: ${inSize})`);
     }
 
-    const currVbo = this._vbos[index];
+    const currVbo = this._vbos[inIndex];
 
     if (inSize < currVbo.maxSize) {
       return;
@@ -240,10 +271,8 @@ export class Geometry {
 
     const gl = WebGLContext.getContext();
 
-    const usage = currVbo.dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW;
-
     gl.bindBuffer(gl.ARRAY_BUFFER, currVbo.object);
-    gl.bufferData(gl.ARRAY_BUFFER, inSize, usage);
+    gl.bufferData(gl.ARRAY_BUFFER, inSize, _getBufferUsage(currVbo.mode));
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
   }
 
@@ -251,36 +280,70 @@ export class Geometry {
     this.setBufferSize(index, inSize * 4);
   }
 
-  updateBuffer(
-    index: number,
-    vertices: ReadonlyArray<number> | Readonly<Float32Array>,
+  allocateBuffer(
+    inIndex: number,
+    inVertices: ReadonlyArray<number> | Readonly<Float32Array>,
     inSize: number
   ) {
-    if (index < 0 || index >= this._vbos.length) {
-      throw new Error('no buffer available to that index');
+    if (inIndex < 0 || inIndex >= this._vbos.length) {
+      throw new Error(`no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`);
     }
 
     if (inSize <= 0) {
-      return;
+      throw new Error(`size must be > 0 (input: ${inSize})`);
     }
+
+    const currVbo = this._vbos[inIndex];
+
+    if (inSize <= 0) {
+      throw new Error(`vbo must be > 0 (input: ${inSize})`);
+    }
+
+    currVbo.maxSize = inSize;
+
+    const buffer = _ensureFloatBuffer(inVertices);
 
     const gl = WebGLContext.getContext();
 
-    const buffer =
-      vertices instanceof Float32Array ? vertices : new Float32Array(vertices);
-
-    const currVbo = this._vbos[index];
-
     gl.bindBuffer(gl.ARRAY_BUFFER, currVbo.object);
+    gl.bufferData(gl.ARRAY_BUFFER, buffer, _getBufferUsage(currVbo.mode), 0, inSize);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  }
 
-    if (inSize > currVbo.maxSize) {
-      currVbo.maxSize = inSize;
-      const usage = currVbo.dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW;
-      gl.bufferData(gl.ARRAY_BUFFER, buffer, usage, 0, inSize);
-    } else {
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, buffer, 0, inSize);
+  updateBuffer(
+    inIndex: number,
+    inVertices: ReadonlyArray<number> | Readonly<Float32Array>,
+    inSize: number,
+    inStartOffset?: number
+  ) {
+    if (inIndex < 0 || inIndex >= this._vbos.length) {
+      throw new Error(`no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`);
     }
 
+    if (inSize <= 0) {
+      throw new Error(`size must be > 0 (input: ${inSize})`);
+    }
+
+    const currVbo = this._vbos[inIndex];
+
+    if (inStartOffset !== undefined) {
+      if (inStartOffset < 0) {
+        throw new Error(`offset must be >= 0 (input: ${inStartOffset})`);
+      }
+      const endIndex = inStartOffset + inSize;
+      if (endIndex > currVbo.maxSize) {
+        throw new Error(`offset + size > to vbo max size (input: ${endIndex}, max size: ${currVbo.maxSize})`);
+      }
+    } else if (inSize > currVbo.maxSize) {
+      throw new Error(`size must be < to vbo max size (input: ${inSize}, max size: ${currVbo.maxSize})`);
+    }
+
+    const buffer = _ensureFloatBuffer(inVertices);
+
+    const gl = WebGLContext.getContext();
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, currVbo.object);
+    gl.bufferSubData(gl.ARRAY_BUFFER, inStartOffset ?? 0, buffer, 0, inSize);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
   }
 
@@ -364,7 +427,11 @@ export class GeometryBuilder {
     return this;
   }
   setVboAsDynamic(): this {
-    this._getLastVbo().dynamic = true;
+    this._getLastVbo().mode = 'dynamic';
+    return this;
+  }
+  setVboAsStreaming(): this {
+    this._getLastVbo().mode = 'streaming';
     return this;
   }
   setStride(inStride: number): this {

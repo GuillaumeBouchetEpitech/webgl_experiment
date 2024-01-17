@@ -128,46 +128,26 @@ export class WebGLExperiment {
     this._renderer.setOnContextLost(() => {
       console.log('on_context_lost');
 
-      this._errorGraphicContext = true;
-      this.stop();
+      throw new Error('WebGL2 context was lost');
     });
 
-    this._renderer.setOnContextRestored(() => {
-      console.log('on_context_restored');
-
-      this._errorGraphicContext = false;
-      this.start();
-    });
+    // this._renderer.setOnContextRestored(() => {
+    //   console.log('on_context_restored');
+    // });
   }
 
   async init() {
     await this._renderer.init();
   }
 
-  resize(inWidth: number, inHeight: number, inIsFullScreen: boolean) {
-    let currentWidth = inWidth;
-    let currentHeight = inHeight;
-
-    if (inIsFullScreen) {
-      this._canvasElement.style.position = 'absolute';
-      currentWidth = window.innerWidth;
-      currentHeight = window.innerHeight;
-    } else {
-      this._canvasElement.style.position = 'relative';
-    }
-
-    this._canvasElement.style.left = '0px';
-    this._canvasElement.style.top = '0px';
-    this._canvasElement.style.width = `${currentWidth}px`;
-    this._canvasElement.style.height = `${currentHeight}px`;
-    this._canvasElement.width = currentWidth;
-    this._canvasElement.height = currentHeight;
-
-    this._renderer.resize(currentWidth, currentHeight);
+  resize(inWidth: number, inHeight: number) {
+    this._renderer.resize(inWidth, inHeight);
   }
 
   start() {
-    if (this.isRunning()) return;
+    if (this.isRunning()) {
+      return;
+    }
 
     this._running = true;
 
@@ -191,7 +171,9 @@ export class WebGLExperiment {
 
   private _tick() {
     const tick = () => {
-      if (!this._running || this._errorGraphicContext) return;
+      if (!this._running || this._errorGraphicContext) {
+        return;
+      }
 
       // plan the next frame
       window.requestAnimationFrame(tick);
@@ -204,14 +186,16 @@ export class WebGLExperiment {
 
   private _mainLoop() {
     const currentTime = Date.now();
-    const elapsedTime = Math.min(currentTime - this._currFrameTime, 30);
+    const elapsedTimeMsec = system.math.clamp(currentTime - this._currFrameTime, 0, 1000);
     this._currFrameTime = currentTime;
-    this._frameProfiler.pushDelta(elapsedTime);
+    this._frameProfiler.pushDelta(elapsedTimeMsec);
+
+    const deltaTimeSec = elapsedTimeMsec / 1000;
 
     //
     //
 
-    this._freeFlyController.update(elapsedTime / 1000);
+    this._freeFlyController.update(deltaTimeSec);
 
     this._renderer.lookAt(
       this._freeFlyController.getPosition(),
@@ -234,7 +218,9 @@ export class WebGLExperiment {
     this._renderer.wireFrameCubesRenderer.clear();
 
     this._chunkGenerator.getChunks().forEach((chunk) => {
-      if (!chunk.isVisible) return;
+      if (!chunk.isVisible) {
+        return;
+      }
 
       ++visibleChunks;
 
@@ -325,6 +311,9 @@ export class WebGLExperiment {
     this._renderer.textRenderer.flush(
       this._renderer.hudCamera.getComposedMatrix()
     );
+
+    this._renderer.stackRenderers.clear();
+    this._renderer.textRenderer.clear();
 
     const k_minScreenSize = 300;
     const k_minViewSize = 150;
