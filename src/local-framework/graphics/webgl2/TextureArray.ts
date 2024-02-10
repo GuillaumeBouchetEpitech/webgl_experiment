@@ -17,7 +17,12 @@ export interface IBoundTextureArray {
     inTotalLayers: number,
     inImage: HTMLImageElement
   ): void;
-  loadFromMemory(inWidth: number, inHeight: number, inTotalLayers: number, inPixels: Uint8Array): void;
+  loadFromMemory(
+    inWidth: number,
+    inHeight: number,
+    inTotalLayers: number,
+    inPixels: Uint8Array
+  ): void;
   getRawObject(): WebGLTexture;
 }
 
@@ -163,5 +168,4 @@ export class TextureArray implements IUnboundTextureArray, IBoundTextureArray {
     // TODO: this is ugly
     return this._texture;
   }
-
 }

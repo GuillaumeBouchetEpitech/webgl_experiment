@@ -2,8 +2,11 @@ import { system } from '@local-framework';
 
 type Resizable = { resize: (width: number, height: number) => void };
 
-export const setupFullScreenFeature = (app: Resizable, button: HTMLButtonElement, canvasElement: HTMLCanvasElement) => {
-
+export const setupFullScreenFeature = (
+  app: Resizable,
+  button: HTMLButtonElement,
+  canvasElement: HTMLCanvasElement
+) => {
   if (!system.browser.GlobalFullScreenManager.isCompatible(canvasElement)) {
     return;
   }
@@ -13,7 +16,6 @@ export const setupFullScreenFeature = (app: Resizable, button: HTMLButtonElement
   });
 
   system.browser.GlobalFullScreenManager.addOnFullScreenChange(() => {
-
     let currentWidth = null;
     let currentHeight = null;
 

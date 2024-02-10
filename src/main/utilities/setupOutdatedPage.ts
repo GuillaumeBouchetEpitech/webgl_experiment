@@ -1,7 +1,9 @@
 import { system } from '@local-framework';
 
-export const setupOutdatedPage = (maxDuration: number, onTimeout: () => void) => {
-
+export const setupOutdatedPage = (
+  maxDuration: number,
+  onTimeout: () => void
+) => {
   if (!system.browser.GlobalVisibilityManager.isSupported()) {
     return;
   }
@@ -17,7 +19,6 @@ export const setupOutdatedPage = (maxDuration: number, onTimeout: () => void) =>
     } else {
       timeoutHandle = window.setTimeout(onTimeout, maxDuration);
     }
-
   });
   system.browser.GlobalVisibilityManager.activate();
 };

@@ -104,7 +104,7 @@ export class ShaderProgram {
   // }
 
   bind(inCallback: (bound: IBoundShader) => void) {
-        if (ShaderProgram._isBound !== null) {
+    if (ShaderProgram._isBound !== null) {
       throw new Error(
         `Double shader binding (bound: ${ShaderProgram._isBound._name}, binding: ${this._name})`
       );
@@ -121,7 +121,7 @@ export class ShaderProgram {
   }
 
   static unbind() {
-        const gl = WebGLContext.getContext();
+    const gl = WebGLContext.getContext();
 
     gl.useProgram(null);
     ShaderProgram._isBound = null;

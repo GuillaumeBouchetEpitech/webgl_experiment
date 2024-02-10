@@ -14,15 +14,16 @@ const _queryDomElement = <T extends Element>(inName: string): T => {
 };
 
 const onPageLoad = async () => {
-
   //
   // HTML elements check
   //
 
-  const canvasElement = _queryDomElement<HTMLCanvasElement>("#main-canvas")!;
-  const guiToggleStart = _queryDomElement<HTMLButtonElement>("#gui_toggle_start")!;
-  const buttonFullscreen = _queryDomElement<HTMLButtonElement>("#gui_fullscreen")!;
-  const errorText = _queryDomElement<HTMLParagraphElement>("#error-text")!;
+  const canvasElement = _queryDomElement<HTMLCanvasElement>('#main-canvas')!;
+  const guiToggleStart =
+    _queryDomElement<HTMLButtonElement>('#gui_toggle_start')!;
+  const buttonFullscreen =
+    _queryDomElement<HTMLButtonElement>('#gui_fullscreen')!;
+  const errorText = _queryDomElement<HTMLParagraphElement>('#error-text')!;
 
   //
   //
@@ -48,8 +49,8 @@ const onPageLoad = async () => {
       system.browser.GlobalVisibilityManager.deactivate();
 
       // setup the error message
-      errorText.style.width = "800px";
-      errorText.style.height = "600px";
+      errorText.style.width = '800px';
+      errorText.style.height = '600px';
       errorText.innerHTML = err.message;
 
       // swap the canvas with the error message
@@ -60,7 +61,7 @@ const onPageLoad = async () => {
       buttonFullscreen.disabled = true;
       guiToggleStart.disabled = true;
 
-      document.title += " (ERR)";
+      document.title += ' (ERR)';
     }
   };
   window.addEventListener('error', _onPageError);
@@ -108,12 +109,12 @@ const onPageLoad = async () => {
 
   const pageMaxTimeInvisible = 60 * 1000; // 60sec
   utilities.setupOutdatedPage(pageMaxTimeInvisible, () => {
-    throw new Error("<br/><br/><br/>The page was inactive for too long<br/><br/>please reload");
+    throw new Error(
+      '<br/><br/><br/>The page was inactive for too long<br/><br/>please reload'
+    );
   });
 
   utilities.setupFullScreenFeature(mainDemo, buttonFullscreen, canvasElement);
-
-
 };
 
 window.addEventListener('load', onPageLoad);

@@ -7,7 +7,8 @@ import chunksRendererVertex from './shaders/chunks-renderer.glsl.vert';
 // @ts-ignore
 import chunksRendererFragment from './shaders/chunks-renderer.glsl.frag';
 
-const { GeometryWrapper, ShaderProgram, TextureArray, FenceSync } = graphics.webgl2;
+const { GeometryWrapper, ShaderProgram, TextureArray, FenceSync } =
+  graphics.webgl2;
 // const { checkError } = graphics.webgl2;
 
 type IUnboundShader = graphics.webgl2.IUnboundShader;
@@ -19,7 +20,7 @@ export interface ILiveGeometry {
   update(
     inOrigin: glm.ReadonlyVec3,
     inBufferLength: number,
-    inBuffer: Float32Array,
+    inBuffer: Float32Array
   ): void;
   getOrigin(): glm.ReadonlyVec3;
   getSize(): number;
@@ -47,7 +48,7 @@ class LiveGeometry implements ILiveGeometry {
   update(
     inOrigin: glm.ReadonlyVec3,
     inBufferLength: number,
-    inBuffer: Float32Array,
+    inBuffer: Float32Array
   ): void {
     glm.vec3.copy(this._origin, inOrigin);
     this._size = inBufferLength;
@@ -64,7 +65,6 @@ class LiveGeometry implements ILiveGeometry {
   }
 
   render() {
-
     // are we waiting for the geometry buffers to get uploaded?
     if (this._fence.isStarted()) {
       // yes we're waiting
@@ -123,7 +123,7 @@ export class ChunksRenderer implements IChunksRenderer {
         'u_eyePosition',
         'u_sceneScale',
         'u_tileRepeat',
-        "u_textureArray"
+        'u_textureArray'
       ]
     });
 

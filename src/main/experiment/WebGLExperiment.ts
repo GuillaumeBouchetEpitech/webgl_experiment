@@ -186,7 +186,11 @@ export class WebGLExperiment {
 
   private _mainLoop() {
     const currentTime = Date.now();
-    const elapsedTimeMsec = system.math.clamp(currentTime - this._currFrameTime, 0, 1000);
+    const elapsedTimeMsec = system.math.clamp(
+      currentTime - this._currFrameTime,
+      0,
+      1000
+    );
     this._currFrameTime = currentTime;
     this._frameProfiler.pushDelta(elapsedTimeMsec);
 
@@ -331,6 +335,5 @@ export class WebGLExperiment {
     );
 
     this._renderer.flush();
-
   }
 }

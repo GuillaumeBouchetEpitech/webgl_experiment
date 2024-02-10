@@ -135,7 +135,7 @@ export class ChunkManager {
       currChunk.geometry.update(
         currChunk.realPosition,
         currChunk.geometryBufferSizeUsed,
-        currChunk.geometryFloat32buffer,
+        currChunk.geometryFloat32buffer
       );
 
       currChunk.isDirty = false;

@@ -1,3 +1,2 @@
-
-export * from "./setupFullScreenFeature";
-export * from "./setupOutdatedPage";
+export * from './setupFullScreenFeature';
+export * from './setupOutdatedPage';

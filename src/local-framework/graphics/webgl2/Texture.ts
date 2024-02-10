@@ -152,5 +152,4 @@ export class Texture implements IUnboundTexture, IBoundTexture {
     // TODO: this is ugly
     return this._texture;
   }
-
 }

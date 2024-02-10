@@ -57,7 +57,7 @@ const _ensureFloatBuffer = (
   vertices: ReadonlyArray<number> | Readonly<Float32Array>
 ): Readonly<Float32Array> => {
   if (vertices instanceof Float32Array) {
-    return vertices
+    return vertices;
   }
   return new Float32Array(vertices);
 };
@@ -66,8 +66,7 @@ interface IVboData {
   object: WebGLBuffer;
   maxSize: number;
   mode: 'static' | 'dynamic' | 'streaming';
-};
-
+}
 
 const _getBufferUsage = (inMode: 'static' | 'dynamic' | 'streaming') => {
   const gl = WebGLContext.getContext();
@@ -80,7 +79,6 @@ const _getBufferUsage = (inMode: 'static' | 'dynamic' | 'streaming') => {
   }
   return gl.STATIC_DRAW;
 };
-
 
 export class Geometry {
   private _def: GeometryDefinition;
@@ -242,7 +240,7 @@ export class Geometry {
   }
 
   dispose() {
-        const gl = WebGLContext.getContext();
+    const gl = WebGLContext.getContext();
 
     for (const vbo of this._vbos) {
       gl.deleteBuffer(vbo.object);
@@ -253,7 +251,7 @@ export class Geometry {
   }
 
   setBufferSize(inIndex: number, inSize: number) {
-        if (inIndex < 0 || inIndex >= this._vbos.length) {
+    if (inIndex < 0 || inIndex >= this._vbos.length) {
       throw new Error(`no vbo available to that index (input: ${inIndex})`);
     }
 
@@ -285,8 +283,10 @@ export class Geometry {
     inVertices: ReadonlyArray<number> | Readonly<Float32Array>,
     inSize: number
   ) {
-        if (inIndex < 0 || inIndex >= this._vbos.length) {
-      throw new Error(`no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`);
+    if (inIndex < 0 || inIndex >= this._vbos.length) {
+      throw new Error(
+        `no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`
+      );
     }
 
     if (inSize <= 0) {
@@ -306,7 +306,13 @@ export class Geometry {
     const gl = WebGLContext.getContext();
 
     gl.bindBuffer(gl.ARRAY_BUFFER, currVbo.object);
-    gl.bufferData(gl.ARRAY_BUFFER, buffer, _getBufferUsage(currVbo.mode), 0, inSize);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      buffer,
+      _getBufferUsage(currVbo.mode),
+      0,
+      inSize
+    );
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
   }
 
@@ -316,8 +322,10 @@ export class Geometry {
     inSize: number,
     inStartOffset?: number
   ) {
-        if (inIndex < 0 || inIndex >= this._vbos.length) {
-      throw new Error(`no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`);
+    if (inIndex < 0 || inIndex >= this._vbos.length) {
+      throw new Error(
+        `no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`
+      );
     }
 
     if (inSize <= 0) {
@@ -332,10 +340,14 @@ export class Geometry {
       }
       const endIndex = inStartOffset + inSize;
       if (endIndex > currVbo.maxSize) {
-        throw new Error(`offset + size > to vbo max size (input: ${endIndex}, max size: ${currVbo.maxSize})`);
+        throw new Error(
+          `offset + size > to vbo max size (input: ${endIndex}, max size: ${currVbo.maxSize})`
+        );
       }
     } else if (inSize > currVbo.maxSize) {
-      throw new Error(`size must be < to vbo max size (input: ${inSize}, max size: ${currVbo.maxSize})`);
+      throw new Error(
+        `size must be < to vbo max size (input: ${inSize}, max size: ${currVbo.maxSize})`
+      );
     }
 
     const buffer = _ensureFloatBuffer(inVertices);
@@ -348,7 +360,7 @@ export class Geometry {
   }
 
   render() {
-        if (this._primitiveCount == 0) {
+    if (this._primitiveCount == 0) {
       return;
     }
 

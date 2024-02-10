@@ -1,11 +1,9 @@
 import { WebGLContext } from './WebGLContext';
 
 export class FenceSync {
-
   private _sync: WebGLSync | undefined;
 
-  constructor() {
-  }
+  constructor() {}
 
   dispose(): void {
     if (!this._sync) {
@@ -29,7 +27,7 @@ export class FenceSync {
     const gl = WebGLContext.getContext();
     const tmpSync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
     if (tmpSync === null) {
-      throw new Error("could not create a webgl fence");
+      throw new Error('could not create a webgl fence');
     }
     this._sync = tmpSync;
     gl.flush();
@@ -38,17 +36,17 @@ export class FenceSync {
 
   isSignaled(): boolean {
     if (!this._sync) {
-      throw new Error("fence not started");
+      throw new Error('fence not started');
     }
 
     const gl = WebGLContext.getContext();
     const signaled = gl.getSyncParameter(this._sync, gl.SYNC_STATUS);
-    return (signaled === gl.SIGNALED);
+    return signaled === gl.SIGNALED;
   }
 
   wait(timeoutNanoSec: number): 'done' | 'timed-out' {
     if (!this._sync) {
-      throw new Error("fence not started");
+      throw new Error('fence not started');
     }
     const gl = WebGLContext.getContext();
 
@@ -72,6 +70,4 @@ export class FenceSync {
         return 'done';
     }
   }
-
-};
-
+}

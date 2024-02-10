@@ -1,3 +1,2 @@
-
-export * from "./angles"
-export * from "./clamp"
+export * from './angles';
+export * from './clamp';
