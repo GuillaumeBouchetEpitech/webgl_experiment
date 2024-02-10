@@ -66,7 +66,9 @@ export class ShaderProgram {
     //
 
     const program = gl.createProgram();
-    if (!program) throw new Error('could not create a shader program');
+    if (!program) {
+      throw new Error('could not create a shader program');
+    }
 
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
@@ -102,7 +104,7 @@ export class ShaderProgram {
   // }
 
   bind(inCallback: (bound: IBoundShader) => void) {
-    if (ShaderProgram._isBound !== null) {
+        if (ShaderProgram._isBound !== null) {
       throw new Error(
         `Double shader binding (bound: ${ShaderProgram._isBound._name}, binding: ${this._name})`
       );
@@ -119,7 +121,7 @@ export class ShaderProgram {
   }
 
   static unbind() {
-    const gl = WebGLContext.getContext();
+        const gl = WebGLContext.getContext();
 
     gl.useProgram(null);
     ShaderProgram._isBound = null;
@@ -135,15 +137,18 @@ export class ShaderProgram {
 
   getAttribute(name: string) {
     const attribute = this._attributes.get(name);
-    if (attribute === undefined)
+    if (attribute === undefined) {
       throw new Error(`attribute not found: ${name}`);
+    }
 
     return attribute;
   }
 
   getUniform(name: string) {
     const uniform = this._uniforms.get(name);
-    if (uniform === undefined) throw new Error(`uniform not found: ${name}`);
+    if (uniform === undefined) {
+      throw new Error(`uniform not found: ${name}`);
+    }
 
     return uniform;
   }
@@ -211,8 +216,9 @@ export class ShaderProgram {
     for (let ii = 0; ii < attributes.length; ++ii) {
       const value = gl.getAttribLocation(this._program, attributes[ii]);
 
-      if (value < 0)
+      if (value < 0) {
         throw new Error(`attribute not found => ${attributes[ii]}`);
+      }
 
       this._attributes.set(attributes[ii], value);
     }
@@ -224,8 +230,9 @@ export class ShaderProgram {
     for (let ii = 0; ii < uniforms.length; ++ii) {
       const value = gl.getUniformLocation(this._program, uniforms[ii]);
 
-      if (value === null)
+      if (value === null) {
         throw new Error(`uniform not found => ${uniforms[ii]}`);
+      }
 
       this._uniforms.set(uniforms[ii], value);
     }
@@ -237,7 +244,9 @@ export class ShaderProgram {
     const gl = WebGLContext.getContext();
 
     const shader = gl.createShader(type);
-    if (!shader) throw new Error('could not create a shader');
+    if (!shader) {
+      throw new Error('could not create a shader');
+    }
 
     gl.shaderSource(shader, src);
     gl.compileShader(shader);

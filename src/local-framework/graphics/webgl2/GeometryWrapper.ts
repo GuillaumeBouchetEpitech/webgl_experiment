@@ -1,5 +1,5 @@
 import { WebGLContext } from './WebGLContext';
-import { IUnboundShader, ShaderProgram } from './ShaderProgram';
+import { IUnboundShader } from './ShaderProgram';
 
 export const BytesPerPixel = 4; // float (float32 = 4 bytes)
 
@@ -242,7 +242,7 @@ export class Geometry {
   }
 
   dispose() {
-    const gl = WebGLContext.getContext();
+        const gl = WebGLContext.getContext();
 
     for (const vbo of this._vbos) {
       gl.deleteBuffer(vbo.object);
@@ -253,7 +253,7 @@ export class Geometry {
   }
 
   setBufferSize(inIndex: number, inSize: number) {
-    if (inIndex < 0 || inIndex >= this._vbos.length) {
+        if (inIndex < 0 || inIndex >= this._vbos.length) {
       throw new Error(`no vbo available to that index (input: ${inIndex})`);
     }
 
@@ -285,7 +285,7 @@ export class Geometry {
     inVertices: ReadonlyArray<number> | Readonly<Float32Array>,
     inSize: number
   ) {
-    if (inIndex < 0 || inIndex >= this._vbos.length) {
+        if (inIndex < 0 || inIndex >= this._vbos.length) {
       throw new Error(`no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`);
     }
 
@@ -316,7 +316,7 @@ export class Geometry {
     inSize: number,
     inStartOffset?: number
   ) {
-    if (inIndex < 0 || inIndex >= this._vbos.length) {
+        if (inIndex < 0 || inIndex >= this._vbos.length) {
       throw new Error(`no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`);
     }
 
@@ -348,7 +348,7 @@ export class Geometry {
   }
 
   render() {
-    if (this._primitiveCount == 0) {
+        if (this._primitiveCount == 0) {
       return;
     }
 

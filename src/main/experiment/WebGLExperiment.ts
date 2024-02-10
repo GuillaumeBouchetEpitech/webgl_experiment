@@ -329,5 +329,8 @@ export class WebGLExperiment {
       this._renderer.wireFrameCubesRenderer,
       this._renderer.stackRenderers
     );
+
+    this._renderer.flush();
+
   }
 }

@@ -233,6 +233,12 @@ export class WebGLRenderer {
     ShaderProgram.unbind();
   }
 
+  flush() {
+    const gl = graphics.webgl2.WebGLContext.getContext();
+    gl.flush();
+    // gl.finish();
+  }
+
   get mainCamera(): Readonly<graphics.camera.ICamera> {
     return this._mainCamera;
   }

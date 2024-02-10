@@ -7,7 +7,8 @@ import chunksRendererVertex from './shaders/chunks-renderer.glsl.vert';
 // @ts-ignore
 import chunksRendererFragment from './shaders/chunks-renderer.glsl.frag';
 
-const { GeometryWrapper, ShaderProgram, TextureArray } = graphics.webgl2;
+const { GeometryWrapper, ShaderProgram, TextureArray, FenceSync } = graphics.webgl2;
+// const { checkError } = graphics.webgl2;
 
 type IUnboundShader = graphics.webgl2.IUnboundShader;
 type IUnboundTextureArray = graphics.webgl2.IUnboundTextureArray;
@@ -28,16 +29,19 @@ class LiveGeometry implements ILiveGeometry {
   private _origin: glm.vec3 = glm.vec3.fromValues(0, 0, 0);
   private _size: number = 0;
   private _geometry: Geometry;
-  private _isVisible: boolean = false;
+  private _fence = new FenceSync();
 
   constructor(
     inShader: IUnboundShader,
-    inGeometryDefinition: GeometryDefinition
+    inGeometryDefinition: GeometryDefinition,
+    preAllocatedSize: number
   ) {
     this._geometry = new GeometryWrapper.Geometry(
       inShader,
       inGeometryDefinition
     );
+    this._geometry.setFloatBufferSize(0, preAllocatedSize);
+    this._geometry.setFloatBufferSize(1, 3 * 4); // vec3 => 3 float => 3 * 4 bytes
   }
 
   update(
@@ -48,16 +52,43 @@ class LiveGeometry implements ILiveGeometry {
     glm.vec3.copy(this._origin, inOrigin);
     this._size = inBufferLength;
 
-    this._geometry.allocateBuffer(0, inBuffer, inBufferLength);
+    this._geometry.updateBuffer(0, inBuffer, inBufferLength);
     this._geometry.setPrimitiveCount(inBufferLength / 6);
 
     const newBuffer = new Float32Array([inOrigin[0], inOrigin[1], inOrigin[2]]);
-    this._geometry.allocateBuffer(1, newBuffer, newBuffer.length);
+    this._geometry.updateBuffer(1, newBuffer, newBuffer.length);
     this._geometry.setInstancedCount(1);
+
+    // we want to know when the current command queue wil be completed
+    this._fence.start();
   }
 
   render() {
+
+    // are we waiting for the geometry buffers to get uploaded?
+    if (this._fence.isStarted()) {
+      // yes we're waiting
+
+      // is the geometry buffers ready?
+      if (this._fence.isSignaled()) {
+        // yes it's ready, let's render it from now on
+        this._fence.dispose();
+      } else {
+        // no
+        // -> do not render
+        // ---> it would force us to wait for the buffer to finish uploading
+        // ---> which in turn could trigger a freeze, and lower the overall fps
+        return;
+      }
+    }
+
+    // checkError();
+
     this._geometry.render();
+  }
+
+  reuse(): void {
+    this._fence.dispose();
   }
 
   getOrigin(): glm.ReadonlyVec3 {
@@ -125,7 +156,7 @@ export class ChunksRenderer implements IChunksRenderer {
     });
   }
 
-  acquireGeometry(): ILiveGeometry {
+  acquireGeometry(inSize: number): ILiveGeometry {
     if (this._unusedGeometries.length > 0) {
       const reusedGeom = this._unusedGeometries.pop()!;
       this._inUseGeometries.push(reusedGeom);
@@ -134,17 +165,23 @@ export class ChunksRenderer implements IChunksRenderer {
 
     const newGeom = new LiveGeometry(
       this._shader,
-      this._geometryDefinition
+      this._geometryDefinition,
+      inSize
     );
     this._inUseGeometries.push(newGeom);
     return newGeom;
   }
 
   releaseGeometry(geom: ILiveGeometry): void {
-    const index = this._inUseGeometries.indexOf(geom as LiveGeometry);
-    if (index < 0) return;
+    const geomImpl = geom as LiveGeometry;
+    const index = this._inUseGeometries.indexOf(geomImpl);
+    if (index < 0) {
+      return;
+    }
 
-    this._unusedGeometries.push(geom as LiveGeometry);
+    geomImpl.reuse();
+
+    this._unusedGeometries.push(geomImpl);
     this._inUseGeometries.splice(index, 1);
   }
 
