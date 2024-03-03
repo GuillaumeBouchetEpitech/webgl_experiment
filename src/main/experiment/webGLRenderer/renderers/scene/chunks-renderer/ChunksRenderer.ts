@@ -148,7 +148,7 @@ export class ChunksRenderer implements IChunksRenderer {
 
     this._textureArray.initialize();
     this._textureArray.bind((bound) => {
-      bound.load(512, 512, 4, image);
+      bound.loadFromImage(512, 512, 4, image);
     });
 
     this._shader.bind((boundShader) => {

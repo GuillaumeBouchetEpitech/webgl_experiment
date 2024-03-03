@@ -58,7 +58,9 @@ export class WebGLContext {
   //
 
   static getContext() {
-    if (!WebGLContext._gl) throw new Error('webgl context not initialized');
+    if (!WebGLContext._gl) {
+      throw new Error('webgl context not initialized');
+    }
     return WebGLContext._gl;
   }
 
@@ -71,8 +73,9 @@ export class WebGLContext {
   }
 
   static getExtensionLoseContextStrict() {
-    if (!WebGLContext._extensionLoseContext)
+    if (!WebGLContext._extensionLoseContext) {
       throw new Error('lose context extension not available');
+    }
 
     return WebGLContext._extensionLoseContext;
   }

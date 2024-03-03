@@ -49,9 +49,12 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
   private _texture: WebGLTexture | null = null;
 
   initialize(width: number, height: number): void {
-    if (width < 1) throw new Error(`cube map: width is < 1, input: ${width}`);
-    if (height < 1)
+    if (width < 1) {
+      throw new Error(`cube map: width is < 1, input: ${width}`);
+    }
+    if (height < 1) {
       throw new Error(`cube map: height is < 1, input: ${height}`);
+    }
     const gl = WebGLContext.getContext();
     this._texture = gl.createTexture();
     this._width = width;
@@ -59,8 +62,15 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
     this._minBufferSize = this._width * this._height * 4;
   }
 
+  dispose() {
+    const gl = WebGLContext.getContext();
+    gl.deleteTexture(this._texture);
+  }
+
   rawBind(): void {
-    if (!this._texture) throw new Error('cube map: not initialized');
+    if (!this._texture) {
+      throw new Error('cube map: not initialized');
+    }
     const gl = WebGLContext.getContext();
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, this._texture);
   }
@@ -80,11 +90,14 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
   }
 
   loadFromMemory(inType: CubeMapType, inPixels: Uint8Array): void {
-    if (!this._texture) throw new Error('cube map: not initialized');
-    if (inPixels.length < this._minBufferSize)
+    if (!this._texture) {
+      throw new Error('cube map: not initialized');
+    }
+    if (inPixels.length < this._minBufferSize) {
       throw new Error(
         `cube map: miss-matching pixels buffer size, input: ${inPixels.length}`
       );
+    }
 
     const gl = WebGLContext.getContext();
 
@@ -152,19 +165,25 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
   }
 
   getWidth(): number {
-    if (!this._texture) throw new Error('cube map: not initialized');
+    if (!this._texture) {
+      throw new Error('cube map: not initialized');
+    }
 
     return this._width;
   }
 
   getHeight(): number {
-    if (!this._texture) throw new Error('cube map: not initialized');
+    if (!this._texture) {
+      throw new Error('cube map: not initialized');
+    }
 
     return this._height;
   }
 
   getRawObject() {
-    if (!this._texture) throw new Error('texture not initialized');
+    if (!this._texture) {
+      throw new Error('texture not initialized');
+    }
 
     // TODO: this is ugly
     return this._texture;

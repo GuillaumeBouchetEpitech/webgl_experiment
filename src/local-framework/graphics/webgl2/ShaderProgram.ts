@@ -97,6 +97,11 @@ export class ShaderProgram {
     // ShaderProgram.unbind();
   }
 
+  dispose() {
+    const gl = WebGLContext.getContext();
+    gl.deleteProgram(this._program);
+  }
+
   // rawBind() {
   //   const gl = WebGLContext.getContext();
 
@@ -253,7 +258,9 @@ export class ShaderProgram {
 
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       let error_str = gl.getShaderInfoLog(shader);
-      if (!error_str) error_str = 'failed to compile a shader';
+      if (!error_str) {
+        error_str = 'failed to compile a shader';
+      }
 
       throw new Error(error_str);
     }

@@ -16,7 +16,9 @@ export class DataTexture implements IBoundDataTexture {
 
   // initialize(data: number[] = [], numComponents: number = 1) {
   initialize(data: number[] = []) {
-    if (this._texture) throw new Error('data texture already initialized');
+    if (this._texture) {
+      throw new Error('data texture already initialized');
+    }
 
     const gl = WebGLContext.getContext();
 
@@ -34,9 +36,16 @@ export class DataTexture implements IBoundDataTexture {
     this.update(data);
   }
 
+  dispose() {
+    const gl = WebGLContext.getContext();
+    gl.deleteTexture(this._texture);
+  }
+
   // update(data: number[], numComponents: number = 1) {
   update(data: number[]) {
-    if (!this._texture) throw new Error('data texture not initialized');
+    if (!this._texture) {
+      throw new Error('data texture not initialized');
+    }
 
     const gl = WebGLContext.getContext();
 
@@ -80,7 +89,9 @@ export class DataTexture implements IBoundDataTexture {
   }
 
   rawBind() {
-    if (!this._texture) throw new Error('data texture not initialized');
+    if (!this._texture) {
+      throw new Error('data texture not initialized');
+    }
 
     const gl = WebGLContext.getContext();
 

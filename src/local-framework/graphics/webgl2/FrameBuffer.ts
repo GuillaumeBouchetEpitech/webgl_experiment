@@ -26,8 +26,15 @@ export class FrameBuffer implements IUnboundFrameBuffer, IBoundFrameBuffer {
     const gl = WebGLContext.getContext();
 
     const tmpFbo = gl.createFramebuffer();
-    if (tmpFbo === null) throw new Error('null frame buffer object');
+    if (tmpFbo === null) {
+      throw new Error('null frame buffer object');
+    }
     this._frameBuffer = tmpFbo;
+  }
+
+  dispose() {
+    const gl = WebGLContext.getContext();
+    gl.deleteFramebuffer(this._frameBuffer);
   }
 
   rawBind() {
