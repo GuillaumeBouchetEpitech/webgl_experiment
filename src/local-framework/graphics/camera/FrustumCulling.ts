@@ -20,12 +20,7 @@ export interface IFrustumCulling {
 export class FrustumCulling implements IFrustumCulling {
   private _frustum = new Float32Array(24); // 6 * 4 values
 
-  private _setPlane(
-    side: FrustumSide,
-    left: glm.ReadonlyVec4,
-    right: glm.ReadonlyVec4,
-    coef: number
-  ) {
+  private _setPlane(side: FrustumSide, left: glm.ReadonlyVec4, right: glm.ReadonlyVec4, coef: number) {
     const index = side * 4;
 
     this._frustum[index + 0] = left[0] + right[0] * coef;

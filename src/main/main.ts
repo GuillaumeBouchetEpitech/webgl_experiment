@@ -41,7 +41,7 @@ const onPageLoad = async () => {
 
       // stop the browser helpers
       system.browser.GlobalKeyboardManager.deactivate();
-      system.browser.GlobalMouseManager.deactivate();
+      system.browser.GlobalMouseManager.deactivate(canvasElement);
       system.browser.GlobalTouchManager.deactivate(canvasElement);
       system.browser.GlobalFullScreenManager.removeAllCallbacks();
       system.browser.GlobalPointerLockManager.removeAllCallbacks();

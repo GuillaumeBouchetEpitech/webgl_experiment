@@ -31,8 +31,11 @@ const getAttrTypeSize = (inType: AttributeType) => {
 
 export enum PrimitiveType {
   lines,
+  lineStrip,
+  lineLoop,
   triangles,
-  triangleStrip
+  triangleStrip,
+  triangleFan
 }
 
 export interface VboAttr {
@@ -53,9 +56,7 @@ export interface GeometryDefinition {
   primitiveType: PrimitiveType;
 }
 
-const _ensureFloatBuffer = (
-  vertices: ReadonlyArray<number> | Readonly<Float32Array>
-): Readonly<Float32Array> => {
+const _ensureFloatBuffer = (vertices: ReadonlyArray<number> | Readonly<Float32Array>): Readonly<Float32Array> => {
   if (vertices instanceof Float32Array) {
     return vertices;
   }
@@ -115,11 +116,20 @@ export class Geometry {
       case PrimitiveType.lines:
         this._primitiveType = gl.LINES;
         break;
+      case PrimitiveType.lineStrip:
+        this._primitiveType = gl.LINE_STRIP;
+        break;
+      case PrimitiveType.lineLoop:
+        this._primitiveType = gl.LINE_LOOP;
+        break;
       case PrimitiveType.triangles:
         this._primitiveType = gl.TRIANGLES;
         break;
       case PrimitiveType.triangleStrip:
         this._primitiveType = gl.TRIANGLE_STRIP;
+        break;
+      case PrimitiveType.triangleFan:
+        this._primitiveType = gl.TRIANGLE_FAN;
         break;
       default:
         throw new Error('primitive type not found');
@@ -217,14 +227,7 @@ export class Geometry {
           const rowIndex = (attr.index + ii * rowSize) * BytesPerPixel;
 
           gl.enableVertexAttribArray(attrId);
-          gl.vertexAttribPointer(
-            attrId,
-            rowSize,
-            gl.FLOAT,
-            false,
-            stride,
-            rowIndex
-          );
+          gl.vertexAttribPointer(attrId, rowSize, gl.FLOAT, false, stride, rowIndex);
 
           if (vboDef.instanced === true) {
             gl.vertexAttribDivisor(attrId, 1);
@@ -278,15 +281,9 @@ export class Geometry {
     this.setBufferSize(index, inSize * 4);
   }
 
-  allocateBuffer(
-    inIndex: number,
-    inVertices: ReadonlyArray<number> | Readonly<Float32Array>,
-    inSize: number
-  ) {
+  allocateBuffer(inIndex: number, inVertices: ReadonlyArray<number> | Readonly<Float32Array>, inSize: number) {
     if (inIndex < 0 || inIndex >= this._vbos.length) {
-      throw new Error(
-        `no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`
-      );
+      throw new Error(`no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`);
     }
 
     if (inSize <= 0) {
@@ -306,13 +303,7 @@ export class Geometry {
     const gl = WebGLContext.getContext();
 
     gl.bindBuffer(gl.ARRAY_BUFFER, currVbo.object);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      buffer,
-      _getBufferUsage(currVbo.mode),
-      0,
-      inSize
-    );
+    gl.bufferData(gl.ARRAY_BUFFER, buffer, _getBufferUsage(currVbo.mode), 0, inSize);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
   }
 
@@ -323,9 +314,7 @@ export class Geometry {
     inStartOffset?: number
   ) {
     if (inIndex < 0 || inIndex >= this._vbos.length) {
-      throw new Error(
-        `no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`
-      );
+      throw new Error(`no vbo available to that index (input: ${inIndex}, total vbos: ${this._vbos.length})`);
     }
 
     if (inSize <= 0) {
@@ -340,14 +329,10 @@ export class Geometry {
       }
       const endIndex = inStartOffset + inSize;
       if (endIndex > currVbo.maxSize) {
-        throw new Error(
-          `offset + size > to vbo max size (input: ${endIndex}, max size: ${currVbo.maxSize})`
-        );
+        throw new Error(`offset + size > to vbo max size (input: ${endIndex}, max size: ${currVbo.maxSize})`);
       }
     } else if (inSize > currVbo.maxSize) {
-      throw new Error(
-        `size must be < to vbo max size (input: ${inSize}, max size: ${currVbo.maxSize})`
-      );
+      throw new Error(`size must be < to vbo max size (input: ${inSize}, max size: ${currVbo.maxSize})`);
     }
 
     const buffer = _ensureFloatBuffer(inVertices);
@@ -373,18 +358,9 @@ export class Geometry {
     gl.bindVertexArray(this._vao);
 
     if (this._isInstanced === true) {
-      gl.drawArraysInstanced(
-        this._primitiveType,
-        this._primitiveStart,
-        this._primitiveCount,
-        this._instanceCount
-      );
+      gl.drawArraysInstanced(this._primitiveType, this._primitiveStart, this._primitiveCount, this._instanceCount);
     } else {
-      gl.drawArrays(
-        this._primitiveType,
-        this._primitiveStart,
-        this._primitiveCount
-      );
+      gl.drawArrays(this._primitiveType, this._primitiveStart, this._primitiveCount);
     }
 
     gl.bindVertexArray(null);
@@ -421,7 +397,9 @@ export class GeometryBuilder {
     return this._def;
   }
 
-  setPrimitiveType(inPrimitive: 'lines' | 'triangles' | 'triangleStrip'): this {
+  setPrimitiveType(
+    inPrimitive: 'lines' | 'lineStrip' | 'lineLoop' | 'triangles' | 'triangleStrip' | 'triangleFan'
+  ): this {
     this._def.primitiveType = PrimitiveType[inPrimitive];
     return this;
   }
@@ -450,13 +428,9 @@ export class GeometryBuilder {
     this._getLastVbo().stride = inStride;
     return this;
   }
-  addVboAttribute(
-    inName: string,
-    inType: 'float' | 'vec2f' | 'vec3f' | 'vec4f' | 'mat3f' | 'mat4f'
-  ): this {
+  addVboAttribute(inName: string, inType: 'float' | 'vec2f' | 'vec3f' | 'vec4f' | 'mat3f' | 'mat4f'): this {
     const currVbo = this._getLastVbo();
-    const lastAttr =
-      currVbo.attrs.length > 0 ? currVbo.attrs[currVbo.attrs.length - 1] : null;
+    const lastAttr = currVbo.attrs.length > 0 ? currVbo.attrs[currVbo.attrs.length - 1] : null;
     currVbo.attrs.push({
       name: inName,
       type: AttributeType[inType],

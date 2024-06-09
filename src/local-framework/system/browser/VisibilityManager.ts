@@ -9,9 +9,7 @@ class VisibilityManager {
   constructor() {
     const handleVisibilityChange = () => {
       const isVisible = this.isVisible();
-      this._onVisibilityChangeCallbacks.forEach((callback) =>
-        callback(isVisible)
-      );
+      this._onVisibilityChangeCallbacks.forEach((callback) => callback(isVisible));
     };
 
     this._handleVisibilityChange = handleVisibilityChange.bind(this);
@@ -25,11 +23,7 @@ class VisibilityManager {
       return;
     }
 
-    document.addEventListener(
-      'visibilitychange',
-      this._handleVisibilityChange,
-      false
-    );
+    document.addEventListener('visibilitychange', this._handleVisibilityChange, false);
 
     this._activated = true;
   }
@@ -39,11 +33,7 @@ class VisibilityManager {
       return;
     }
 
-    document.removeEventListener(
-      'visibilitychange',
-      this._handleVisibilityChange,
-      false
-    );
+    document.removeEventListener('visibilitychange', this._handleVisibilityChange, false);
 
     this._activated = false;
   }

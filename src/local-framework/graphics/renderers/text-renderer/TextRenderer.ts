@@ -20,10 +20,7 @@ type HorizontalTextAlign = 'left' | 'centered' | 'right';
 type VerticalTextAlign = 'top' | 'centered' | 'bottom';
 
 export interface ITextRenderer {
-  setTextAlign(
-    inHorizontalTextAlign: HorizontalTextAlign,
-    inVerticalTextAlign: VerticalTextAlign
-  ): this;
+  setTextAlign(inHorizontalTextAlign: HorizontalTextAlign, inVerticalTextAlign: VerticalTextAlign): this;
   setTextScale(inScale: number): this;
   setTextColor(inRed: number, inGreen: number, inBlue: number): this;
 
@@ -80,10 +77,7 @@ export class TextRenderer implements ITextRenderer {
       .addVboAttribute('a_offset_scale', 'float')
       .setStride(9 * 4);
 
-    this._geometry = new webgl2.GeometryWrapper.Geometry(
-      this._shader,
-      geoBuilder.getDef()
-    );
+    this._geometry = new webgl2.GeometryWrapper.Geometry(this._shader, geoBuilder.getDef());
 
     type Vertex = { position: glm.ReadonlyVec2; texCoord: glm.ReadonlyVec2 };
 
@@ -111,12 +105,7 @@ export class TextRenderer implements ITextRenderer {
     const letterVertices: number[] = [];
     for (const index of indices) {
       const vertex = vertices[index];
-      letterVertices.push(
-        vertex.position[0],
-        vertex.position[1],
-        vertex.texCoord[0],
-        vertex.texCoord[1]
-      );
+      letterVertices.push(vertex.position[0], vertex.position[1], vertex.texCoord[0], vertex.texCoord[1]);
     }
 
     this._geometry.allocateBuffer(0, letterVertices, letterVertices.length);
@@ -231,8 +220,7 @@ export class TextRenderer implements ITextRenderer {
     {
       let index = 0;
       for (let ii = 0; ii < asciiTextureHex.length; ii += 2) {
-        let currSize =
-          parseInt(`${asciiTextureHex.substring(ii, ii + 2)}000000`, 16) >> 24;
+        let currSize = parseInt(`${asciiTextureHex.substring(ii, ii + 2)}000000`, 16) >> 24;
 
         let currVal = 0;
         if (currSize < 0) {
@@ -256,10 +244,7 @@ export class TextRenderer implements ITextRenderer {
     });
   }
 
-  setTextAlign(
-    inHorizontalTextAlign: HorizontalTextAlign,
-    inVerticalTextAlign: VerticalTextAlign
-  ): this {
+  setTextAlign(inHorizontalTextAlign: HorizontalTextAlign, inVerticalTextAlign: VerticalTextAlign): this {
     this._horizontalTextAlign = inHorizontalTextAlign;
     this._verticalTextAlign = inVerticalTextAlign;
     return this;
@@ -325,10 +310,7 @@ export class TextRenderer implements ITextRenderer {
         currPos[0] = inPosition[0] - allLineWidth[lineIndex] * hScale + hScale;
         break;
       case 'right':
-        currPos[0] =
-          inPosition[0] -
-          allLineWidth[lineIndex] * this._textScale +
-          this._textScale;
+        currPos[0] = inPosition[0] - allLineWidth[lineIndex] * this._textScale + this._textScale;
         break;
     }
 
@@ -340,8 +322,7 @@ export class TextRenderer implements ITextRenderer {
         currPos[1] = inPosition[1] + allLineWidth.length * hScale - hScale;
         break;
       case 'bottom':
-        currPos[1] =
-          inPosition[1] - (allLineWidth.length - 1) * this._textScale;
+        currPos[1] = inPosition[1] - (allLineWidth.length - 1) * this._textScale;
         break;
     }
 
@@ -361,14 +342,10 @@ export class TextRenderer implements ITextRenderer {
             currPos[0] = inPosition[0];
             break;
           case 'centered':
-            currPos[0] =
-              inPosition[0] - allLineWidth[lineIndex] * hScale + hScale;
+            currPos[0] = inPosition[0] - allLineWidth[lineIndex] * hScale + hScale;
             break;
           case 'right':
-            currPos[0] =
-              inPosition[0] -
-              allLineWidth[lineIndex] * this._textScale +
-              this._textScale;
+            currPos[0] = inPosition[0] - allLineWidth[lineIndex] * this._textScale + this._textScale;
             break;
         }
 
@@ -389,8 +366,7 @@ export class TextRenderer implements ITextRenderer {
 
     const texCoord = this._texCoordMap.get(inCharacter);
 
-    if (!texCoord)
-      throw new Error(`fail to find a letter, letter=${inCharacter}`);
+    if (!texCoord) throw new Error(`fail to find a letter, letter=${inCharacter}`);
 
     for (let yy = -1; yy <= 1; ++yy) {
       for (let xx = -1; xx <= 1; ++xx) {

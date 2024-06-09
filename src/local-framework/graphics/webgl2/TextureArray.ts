@@ -16,18 +16,18 @@ export interface IBoundTextureArray {
     inWidth: number,
     inHeight: number,
     inTotalLayers: number,
-    inImage: HTMLImageElement
+    inImage: HTMLImageElement,
+    mode?: TextureFilter,
+    repeat?: TextureRepeat
   ): void;
   loadFromMemory(
     inWidth: number,
     inHeight: number,
     inTotalLayers: number,
-    inPixels: Uint8Array
+    inPixels: Uint8Array,
+    mode?: TextureFilter,
+    repeat?: TextureRepeat
   ): void;
-
-  setRepeat(repeat: TextureRepeat): void;
-  setFilter(mode: TextureFilter): void;
-
   getRawObject(): WebGLTexture;
 }
 
@@ -37,9 +37,7 @@ export class TextureArray implements IUnboundTextureArray, IBoundTextureArray {
   private _texture: WebGLTexture | null = null;
 
   initialize(): void {
-    if (this._texture) {
-      throw new Error('texture: already initialized');
-    }
+    if (this._texture) throw new Error('texture: already initialized');
 
     const gl = WebGLContext.getContext();
     this._texture = gl.createTexture();
@@ -51,9 +49,7 @@ export class TextureArray implements IUnboundTextureArray, IBoundTextureArray {
   }
 
   rawBind(): void {
-    if (!this._texture) {
-      throw new Error('texture: not initialized');
-    }
+    if (!this._texture) throw new Error('texture: not initialized');
     const gl = WebGLContext.getContext();
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, this._texture);
   }
@@ -78,35 +74,40 @@ export class TextureArray implements IUnboundTextureArray, IBoundTextureArray {
     inWidth: number,
     inHeight: number,
     inTotalLayers: number,
-    inImage: HTMLImageElement
+    inImage: HTMLImageElement,
+    mode: TextureFilter = TextureFilter.pixelated,
+    repeat: TextureRepeat = TextureRepeat.noRepeat
   ): void {
-    if (!this._texture) {
-      throw new Error('texture: not initialized');
-    }
-
-    this._allocate(inWidth, inHeight, inTotalLayers, inImage);
-
-    this.setRepeat(TextureRepeat.noRepeat);
-    this.setFilter(TextureFilter.pixelated);
+    this._allocate(inWidth, inHeight, inTotalLayers, inImage, mode, repeat);
   }
 
   loadFromMemory(
     inWidth: number,
     inHeight: number,
     inTotalLayers: number,
-    inPixels: Uint8Array
+    inPixels: Uint8Array,
+    mode: TextureFilter = TextureFilter.pixelated,
+    repeat: TextureRepeat = TextureRepeat.noRepeat
   ): void {
-    this._allocate(inWidth, inHeight, inTotalLayers, inPixels);
+    this._allocate(inWidth, inHeight, inTotalLayers, inPixels, mode, repeat);
   }
 
   private _allocate(
     inWidth: number,
     inHeight: number,
     inTotalLayers: number,
-    inPixels: Uint8Array | HTMLImageElement | null = null
+    inPixels: Uint8Array | HTMLImageElement | null = null,
+    mode: TextureFilter = TextureFilter.pixelated,
+    repeat: TextureRepeat = TextureRepeat.noRepeat
   ): void {
     if (!this._texture) {
       throw new Error('texture: not initialized');
+    }
+    if (inWidth <= 0) {
+      throw new Error('texture: width must be positive');
+    }
+    if (inHeight <= 0) {
+      throw new Error('texture: height must be positive');
     }
 
     const gl = WebGLContext.getContext();
@@ -119,20 +120,34 @@ export class TextureArray implements IUnboundTextureArray, IBoundTextureArray {
     const border = 0;
     const srcFormat = gl.RGBA;
     const srcType = gl.UNSIGNED_BYTE;
-    if (inPixels !== null) {
-      if (inPixels instanceof Uint8Array) {
-        gl.texImage3D(gl.TEXTURE_2D_ARRAY, level, internalFormat, inWidth, inHeight, inTotalLayers, border, srcFormat, srcType, inPixels);
-      } else {
-        gl.texImage3D(gl.TEXTURE_2D_ARRAY, level, internalFormat, inWidth, inHeight, inTotalLayers, border, srcFormat, srcType, inPixels);
-      }
+
+    if (inPixels instanceof HTMLImageElement) {
+      gl.texImage3D(
+        gl.TEXTURE_2D_ARRAY,
+        level,
+        internalFormat,
+        inWidth,
+        inHeight,
+        inTotalLayers,
+        border,
+        srcFormat,
+        srcType,
+        inPixels
+      );
+    } else {
+      gl.texImage3D(
+        gl.TEXTURE_2D_ARRAY,
+        level,
+        internalFormat,
+        inWidth,
+        inHeight,
+        inTotalLayers,
+        border,
+        srcFormat,
+        srcType,
+        inPixels
+      );
     }
-
-    this.setRepeat(TextureRepeat.noRepeat);
-    this.setFilter(TextureFilter.pixelated);
-  }
-
-  setRepeat(repeat: TextureRepeat): void {
-    const gl = WebGLContext.getContext();
 
     if (repeat === TextureRepeat.noRepeat) {
       // wrapping to clamp to edge
@@ -142,10 +157,6 @@ export class TextureArray implements IUnboundTextureArray, IBoundTextureArray {
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.REPEAT);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.REPEAT);
     }
-  }
-
-  setFilter(mode: TextureFilter): void {
-    const gl = WebGLContext.getContext();
 
     if (mode === TextureFilter.pixelated) {
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -161,25 +172,19 @@ export class TextureArray implements IUnboundTextureArray, IBoundTextureArray {
   }
 
   getWidth(): number {
-    if (!this._texture) {
-      throw new Error('texture not initialized');
-    }
+    if (!this._texture) throw new Error('texture not initialized');
 
     return this._width;
   }
 
   getHeight(): number {
-    if (!this._texture) {
-      throw new Error('texture not initialized');
-    }
+    if (!this._texture) throw new Error('texture not initialized');
 
     return this._height;
   }
 
   getRawObject() {
-    if (!this._texture) {
-      throw new Error('texture not initialized');
-    }
+    if (!this._texture) throw new Error('texture not initialized');
 
     // TODO: this is ugly
     return this._texture;

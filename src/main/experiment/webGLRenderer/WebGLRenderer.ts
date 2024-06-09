@@ -23,6 +23,7 @@ interface IHud {
   textRenderer: graphics.renderers.ITextRenderer;
   stackRenderers: graphics.renderers.IStackRenderers;
   wireFrameCubesRenderer: hud.WireFrameCubesRenderer;
+  multipleBuffering: graphics.renderers.MultiBuffersRendering;
 }
 
 export class WebGLRenderer {
@@ -43,11 +44,6 @@ export class WebGLRenderer {
 
   constructor(def: IDefinition) {
     this._def = def;
-
-    this.resize(
-      this._def.canvasDomElement.width,
-      this._def.canvasDomElement.height
-    );
 
     WebGLContext.initialize(this._def.canvasDomElement);
 
@@ -89,8 +85,19 @@ export class WebGLRenderer {
     this._hud = {
       textRenderer: new graphics.renderers.TextRenderer(),
       stackRenderers: new graphics.renderers.StackRenderers(),
-      wireFrameCubesRenderer: new hud.WireFrameCubesRenderer()
+      wireFrameCubesRenderer: new hud.WireFrameCubesRenderer(),
+      multipleBuffering: new graphics.renderers.MultiBuffersRendering(
+        this._def.canvasDomElement.width,
+        this._def.canvasDomElement.height
+      ),
     };
+
+    this.resize(
+      this._def.canvasDomElement.width,
+      this._def.canvasDomElement.height
+    );
+
+
   }
 
   resize(width: number, height: number) {
@@ -113,6 +120,8 @@ export class WebGLRenderer {
     this._mainHudCamera.setTarget([+width * 0.5, +height * 0.5, 0]);
     this._mainHudCamera.setUpAxis([0, 1, 0]);
     this._mainHudCamera.computeMatrices();
+
+    this._hud.multipleBuffering.resize(width, height);
   }
 
   //
@@ -194,7 +203,7 @@ export class WebGLRenderer {
     );
   }
 
-  renderScene(inChunkSize: number) {
+  renderScene(callback: () => void) {
     const gl = WebGLContext.getContext();
 
     const viewPos = this._mainCamera.getViewportPos();
@@ -208,20 +217,10 @@ export class WebGLRenderer {
     //
     //
 
-    this._scene.chunksRenderer.render(
-      this._mainCamera,
-      this._frustumCulling,
-      inChunkSize
-    );
-
-    //
-    //
-    //
-
-    this._scene.triangleCubesRenderer.flush(this._mainCamera);
+    callback();
   }
 
-  renderHUD() {
+  renderHUD(callback: () => void) {
     const gl = WebGLContext.getContext();
 
     const viewPos = this._mainHudCamera.getViewportPos();
@@ -231,6 +230,8 @@ export class WebGLRenderer {
     gl.clear(gl.DEPTH_BUFFER_BIT);
 
     ShaderProgram.unbind();
+
+    callback();
   }
 
   flush() {
@@ -245,23 +246,28 @@ export class WebGLRenderer {
   get hudCamera(): Readonly<graphics.camera.ICamera> {
     return this._mainHudCamera;
   }
-  get wireFrameCubesRenderer(): hud.IWireFrameCubesRenderer {
-    return this._hud.wireFrameCubesRenderer;
+  get frustumCulling(): graphics.camera.IFrustumCulling {
+    return this._frustumCulling;
+  }
+
+  get chunksRenderer(): scene.IChunksRenderer {
+    return this._scene.chunksRenderer;
   }
   get triangleCubesRenderer(): scene.ITriangleCubesRenderer {
     return this._scene.triangleCubesRenderer;
   }
+
   get stackRenderers(): graphics.renderers.IStackRenderers {
     return this._hud.stackRenderers;
+  }
+  get wireFrameCubesRenderer(): hud.IWireFrameCubesRenderer {
+    return this._hud.wireFrameCubesRenderer;
   }
   get textRenderer(): graphics.renderers.ITextRenderer {
     return this._hud.textRenderer;
   }
-  get frustumCulling(): graphics.camera.IFrustumCulling {
-    return this._frustumCulling;
-  }
-  get chunksRenderer(): scene.IChunksRenderer {
-    return this._scene.chunksRenderer;
+  get multipleBuffering(): graphics.renderers.MultiBuffersRendering {
+    return this._hud.multipleBuffering;
   }
 }
 

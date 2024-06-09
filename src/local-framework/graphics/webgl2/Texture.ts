@@ -13,22 +13,25 @@ export interface IUnboundTexture {
 export enum TextureFilter {
   pixelated = 0,
   linear = 1,
-  mipmap = 2,
-};
+  mipmap = 2
+}
 
 export enum TextureRepeat {
   noRepeat = 0,
-  repeat = 1,
-};
+  repeat = 1
+}
 
 export interface IBoundTexture {
-  load(inImage: HTMLImageElement, mode?: TextureFilter, repeat?: TextureRepeat): void;
-  loadFromMemory(inWidth: number, inHeight: number, inPixels: Uint8Array, mode?: TextureFilter, repeat?: TextureRepeat): void;
+  loadFromImage(inImage: HTMLImageElement, mode?: TextureFilter, repeat?: TextureRepeat): void;
+  loadFromMemory(
+    inWidth: number,
+    inHeight: number,
+    inPixels: Uint8Array,
+    mode?: TextureFilter,
+    repeat?: TextureRepeat
+  ): void;
   allocate(inWidth: number, inHeight: number, mode?: TextureFilter, repeat?: TextureRepeat): void;
-
-  setRepeat(repeat: TextureRepeat): void;
-  setFilter(mode: TextureFilter): void;
-
+  allocateDepth(inWidth: number, inHeight: number, mode?: TextureFilter, repeat?: TextureRepeat): void;
   resize(inWidth: number, inHeight: number, mode?: TextureFilter, repeat?: TextureRepeat): void;
   getRawObject(): WebGLTexture;
 }
@@ -67,25 +70,67 @@ export class Texture implements IUnboundTexture, IBoundTexture {
     gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
-  load(inImage: HTMLImageElement, mode: TextureFilter = TextureFilter.pixelated, repeat: TextureRepeat = TextureRepeat.noRepeat): void {
+  loadFromImage(
+    inImage: HTMLImageElement,
+    mode: TextureFilter = TextureFilter.pixelated,
+    repeat: TextureRepeat = TextureRepeat.noRepeat
+  ): void {
     this._allocate(inImage.width, inImage.height, inImage, mode, repeat);
   }
 
-  loadFromMemory(inWidth: number, inHeight: number, inPixels: Uint8Array, mode: TextureFilter = TextureFilter.pixelated, repeat: TextureRepeat = TextureRepeat.noRepeat): void {
+  loadFromMemory(
+    inWidth: number,
+    inHeight: number,
+    inPixels: Uint8Array,
+    mode: TextureFilter = TextureFilter.pixelated,
+    repeat: TextureRepeat = TextureRepeat.noRepeat
+  ): void {
     this._allocate(inWidth, inHeight, inPixels, mode, repeat);
   }
 
-  allocate(inWidth: number, inHeight: number, mode: TextureFilter = TextureFilter.pixelated, repeat: TextureRepeat = TextureRepeat.noRepeat): void {
+  allocate(
+    inWidth: number,
+    inHeight: number,
+    mode: TextureFilter = TextureFilter.pixelated,
+    repeat: TextureRepeat = TextureRepeat.noRepeat
+  ): void {
     this._allocate(inWidth, inHeight, null, mode, repeat);
   }
 
-  resize(inWidth: number, inHeight: number, mode: TextureFilter = TextureFilter.pixelated, repeat: TextureRepeat = TextureRepeat.noRepeat): void {
+  allocateDepth(
+    inWidth: number,
+    inHeight: number,
+    mode: TextureFilter = TextureFilter.pixelated,
+    repeat: TextureRepeat = TextureRepeat.noRepeat
+  ): void {
+    this._allocate(inWidth, inHeight, null, mode, repeat, true);
+  }
+
+  resize(
+    inWidth: number,
+    inHeight: number,
+    mode: TextureFilter = TextureFilter.pixelated,
+    repeat: TextureRepeat = TextureRepeat.noRepeat
+  ): void {
     this._allocate(inWidth, inHeight, null, mode, repeat);
   }
 
-  private _allocate(inWidth: number, inHeight: number, inPixels: Uint8Array | HTMLImageElement | null = null, mode: TextureFilter = TextureFilter.pixelated, repeat: TextureRepeat = TextureRepeat.noRepeat): void {
+  private _allocate(
+    inWidth: number,
+    inHeight: number,
+    inPixels: Uint8Array | HTMLImageElement | null = null,
+    mode: TextureFilter = TextureFilter.pixelated,
+    repeat: TextureRepeat = TextureRepeat.noRepeat,
+    isDepthTexture: boolean = false
+  ): void {
     if (!this._texture) {
       throw new Error('texture: not initialized');
+    }
+    if (inWidth <= 0) {
+      throw new Error('texture: width must be positive');
+    }
+    if (inHeight <= 0) {
+      throw new Error('texture: height must be positive');
     }
 
     const gl = WebGLContext.getContext();
@@ -93,26 +138,17 @@ export class Texture implements IUnboundTexture, IBoundTexture {
     this._width = inWidth;
     this._height = inHeight;
 
-
     const level = 0;
-    const internalFormat = gl.RGBA;
+    const internalFormat = isDepthTexture ? gl.DEPTH_COMPONENT32F : gl.RGBA;
     const border = 0;
-    const srcFormat = gl.RGBA;
-    const srcType = gl.UNSIGNED_BYTE;
-    if (inPixels !== null) {
-      if (inPixels instanceof Uint8Array) {
-        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, inWidth, inHeight, border, srcFormat, srcType, inPixels);
-      } else {
-        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, inPixels);
-      }
+    const srcFormat = isDepthTexture ? gl.DEPTH_COMPONENT : gl.RGBA;
+    const srcType = isDepthTexture ? gl.FLOAT : gl.UNSIGNED_BYTE;
+
+    if (inPixels instanceof HTMLImageElement) {
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, inPixels);
+    } else {
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, inWidth, inHeight, border, srcFormat, srcType, inPixels);
     }
-
-    this.setRepeat(repeat);
-    this.setFilter(mode);
-  }
-
-  setRepeat(repeat: TextureRepeat): void {
-    const gl = WebGLContext.getContext();
 
     if (repeat === TextureRepeat.noRepeat) {
       // wrapping to clamp to edge
@@ -122,10 +158,6 @@ export class Texture implements IUnboundTexture, IBoundTexture {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
     }
-  }
-
-  setFilter(mode: TextureFilter): void {
-    const gl = WebGLContext.getContext();
 
     if (mode === TextureFilter.pixelated) {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);

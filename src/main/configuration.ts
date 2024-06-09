@@ -1,5 +1,5 @@
 export const chunkGraphicSize = 30;
-export const chunkLogicSize = 10;
+export const chunkLogicSize = 8;
 export const chunkThreshold = 0.5;
 export const chunkRange = 2;
 

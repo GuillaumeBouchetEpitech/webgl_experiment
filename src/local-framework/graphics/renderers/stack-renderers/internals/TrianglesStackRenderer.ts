@@ -11,10 +11,7 @@ export class TrianglesStackRenderer {
   private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
 
-  constructor(
-    inShader: webgl2.IUnboundShader,
-    inGeometryDef: webgl2.GeometryWrapper.GeometryDefinition
-  ) {
+  constructor(inShader: webgl2.IUnboundShader, inGeometryDef: webgl2.GeometryWrapper.GeometryDefinition) {
     this._shader = inShader;
     const geometryDef: webgl2.GeometryWrapper.GeometryDefinition = {
       ...inGeometryDef,
@@ -102,24 +99,10 @@ export class TrianglesStackRenderer {
     );
   }
 
-  pushRotatedLine(
-    center: glm.ReadonlyVec3,
-    angle: number,
-    length: number,
-    thickness: number,
-    color: glm.ReadonlyVec3
-  ) {
+  pushRotatedLine(center: glm.ReadonlyVec3, angle: number, length: number, thickness: number, color: glm.ReadonlyVec3) {
     this.pushLine(
-      [
-        center[0] - length * Math.cos(angle),
-        center[1] - length * Math.sin(angle),
-        center[2]
-      ],
-      [
-        center[0] + length * Math.cos(angle),
-        center[1] + length * Math.sin(angle),
-        center[2]
-      ],
+      [center[0] - length * Math.cos(angle), center[1] - length * Math.sin(angle), center[2]],
+      [center[0] + length * Math.cos(angle), center[1] + length * Math.sin(angle), center[2]],
       thickness,
       color
     );
@@ -134,10 +117,7 @@ export class TrianglesStackRenderer {
       return;
     }
 
-    const maxCoord: glm.ReadonlyVec2 = [
-      inOrigin[0] + inSize[0],
-      inOrigin[1] + inSize[1]
-    ];
+    const maxCoord: glm.ReadonlyVec2 = [inOrigin[0] + inSize[0], inOrigin[1] + inSize[1]];
 
     this.pushTriangle(
       [inOrigin[0], inOrigin[1], inOrigin[2]],
@@ -159,11 +139,7 @@ export class TrianglesStackRenderer {
     inSize: glm.ReadonlyVec2,
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
-    const origin: glm.ReadonlyVec3 = [
-      inCenter[0] - inSize[0] * 0.5,
-      inCenter[1] - inSize[1] * 0.5,
-      inCenter[2]
-    ];
+    const origin: glm.ReadonlyVec3 = [inCenter[0] - inSize[0] * 0.5, inCenter[1] - inSize[1] * 0.5, inCenter[2]];
 
     this.pushOriginBoundRectangle(origin, inSize, inColor);
   }

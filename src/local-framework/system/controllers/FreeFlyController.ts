@@ -1,10 +1,6 @@
-import {
-  GlobalKeyboardManager,
-  GlobalMouseManager,
-  GlobalTouchManager
-} from '../browser';
+import { GlobalKeyboardManager, GlobalMouseManager, GlobalTouchManager } from '../browser';
 
-import { degreeToRad } from '../math/angles';
+import { deg2Rad } from '../math/angles';
 
 import * as glm from 'gl-matrix';
 
@@ -49,6 +45,10 @@ export class FreeFlyController {
   private _leftAxis = glm.vec3.fromValues(0, 0, 1);
   private _upAxis = glm.vec3.fromValues(0, 1, 0);
 
+  private _move_forwardAxis = glm.vec3.fromValues(1, 0, 0);
+  private _move_leftAxis = glm.vec3.fromValues(0, 0, 1);
+  private _move_upAxis = glm.vec3.fromValues(0, 1, 0);
+
   constructor(def: IFreeFlyControllerDef) {
     this._mouseSensibility = def.mouseSensibility;
     this._keyboardSensibility = def.keyboardSensibility;
@@ -70,7 +70,55 @@ export class FreeFlyController {
     return this._isActivated;
   }
 
-  update(deltaMsTime: number) {
+  activate() {
+    this._isActivated = true;
+
+    GlobalKeyboardManager.preventDefault('Z');
+    GlobalKeyboardManager.preventDefault('W');
+    GlobalKeyboardManager.preventDefault('S');
+    GlobalKeyboardManager.preventDefault('A');
+    GlobalKeyboardManager.preventDefault('Q');
+    GlobalKeyboardManager.preventDefault('D');
+
+    GlobalKeyboardManager.preventDefault('Shift');
+    GlobalKeyboardManager.preventDefault('C');
+    GlobalKeyboardManager.preventDefault('Space');
+
+    GlobalKeyboardManager.preventDefault('ArrowUp');
+    GlobalKeyboardManager.preventDefault('ArrowDown');
+    GlobalKeyboardManager.preventDefault('ArrowLeft');
+    GlobalKeyboardManager.preventDefault('ArrowRight');
+  }
+
+  deactivate() {
+    this._isActivated = false;
+
+    GlobalKeyboardManager.enableDefault('Z');
+    GlobalKeyboardManager.enableDefault('W');
+    GlobalKeyboardManager.enableDefault('S');
+    GlobalKeyboardManager.enableDefault('A');
+    GlobalKeyboardManager.enableDefault('Q');
+    GlobalKeyboardManager.enableDefault('D');
+
+    GlobalKeyboardManager.enableDefault('Shift');
+    GlobalKeyboardManager.enableDefault('C');
+    GlobalKeyboardManager.enableDefault('Space');
+
+    GlobalKeyboardManager.enableDefault('ArrowUp');
+    GlobalKeyboardManager.enableDefault('ArrowDown');
+    GlobalKeyboardManager.enableDefault('ArrowLeft');
+    GlobalKeyboardManager.enableDefault('ArrowRight');
+  }
+
+  isInteractedWith() {
+    return (
+      GlobalKeyboardManager.isPressed('Z', 'W', 'S', 'A', 'Q', 'D') ||
+      GlobalKeyboardManager.isPressed('Shift', 'C', 'Space') ||
+      GlobalKeyboardManager.isPressed('ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight')
+    );
+  }
+
+  update(deltaMsTime: number, fpsControls: boolean = false) {
     let moveForward = false;
     let moveBackward = false;
     let strafeLeft = false;
@@ -89,8 +137,8 @@ export class FreeFlyController {
       const deltaX = GlobalMouseManager.deltaX() * this._mouseSensibility;
       const deltaY = GlobalMouseManager.deltaY() * this._mouseSensibility;
 
-      lookDeltaX -= degreeToRad(deltaX) * deltaMsTime;
-      lookDeltaY -= degreeToRad(deltaY) * deltaMsTime;
+      lookDeltaX -= deg2Rad(deltaX) * deltaMsTime;
+      lookDeltaY -= deg2Rad(deltaY) * deltaMsTime;
     }
 
     //
@@ -119,8 +167,8 @@ export class FreeFlyController {
       const deltaX = firstTouch.deltaX * this._touchSensibility;
       const deltaY = firstTouch.deltaY * this._touchSensibility;
 
-      lookDeltaX -= degreeToRad(deltaX) * deltaMsTime;
-      lookDeltaY -= degreeToRad(deltaY) * deltaMsTime;
+      lookDeltaX -= deg2Rad(deltaX) * deltaMsTime;
+      lookDeltaY -= deg2Rad(deltaY) * deltaMsTime;
     } else {
       this._touchMoveForward = false;
     }
@@ -164,25 +212,19 @@ export class FreeFlyController {
       isRunning = true;
     }
 
-    // dive
-    if (GlobalKeyboardManager.isPressed('C')) {
-      isDiving = true;
+    if (!fpsControls) {
+      // dive
+      if (GlobalKeyboardManager.isPressed('C')) {
+        isDiving = true;
+      }
+
+      // rise
+      if (GlobalKeyboardManager.isPressed('Space')) {
+        isRising = true;
+      }
     }
 
-    // rise
-    if (GlobalKeyboardManager.isPressed('Space')) {
-      isRising = true;
-    }
-
-    const currentLinearSpeed =
-      this._movingSpeed * (isRunning ? 4 : 1) * deltaMsTime;
-
-    const scaledForward = glm.vec3.fromValues(0, 0, 0);
-    glm.vec3.scale(scaledForward, this._forwardAxis, currentLinearSpeed);
-    const scaledLeft = glm.vec3.fromValues(0, 0, 0);
-    glm.vec3.scale(scaledLeft, this._leftAxis, currentLinearSpeed);
-    const scaledUp = glm.vec3.fromValues(0, 0, 0);
-    glm.vec3.scale(scaledUp, this._upAxis, currentLinearSpeed);
+    const currentLinearSpeed = this._movingSpeed * (isRunning ? 4 : 1) * deltaMsTime;
 
     //
     //
@@ -234,6 +276,39 @@ export class FreeFlyController {
 
     glm.vec3.cross(this._leftAxis, this._upAxis, this._forwardAxis);
 
+    if (fpsControls) {
+      this._move_forwardAxis[axisX] = cosTheta;
+      this._move_forwardAxis[axisY] = sinTheta;
+      this._move_forwardAxis[axisZ] = 0;
+
+      this._move_leftAxis[axisX] = -sinTheta;
+      this._move_leftAxis[axisY] = cosTheta;
+      this._move_leftAxis[axisZ] = 0;
+
+      this._move_upAxis[axisX] = 0;
+      this._move_upAxis[axisY] = 0;
+      this._move_upAxis[axisZ] = 1;
+    } else {
+      glm.vec3.copy(this._move_forwardAxis, this._forwardAxis);
+      glm.vec3.copy(this._move_leftAxis, this._leftAxis);
+      glm.vec3.copy(this._move_upAxis, this._upAxis);
+    }
+
+    //
+    //
+    //
+
+    const scaledForward = glm.vec3.fromValues(0, 0, 0);
+    glm.vec3.scale(scaledForward, this._move_forwardAxis, currentLinearSpeed);
+    const scaledLeft = glm.vec3.fromValues(0, 0, 0);
+    glm.vec3.scale(scaledLeft, this._move_leftAxis, currentLinearSpeed);
+    const scaledUp = glm.vec3.fromValues(0, 0, 0);
+    glm.vec3.scale(scaledUp, this._move_upAxis, currentLinearSpeed);
+
+    //
+    //
+    //
+
     if (moveForward) {
       glm.vec3.add(this._position, this._position, scaledForward);
     } else if (moveBackward) {
@@ -265,6 +340,7 @@ export class FreeFlyController {
 
   setPosition(inPos: glm.ReadonlyVec3) {
     glm.vec3.copy(this._position, inPos);
+    glm.vec3.add(this._target, this._position, this._forwardAxis);
   }
 
   getTarget(): glm.ReadonlyVec3 {

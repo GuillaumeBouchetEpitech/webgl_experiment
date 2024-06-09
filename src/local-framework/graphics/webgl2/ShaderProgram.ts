@@ -1,6 +1,8 @@
 import { IUnboundTextureArray } from './TextureArray';
 import { IUnboundCubeMap } from './CubeMap';
 import { IUnboundTexture } from './Texture';
+import { IUnboundDataTexture } from './DataTexture';
+import { IUnboundDataTextureVec4 } from './DataTextureVec4';
 import { WebGLContext } from './WebGLContext';
 
 import * as glm from 'gl-matrix';
@@ -23,25 +25,16 @@ export interface IUnboundShader {
 export interface IBoundShader {
   setTextureUniform(
     inName: string,
-    inTexture: IUnboundTexture | IUnboundTextureArray | IUnboundCubeMap,
+    inTexture: IUnboundTexture | IUnboundTextureArray | IUnboundCubeMap | IUnboundDataTexture | IUnboundDataTextureVec4,
     inIndex: number
   ): void;
   setInteger1Uniform(inName: string, inValue: number): void;
   setInteger2Uniform(inName: string, inValueX: number, inValueY: number): void;
-  setInteger3Uniform(
-    inName: string,
-    inValueX: number,
-    inValueY: number,
-    inValueZ: number
-  ): void;
+  setInteger3Uniform(inName: string, inValueX: number, inValueY: number, inValueZ: number): void;
   setFloat1Uniform(inName: string, inValue: number): void;
   setFloat2Uniform(inName: string, inValueX: number, inValueY: number): void;
-  setFloat3Uniform(
-    inName: string,
-    inValueX: number,
-    inValueY: number,
-    inValueZ: number
-  ): void;
+  setFloat3Uniform(inName: string, inValueX: number, inValueY: number, inValueZ: number): void;
+  setMatrix3Uniform(inName: string, inMatrix: glm.ReadonlyMat3): void;
   setMatrix4Uniform(inName: string, inMatrix: glm.ReadonlyMat4): void;
 }
 
@@ -80,9 +73,7 @@ export class ShaderProgram {
       // An error occurred while linking
       const lastError = gl.getProgramInfoLog(program);
 
-      throw new Error(
-        'Failed to initialized shaders, Error linking:' + lastError
-      );
+      throw new Error('Failed to initialized shaders, Error linking:' + lastError);
     }
 
     this._program = program;
@@ -110,9 +101,7 @@ export class ShaderProgram {
 
   bind(inCallback: (bound: IBoundShader) => void) {
     if (ShaderProgram._isBound !== null) {
-      throw new Error(
-        `Double shader binding (bound: ${ShaderProgram._isBound._name}, binding: ${this._name})`
-      );
+      throw new Error(`Double shader binding (bound: ${ShaderProgram._isBound._name}, binding: ${this._name})`);
     }
 
     ShaderProgram._isBound = this;
@@ -160,7 +149,7 @@ export class ShaderProgram {
 
   setTextureUniform(
     inName: string,
-    inTexture: IUnboundTexture | IUnboundCubeMap,
+    inTexture: IUnboundTexture | IUnboundTextureArray | IUnboundCubeMap | IUnboundDataTexture | IUnboundDataTextureVec4,
     inIndex: number
   ) {
     const gl = WebGLContext.getContext();
@@ -180,12 +169,7 @@ export class ShaderProgram {
     gl.uniform2i(this.getUniform(inName), inValueX, inValueY);
   }
 
-  setInteger3Uniform(
-    inName: string,
-    inValueX: number,
-    inValueY: number,
-    inValueZ: number
-  ) {
+  setInteger3Uniform(inName: string, inValueX: number, inValueY: number, inValueZ: number) {
     const gl = WebGLContext.getContext();
     gl.uniform3i(this.getUniform(inName), inValueX, inValueY, inValueZ);
   }
@@ -200,14 +184,14 @@ export class ShaderProgram {
     gl.uniform2f(this.getUniform(inName), inValueX, inValueY);
   }
 
-  setFloat3Uniform(
-    inName: string,
-    inValueX: number,
-    inValueY: number,
-    inValueZ: number
-  ) {
+  setFloat3Uniform(inName: string, inValueX: number, inValueY: number, inValueZ: number) {
     const gl = WebGLContext.getContext();
     gl.uniform3f(this.getUniform(inName), inValueX, inValueY, inValueZ);
+  }
+
+  setMatrix3Uniform(inName: string, inMatrix: glm.ReadonlyMat3): void {
+    const gl = WebGLContext.getContext();
+    gl.uniformMatrix3fv(this.getUniform(inName), false, inMatrix as glm.mat3);
   }
 
   setMatrix4Uniform(inName: string, inMatrix: glm.ReadonlyMat4) {
@@ -258,9 +242,7 @@ export class ShaderProgram {
 
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       let error_str = gl.getShaderInfoLog(shader);
-      if (!error_str) {
-        error_str = 'failed to compile a shader';
-      }
+      if (!error_str) error_str = 'failed to compile a shader';
 
       throw new Error(error_str);
     }

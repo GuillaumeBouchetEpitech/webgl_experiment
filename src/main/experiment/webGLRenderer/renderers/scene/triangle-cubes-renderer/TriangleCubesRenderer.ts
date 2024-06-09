@@ -147,6 +147,7 @@ export interface ITriangleCubesRenderer {
   ): void;
 
   clear(): void;
+  flush(inCamera: graphics.camera.ICamera): void;
 }
 
 const k_bufferSize = 8 * 1024 * 4;

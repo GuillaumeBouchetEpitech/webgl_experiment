@@ -27,9 +27,15 @@ class TouchManager {
   private _handleTouchEnd: (event: TouchEvent) => void;
   private _handleTouchMove: (event: TouchEvent) => void;
 
+  private _onEvent: (() => void) | undefined;
+
   constructor() {
     const handleTouchStart = (event: TouchEvent) => {
       event.preventDefault();
+
+      if (this._onEvent) {
+        this._onEvent();
+      }
 
       for (let ii = 0; ii < event.changedTouches.length; ++ii) {
         const { identifier, pageX, pageY } = event.changedTouches[ii];
@@ -42,6 +48,10 @@ class TouchManager {
     const handleTouchEnd = (event: TouchEvent) => {
       event.preventDefault();
 
+      if (this._onEvent) {
+        this._onEvent();
+      }
+
       for (let ii = 0; ii < event.changedTouches.length; ++ii) {
         const { identifier } = event.changedTouches[ii];
 
@@ -51,6 +61,10 @@ class TouchManager {
     };
     const handleTouchMove = (event: TouchEvent) => {
       event.preventDefault();
+
+      if (this._onEvent) {
+        this._onEvent();
+      }
 
       for (let ii = 0; ii < event.changedTouches.length; ++ii) {
         const { identifier, pageX, pageY } = event.changedTouches[ii];
@@ -131,6 +145,10 @@ class TouchManager {
   resetDeltas() {
     this._refreshCache();
     this._allCachedTouchDataArray.forEach((item) => item.resetDelta());
+  }
+
+  onEvent(callback: (() => void) | undefined) {
+    this._onEvent = callback;
   }
 }
 

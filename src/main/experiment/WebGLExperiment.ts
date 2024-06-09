@@ -99,11 +99,11 @@ export class WebGLExperiment {
         if (isLocked) {
           // g_logger.log('The pointer lock status is now locked');
 
-          GlobalMouseManager.activate();
+          GlobalMouseManager.activate(document.body);
         } else {
           // g_logger.log('The pointer lock status is now unlocked');
 
-          GlobalMouseManager.deactivate();
+          GlobalMouseManager.deactivate(document.body);
 
           GlobalPointerLockManager.allowPointerLockedOnClickEvent(
             canvasElement
@@ -176,7 +176,8 @@ export class WebGLExperiment {
       }
 
       // plan the next frame
-      window.requestAnimationFrame(tick);
+      // window.requestAnimationFrame(tick);
+      window.setTimeout(tick, 1000 / 60);
 
       this._mainLoop();
     };
@@ -213,127 +214,166 @@ export class WebGLExperiment {
 
     this._chunkGenerator.update(eyePos);
 
+
+    let visibleChunks = 0;
+    this._chunkGenerator.getChunks().forEach((chunk) => {
+      if (chunk.isVisible) {
+        ++visibleChunks;
+      }
+    });
+
     //
     //
     ////// render 3d scene
 
-    let visibleChunks = 0;
+    this._renderer.multipleBuffering.captureScene(() => {
 
-    this._renderer.wireFrameCubesRenderer.clear();
+      this._renderer.renderScene(() => {
 
-    this._chunkGenerator.getChunks().forEach((chunk) => {
-      if (!chunk.isVisible) {
-        return;
-      }
+        //
+        //
+        //
 
-      ++visibleChunks;
+        this._renderer.wireFrameCubesRenderer.clear();
 
-      this._renderer.triangleCubesRenderer.pushOriginBoundCube(
-        chunk.realPosition,
-        configuration.chunkGraphicSize,
-        [1, 1, 1]
-      );
+        this._chunkGenerator.getChunks().forEach((chunk) => {
+          if (!chunk.isVisible) {
+            return;
+          }
+
+          this._renderer.triangleCubesRenderer.pushOriginBoundCube(
+            chunk.realPosition,
+            configuration.chunkGraphicSize,
+            [1, 1, 1]
+          );
+        });
+
+        this._renderer.triangleCubesRenderer.flush(this._renderer.mainCamera);
+
+        this._renderer.chunksRenderer.render(
+          this._renderer.mainCamera,
+          this._renderer.frustumCulling,
+          configuration.chunkGraphicSize
+        );
+
+        //
+        //
+        //
+
+      });
+
     });
-
-    this._renderer.renderScene(configuration.chunkGraphicSize);
 
     //
     //
     ////// HUD
 
-    this._renderer.renderHUD();
+    this._renderer.renderHUD(() => {
 
-    this._renderer.stackRenderers.clear();
-    this._renderer.textRenderer.clear();
+      const gl = graphics.webgl2.WebGLContext.getContext();
 
-    // top right text
-    widgets.renderGenerationMetrics(
-      this._renderer.getSize(),
-      this._chunksCreated,
-      this._chunksDiscarded,
-      visibleChunks,
-      this._renderer.textRenderer
-    );
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      // gl.clear(/*gl.COLOR_BUFFER_BIT |*/ gl.DEPTH_BUFFER_BIT);
 
-    // bottom left text
-    widgets.renderCurrentCoordinates(
-      this._renderer.getSize(),
-      configuration.chunkGraphicSize,
-      eyePos,
-      this._renderer.textRenderer
-    );
+      // the modern web browsers are already applying double buffering
+      // -> so we're in fact triple buffering here
+      // -> which is great -> more time for the WebGL queue to finish on time
+      this._renderer.multipleBuffering.renderHud(this._renderer.hudCamera.getComposedMatrix());
 
-    {
-      const keyEventsPos: glm.ReadonlyVec2 = [7 + 20, 165];
-      const touchEventsPos: glm.ReadonlyVec2 = [7 + 20, 260];
-      const boardPos: glm.ReadonlyVec2 = [7, 35];
+      this._renderer.stackRenderers.clear();
+      this._renderer.textRenderer.clear();
 
-      graphics.renderers.addKeyStrokesWidgets(
-        keyEventsPos,
+      // top right text
+      widgets.renderGenerationMetrics(
+        this._renderer.getSize(),
+        this._chunksCreated,
+        this._chunksDiscarded,
+        visibleChunks,
+        this._renderer.textRenderer
+      );
+
+      // bottom left text
+      widgets.renderCurrentCoordinates(
+        this._renderer.getSize(),
+        configuration.chunkGraphicSize,
+        eyePos,
+        this._renderer.textRenderer
+      );
+
+      {
+        const keyEventsPos: glm.ReadonlyVec2 = [7 + 20, 165];
+        const touchEventsPos: glm.ReadonlyVec2 = [7 + 20, 260];
+        const boardPos: glm.ReadonlyVec2 = [7, 35];
+
+        graphics.renderers.widgets.addArrowStrokesWidgets(
+          keyEventsPos,
+          this._renderer.stackRenderers,
+          this._renderer.textRenderer
+        );
+        graphics.renderers.widgets.addArrowStrokesWidgets(
+          touchEventsPos,
+          this._renderer.stackRenderers,
+          this._renderer.textRenderer
+        );
+        graphics.renderers.widgets.addKeysTouchesWidgets(
+          this._canvasElement,
+          boardPos,
+          this._renderer.stackRenderers,
+          this._renderer.textRenderer
+        );
+      }
+
+      graphics.renderers.widgets.renderFpsMeter(
+        [10, this._canvasElement.height - 60, 0],
+        [100, 50],
+        this._frameProfiler,
+        this._renderer.stackRenderers,
+        this._renderer.textRenderer,
+        true
+      );
+
+      graphics.renderers.widgets.renderFpsMeter(
+        [10, this._canvasElement.height - 150, 0],
+        [100, 50],
+        this._chunkGenerator.getFrameProfiler(),
         this._renderer.stackRenderers,
         this._renderer.textRenderer
       );
-      graphics.renderers.addArrowStrokesWidgets(
-        touchEventsPos,
+
+      widgets.renderTouchEvents(
+        this._renderer.getSize(),
         this._renderer.stackRenderers,
-        this._renderer.textRenderer
+        this._freeFlyController.getTouchMoveForward()
       );
-      graphics.renderers.addKeysTouchesWidgets(
-        this._canvasElement,
-        boardPos,
-        this._renderer.stackRenderers,
-        this._renderer.textRenderer
+
+      this._renderer.stackRenderers.flush(
+        this._renderer.hudCamera.getComposedMatrix()
       );
-    }
+      this._renderer.textRenderer.flush(
+        this._renderer.hudCamera.getComposedMatrix()
+      );
 
-    graphics.renderers.renderFpsMeter(
-      [10, this._canvasElement.height - 60, 0],
-      [100, 50],
-      this._frameProfiler,
-      this._renderer.stackRenderers,
-      this._renderer.textRenderer,
-      true
-    );
+      this._renderer.stackRenderers.clear();
+      this._renderer.textRenderer.clear();
 
-    graphics.renderers.renderFpsMeter(
-      [10, this._canvasElement.height - 150, 0],
-      [100, 50],
-      this._chunkGenerator.getFrameProfiler(),
-      this._renderer.stackRenderers,
-      this._renderer.textRenderer
-    );
+      const k_minScreenSize = 300;
+      const k_minViewSize = 150;
 
-    widgets.renderTouchEvents(
-      this._renderer.getSize(),
-      this._renderer.stackRenderers,
-      this._freeFlyController.getTouchMoveForward()
-    );
+      widgets.renderMiniMap(
+        this._renderer.mainCamera,
+        k_minScreenSize,
+        k_minViewSize,
+        this._chunkGenerator.getChunks(),
+        configuration.chunkGraphicSize,
+        this._renderer.getSize(),
+        this._chunkGenerator.getProcessingRealPositions(),
+        this._renderer.wireFrameCubesRenderer,
+        this._renderer.stackRenderers
+      );
 
-    this._renderer.stackRenderers.flush(
-      this._renderer.hudCamera.getComposedMatrix()
-    );
-    this._renderer.textRenderer.flush(
-      this._renderer.hudCamera.getComposedMatrix()
-    );
+      this._renderer.flush();
+    });
 
-    this._renderer.stackRenderers.clear();
-    this._renderer.textRenderer.clear();
-
-    const k_minScreenSize = 300;
-    const k_minViewSize = 150;
-
-    widgets.renderMiniMap(
-      this._renderer.mainCamera,
-      k_minScreenSize,
-      k_minViewSize,
-      this._chunkGenerator.getChunks(),
-      configuration.chunkGraphicSize,
-      this._renderer.getSize(),
-      this._chunkGenerator.getProcessingRealPositions(),
-      this._renderer.wireFrameCubesRenderer,
-      this._renderer.stackRenderers
-    );
-
-    this._renderer.flush();
   }
 }

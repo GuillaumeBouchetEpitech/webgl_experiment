@@ -7,18 +7,32 @@ class KeyboardManager {
   private _handleKeyDown: (event: KeyboardEvent) => void;
   private _handleKeyUp: (event: KeyboardEvent) => void;
 
+  private _onEvent: (() => void) | undefined;
+
   constructor() {
     const handleKeyDown = (event: KeyboardEvent) => {
       const { keyCode } = event;
 
-      if (this._preventDefaultKeysSet.has(keyCode)) event.preventDefault();
+      if (this._onEvent) {
+        this._onEvent();
+      }
+
+      if (this._preventDefaultKeysSet.has(keyCode)) {
+        event.preventDefault();
+      }
 
       this._pressedKeysSet.add(keyCode);
     };
     const handleKeyUp = (event: KeyboardEvent) => {
       const { keyCode } = event;
 
-      if (this._preventDefaultKeysSet.has(keyCode)) event.preventDefault();
+      if (this._onEvent) {
+        this._onEvent();
+      }
+
+      if (this._preventDefaultKeysSet.has(keyCode)) {
+        event.preventDefault();
+      }
 
       this._pressedKeysSet.delete(keyCode);
     };
@@ -69,6 +83,10 @@ class KeyboardManager {
     document.removeEventListener('keyup', this._handleKeyUp);
 
     this._activated = false;
+  }
+
+  onEvent(callback: (() => void) | undefined) {
+    this._onEvent = callback;
   }
 }
 

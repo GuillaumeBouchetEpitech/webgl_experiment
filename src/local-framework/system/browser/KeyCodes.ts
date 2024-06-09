@@ -128,8 +128,7 @@ export const isLetter = (key: number) => {
 
 export const isNumber = (key: number) => {
   return (
-    (key >= AllKeyCodes.Num0 && key <= AllKeyCodes.Num9) ||
-    (key >= AllKeyCodes.NumPad0 && key <= AllKeyCodes.NumPad9)
+    (key >= AllKeyCodes.Num0 && key <= AllKeyCodes.Num9) || (key >= AllKeyCodes.NumPad0 && key <= AllKeyCodes.NumPad9)
   );
 };
 

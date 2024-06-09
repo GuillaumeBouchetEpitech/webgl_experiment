@@ -102,6 +102,11 @@ class LiveGeometry implements ILiveGeometry {
 export interface IChunksRenderer {
   acquireGeometry(size: number): ILiveGeometry;
   releaseGeometry(geom: ILiveGeometry): void;
+  render(
+    inCamera: graphics.camera.ICamera,
+    inFrustumCulling: graphics.camera.IFrustumCulling,
+    inChunkSize: number
+  ): void;
 }
 
 export class ChunksRenderer implements IChunksRenderer {

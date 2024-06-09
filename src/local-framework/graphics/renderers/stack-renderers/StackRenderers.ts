@@ -18,23 +18,11 @@ export interface IStackRenderers {
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ): void;
 
-  pushQuad(
-    inPos: glm.ReadonlyVec3,
-    inSize: glm.ReadonlyVec2,
-    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
-  ): void;
+  pushQuad(inPos: glm.ReadonlyVec3, inSize: glm.ReadonlyVec2, inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4): void;
 
-  pushLine(
-    inPointA: glm.ReadonlyVec3,
-    inPointB: glm.ReadonlyVec3,
-    inColor: glm.ReadonlyVec3
-  ): void;
+  pushLine(inPointA: glm.ReadonlyVec3, inPointB: glm.ReadonlyVec3, inColor: glm.ReadonlyVec3): void;
 
-  pushCross(
-    inCenter: glm.ReadonlyVec3,
-    inSize: number,
-    inColor: glm.ReadonlyVec3
-  ): void;
+  pushCross(inCenter: glm.ReadonlyVec3, inSize: number, inColor: glm.ReadonlyVec3): void;
 
   pushThickLine(
     inPointA: glm.ReadonlyVec3,
@@ -63,6 +51,7 @@ export interface IStackRenderers {
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ): void;
 
+  safeRender(inComposedMatrix: glm.ReadonlyMat4, inCallback: () => void): void;
   flush(composedMatrix: glm.ReadonlyMat4): void;
   clear(): void;
 }
@@ -90,29 +79,15 @@ export class StackRenderers implements IStackRenderers {
       .addVboAttribute('a_vertex_position', 'vec3f')
       .addVboAttribute('a_vertex_color', 'vec4f');
 
-    this._wireFramesStackRenderer = new WireFramesStackRenderer(
-      this._shader,
-      geoBuilder.getDef()
-    );
-    this._trianglesStackRenderer = new TrianglesStackRenderer(
-      this._shader,
-      geoBuilder.getDef()
-    );
+    this._wireFramesStackRenderer = new WireFramesStackRenderer(this._shader, geoBuilder.getDef());
+    this._trianglesStackRenderer = new TrianglesStackRenderer(this._shader, geoBuilder.getDef());
   }
 
-  pushLine(
-    inPointA: glm.ReadonlyVec3,
-    inPointB: glm.ReadonlyVec3,
-    inColor: glm.ReadonlyVec3
-  ) {
+  pushLine(inPointA: glm.ReadonlyVec3, inPointB: glm.ReadonlyVec3, inColor: glm.ReadonlyVec3) {
     this._wireFramesStackRenderer.pushLine(inPointA, inPointB, inColor);
   }
 
-  pushCross(
-    inCenter: glm.ReadonlyVec3,
-    inSize: number,
-    inColor: glm.ReadonlyVec3
-  ) {
+  pushCross(inCenter: glm.ReadonlyVec3, inSize: number, inColor: glm.ReadonlyVec3) {
     const crossVertices: glm.ReadonlyVec3[] = [
       [inCenter[0] - inSize, inCenter[1], inCenter[2]],
       [inCenter[0] + inSize, inCenter[1], inCenter[2]],
@@ -130,34 +105,12 @@ export class StackRenderers implements IStackRenderers {
     }
   }
 
-  pushThickLine(
-    inPointA: glm.ReadonlyVec3,
-    inPointB: glm.ReadonlyVec3,
-    thickness: number,
-    inColor: glm.ReadonlyVec3
-  ) {
-    this._trianglesStackRenderer.pushLine(
-      inPointA,
-      inPointB,
-      thickness,
-      inColor
-    );
+  pushThickLine(inPointA: glm.ReadonlyVec3, inPointB: glm.ReadonlyVec3, thickness: number, inColor: glm.ReadonlyVec3) {
+    this._trianglesStackRenderer.pushLine(inPointA, inPointB, thickness, inColor);
   }
 
-  pushRotatedLine(
-    center: glm.ReadonlyVec3,
-    angle: number,
-    length: number,
-    thickness: number,
-    color: glm.ReadonlyVec3
-  ) {
-    this._trianglesStackRenderer.pushRotatedLine(
-      center,
-      angle,
-      length,
-      thickness,
-      color
-    );
+  pushRotatedLine(center: glm.ReadonlyVec3, angle: number, length: number, thickness: number, color: glm.ReadonlyVec3) {
+    this._trianglesStackRenderer.pushRotatedLine(center, angle, length, thickness, color);
   }
 
   pushOriginBoundRectangle(
@@ -165,11 +118,7 @@ export class StackRenderers implements IStackRenderers {
     inSize: glm.ReadonlyVec2,
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
-    this._trianglesStackRenderer.pushOriginBoundRectangle(
-      inOrigin,
-      inSize,
-      inColor
-    );
+    this._trianglesStackRenderer.pushOriginBoundRectangle(inOrigin, inSize, inColor);
   }
 
   pushCenteredRectangle(
@@ -177,11 +126,7 @@ export class StackRenderers implements IStackRenderers {
     inSize: glm.ReadonlyVec2,
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ) {
-    this._trianglesStackRenderer.pushCenteredRectangle(
-      inCenter,
-      inSize,
-      inColor
-    );
+    this._trianglesStackRenderer.pushCenteredRectangle(inCenter, inSize, inColor);
   }
 
   pushTriangle(
@@ -193,11 +138,7 @@ export class StackRenderers implements IStackRenderers {
     this._trianglesStackRenderer.pushTriangle(inPosA, inPosB, inPosC, inColor);
   }
 
-  pushQuad(
-    inPos: glm.ReadonlyVec3,
-    inSize: glm.ReadonlyVec2,
-    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
-  ) {
+  pushQuad(inPos: glm.ReadonlyVec3, inSize: glm.ReadonlyVec2, inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4) {
     this.pushTriangle(
       [inPos[0] + inSize[0] * 0, inPos[1] + inSize[1] * 0, inPos[2]],
       [inPos[0] + inSize[0] * 1, inPos[1] + inSize[1] * 1, inPos[2]],
@@ -213,10 +154,7 @@ export class StackRenderers implements IStackRenderers {
   }
 
   flush(inComposedMatrix: glm.ReadonlyMat4) {
-    if (
-      !this._wireFramesStackRenderer.canRender() &&
-      !this._trianglesStackRenderer.canRender()
-    ) {
+    if (!this._wireFramesStackRenderer.canRender() && !this._trianglesStackRenderer.canRender()) {
       return;
     }
 
