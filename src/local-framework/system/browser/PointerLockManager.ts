@@ -1,8 +1,20 @@
-const allRequestEvents: string[] = ['requestPointerLock', 'mozRequestPointerLock', 'webkitRequestPointerLock'];
+const allRequestEvents: string[] = [
+  'requestPointerLock',
+  'mozRequestPointerLock',
+  'webkitRequestPointerLock'
+];
 
-const allExitEvents: string[] = ['exitPointerLock', 'mozExitPointerLock', 'webkitExitPointerLock'];
+const allExitEvents: string[] = [
+  'exitPointerLock',
+  'mozExitPointerLock',
+  'webkitExitPointerLock'
+];
 
-const allStateEvents: string[] = ['pointerLockElement', 'mozPointerLockElement', 'webkitPointerLockElement'];
+const allStateEvents: string[] = [
+  'pointerLockElement',
+  'mozPointerLockElement',
+  'webkitPointerLockElement'
+];
 
 const allChangeEvents: { methodName: string; propertyName: string }[] = [
   { methodName: 'onpointerlockchange', propertyName: 'pointerlockchange' },
@@ -111,14 +123,17 @@ class PointerLockManager {
     this._initialize();
 
     if (this._timeSinceLastLockChange > 0) {
-      const elapsedSecTime = (Date.now() - this._timeSinceLastLockChange) / 1000;
+      const elapsedSecTime =
+        (Date.now() - this._timeSinceLastLockChange) / 1000;
 
       // console.log("elapsedSecTime 1", elapsedSecTime);
 
       if (elapsedSecTime < 1.1) {
         return {
           success: false,
-          message: `request for lock was too early, time to wait: ${elapsedSecTime.toFixed(2)}sec`
+          message: `request for lock was too early, time to wait: ${elapsedSecTime.toFixed(
+            2
+          )}sec`
         };
       }
     }
@@ -138,13 +153,16 @@ class PointerLockManager {
         } catch (err) {
           // console.log("ERR", err);
 
-          const elapsedSecTime = (Date.now() - this._timeSinceLastLockChange) / 1000;
+          const elapsedSecTime =
+            (Date.now() - this._timeSinceLastLockChange) / 1000;
 
           // console.log("elapsedSecTime 2", elapsedSecTime);
 
           return {
             success: false,
-            message: `request for lock was too early, time to wait: ${elapsedSecTime.toFixed(2)}sec`
+            message: `request for lock was too early, time to wait: ${elapsedSecTime.toFixed(
+              2
+            )}sec`
           };
         }
 

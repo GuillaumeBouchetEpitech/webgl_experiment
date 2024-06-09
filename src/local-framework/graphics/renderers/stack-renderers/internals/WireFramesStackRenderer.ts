@@ -11,7 +11,10 @@ export class WireFramesStackRenderer {
   private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
 
-  constructor(inShader: webgl2.IUnboundShader, inGeometryDef: webgl2.GeometryWrapper.GeometryDefinition) {
+  constructor(
+    inShader: webgl2.IUnboundShader,
+    inGeometryDef: webgl2.GeometryWrapper.GeometryDefinition
+  ) {
     this._shader = inShader;
     const geometryDef: webgl2.GeometryWrapper.GeometryDefinition = {
       ...inGeometryDef,
@@ -21,7 +24,11 @@ export class WireFramesStackRenderer {
     this._geometry = new webgl2.GeometryWrapper.Geometry(inShader, geometryDef);
   }
 
-  pushLine(inPointA: glm.ReadonlyVec3, inPointB: glm.ReadonlyVec3, inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4) {
+  pushLine(
+    inPointA: glm.ReadonlyVec3,
+    inPointB: glm.ReadonlyVec3,
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  ) {
     if (this._currentSize + 7 * 2 >= this._buffer.length) {
       if (this._shader.isBound()) {
         this.flush();

@@ -1,4 +1,7 @@
-export const progressFetch = async (url: string, onProgress?: (total: number) => void): Promise<Response> => {
+export const progressFetch = async (
+  url: string,
+  onProgress?: (total: number) => void
+): Promise<Response> => {
   const response = await fetch(url);
 
   const reader = response.body!.getReader();

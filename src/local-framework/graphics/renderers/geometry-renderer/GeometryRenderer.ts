@@ -64,18 +64,28 @@ export class GeometryRenderer implements IGeometryRenderer {
       .addVboAttribute('a_offset_color', 'vec3f')
       .addVboAttribute('a_offset_scale', 'vec3f');
 
-    this._geometry = new webgl2.GeometryWrapper.Geometry(this._shader, geoBuilder.getDef());
+    this._geometry = new webgl2.GeometryWrapper.Geometry(
+      this._shader,
+      geoBuilder.getDef()
+    );
     this._geometry.setFloatBufferSize(1, k_bufferSize);
   }
 
   setGeometryVertices(vertices: IVertex[]) {
-    const buf = new Float32Array([...vertices.map((val) => [...val.pos, ...val.normal]).flat()]);
+    const buf = new Float32Array([
+      ...vertices.map((val) => [...val.pos, ...val.normal]).flat()
+    ]);
     // const buf = new Float32Array([...vertices.map(val => [...val.pos]).flat()]);
     this._geometry.allocateBuffer(0, buf, buf.length);
     this._geometry.setPrimitiveCount(buf.length / 6);
   }
 
-  push(inPointA: glm.ReadonlyVec3, inQuat: glm.ReadonlyQuat, inColor: glm.ReadonlyVec3, inScale: glm.ReadonlyVec3) {
+  push(
+    inPointA: glm.ReadonlyVec3,
+    inQuat: glm.ReadonlyQuat,
+    inColor: glm.ReadonlyVec3,
+    inScale: glm.ReadonlyVec3
+  ) {
     if (this._currentSize + 13 >= this._buffer.length) {
       if (this._shader.isBound()) {
         this._flush();

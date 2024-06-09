@@ -22,6 +22,9 @@ export class MultiBuffersRendering {
   }
 
   renderHud(composedMat4: glm.ReadonlyMat4): void {
-    this._renderHudTexture.flush(composedMat4, this._sceneCapturer.colorTexture);
+    this._renderHudTexture.flush(
+      composedMat4,
+      this._sceneCapturer.colorTexture
+    );
   }
 }

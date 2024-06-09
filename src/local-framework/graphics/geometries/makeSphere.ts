@@ -30,9 +30,18 @@ const _drawSpherePatch = (
       normal: glm.vec3.copy(glm.vec3.create(), v02)
     });
   } else {
-    const v12 = glm.vec3.normalize(glm.vec3.create(), glm.vec3.lerp(glm.vec3.create(), v01, v02, 0.5));
-    const v23 = glm.vec3.normalize(glm.vec3.create(), glm.vec3.lerp(glm.vec3.create(), v02, v03, 0.5));
-    const v31 = glm.vec3.normalize(glm.vec3.create(), glm.vec3.lerp(glm.vec3.create(), v03, v01, 0.5));
+    const v12 = glm.vec3.normalize(
+      glm.vec3.create(),
+      glm.vec3.lerp(glm.vec3.create(), v01, v02, 0.5)
+    );
+    const v23 = glm.vec3.normalize(
+      glm.vec3.create(),
+      glm.vec3.lerp(glm.vec3.create(), v02, v03, 0.5)
+    );
+    const v31 = glm.vec3.normalize(
+      glm.vec3.create(),
+      glm.vec3.lerp(glm.vec3.create(), v03, v01, 0.5)
+    );
 
     quality -= 1;
 
@@ -92,7 +101,14 @@ export const makeSphere = (
   const vertices: IVertex[] = [];
 
   for (const index of tmpIndices) {
-    _drawSpherePatch(vertices, quality, radius, tmpVertices[index[0]], tmpVertices[index[1]], tmpVertices[index[2]]);
+    _drawSpherePatch(
+      vertices,
+      quality,
+      radius,
+      tmpVertices[index[0]],
+      tmpVertices[index[1]],
+      tmpVertices[index[2]]
+    );
   }
 
   // const newPos = glm.vec3.create();

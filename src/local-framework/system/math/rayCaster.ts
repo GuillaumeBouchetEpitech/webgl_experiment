@@ -34,5 +34,9 @@ export const intersectRaySphere = (
     t = 0;
   }
 
-  return glm.vec3.fromValues(pos[0] + t * dir[0], pos[1] + t * dir[1], pos[2] + t * dir[2]);
+  return glm.vec3.fromValues(
+    pos[0] + t * dir[0],
+    pos[1] + t * dir[1],
+    pos[2] + t * dir[2]
+  );
 };

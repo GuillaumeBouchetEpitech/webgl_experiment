@@ -1,4 +1,8 @@
-import { GlobalKeyboardManager, GlobalMouseManager, GlobalTouchManager } from '../browser';
+import {
+  GlobalKeyboardManager,
+  GlobalMouseManager,
+  GlobalTouchManager
+} from '../browser';
 
 import { deg2Rad } from '../math/angles';
 
@@ -114,7 +118,12 @@ export class FreeFlyController {
     return (
       GlobalKeyboardManager.isPressed('Z', 'W', 'S', 'A', 'Q', 'D') ||
       GlobalKeyboardManager.isPressed('Shift', 'C', 'Space') ||
-      GlobalKeyboardManager.isPressed('ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight')
+      GlobalKeyboardManager.isPressed(
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight'
+      )
     );
   }
 
@@ -224,7 +233,8 @@ export class FreeFlyController {
       }
     }
 
-    const currentLinearSpeed = this._movingSpeed * (isRunning ? 4 : 1) * deltaMsTime;
+    const currentLinearSpeed =
+      this._movingSpeed * (isRunning ? 4 : 1) * deltaMsTime;
 
     //
     //

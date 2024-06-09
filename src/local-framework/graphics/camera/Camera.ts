@@ -94,8 +94,12 @@ export class Camera implements ICamera {
     this._viewportSize[0] = width;
     this._viewportSize[1] = height;
 
-    if (this._projectionType !== ProjectionType.perspective && this._perspectiveData) {
-      this._perspectiveData.aspectRatio = this._viewportSize[0] / this._viewportSize[1];
+    if (
+      this._projectionType !== ProjectionType.perspective &&
+      this._perspectiveData
+    ) {
+      this._perspectiveData.aspectRatio =
+        this._viewportSize[0] / this._viewportSize[1];
     }
   }
 
@@ -105,7 +109,11 @@ export class Camera implements ICamera {
 
   //
 
-  lookAt(inEye: glm.ReadonlyVec3, inTarget: glm.ReadonlyVec3, inUpAxis: glm.ReadonlyVec3) {
+  lookAt(
+    inEye: glm.ReadonlyVec3,
+    inTarget: glm.ReadonlyVec3,
+    inUpAxis: glm.ReadonlyVec3
+  ) {
     this.setEye(inEye);
     this.setTarget(inTarget);
     this.setUpAxis(inUpAxis);
@@ -138,10 +146,24 @@ export class Camera implements ICamera {
   computeMatrices() {
     if (this._projectionType === ProjectionType.perspective) {
       const { fovy, aspectRatio, near, far } = this._perspectiveData!;
-      glm.mat4.perspective(this._projectionMatrix, deg2Rad(fovy), aspectRatio!, near, far);
+      glm.mat4.perspective(
+        this._projectionMatrix,
+        deg2Rad(fovy),
+        aspectRatio!,
+        near,
+        far
+      );
     } else if (this._projectionType === ProjectionType.orthogonal) {
       const { left, right, top, bottom, near, far } = this._orthogonalData!;
-      glm.mat4.ortho(this._projectionMatrix, left, right, top, bottom, near, far);
+      glm.mat4.ortho(
+        this._projectionMatrix,
+        left,
+        right,
+        top,
+        bottom,
+        near,
+        far
+      );
     }
 
     glm.mat4.lookAt(this._viewMatrix, this._eye, this._target, this._upAxis);
@@ -150,7 +172,11 @@ export class Camera implements ICamera {
   }
 
   computeComposedMatrix() {
-    glm.mat4.multiply(this._composedMatrix, this._projectionMatrix, this._viewMatrix);
+    glm.mat4.multiply(
+      this._composedMatrix,
+      this._projectionMatrix,
+      this._viewMatrix
+    );
   }
 
   setProjectionMatrix(inMat4: glm.ReadonlyMat4) {

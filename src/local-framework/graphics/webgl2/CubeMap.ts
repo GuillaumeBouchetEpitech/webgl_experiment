@@ -50,7 +50,8 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
 
   initialize(width: number, height: number): void {
     if (width < 1) throw new Error(`cube map: width is < 1, input: ${width}`);
-    if (height < 1) throw new Error(`cube map: height is < 1, input: ${height}`);
+    if (height < 1)
+      throw new Error(`cube map: height is < 1, input: ${height}`);
     const gl = WebGLContext.getContext();
     this._texture = gl.createTexture();
     this._width = width;
@@ -86,7 +87,9 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
   loadFromMemory(inType: CubeMapType, inPixels: Uint8Array): void {
     if (!this._texture) throw new Error('cube map: not initialized');
     if (inPixels.length < this._minBufferSize)
-      throw new Error(`cube map: miss-matching pixels buffer size, input: ${inPixels.length}`);
+      throw new Error(
+        `cube map: miss-matching pixels buffer size, input: ${inPixels.length}`
+      );
 
     const gl = WebGLContext.getContext();
 
@@ -146,7 +149,11 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
     const gl = WebGLContext.getContext();
 
     gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(
+      gl.TEXTURE_CUBE_MAP,
+      gl.TEXTURE_MIN_FILTER,
+      gl.LINEAR_MIPMAP_LINEAR
+    );
   }
 
   getWidth(): number {

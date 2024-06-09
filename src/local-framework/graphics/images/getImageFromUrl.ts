@@ -68,7 +68,10 @@ export const fetchImageBuffer = async (
   // alert(commits[0].author.login);
 };
 
-export const getImageFromBuffer = async (buffer: Uint8Array, type: string): Promise<HTMLImageElement> => {
+export const getImageFromBuffer = async (
+  buffer: Uint8Array,
+  type: string
+): Promise<HTMLImageElement> => {
   // fetchImageBuffer();
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();

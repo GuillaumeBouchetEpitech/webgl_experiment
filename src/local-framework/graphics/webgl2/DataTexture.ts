@@ -90,7 +90,17 @@ export class DataTexture implements IBoundDataTexture {
     const border = 0;
     const format = gl.RED;
     const type = gl.FLOAT;
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, format, type, this._buffer);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      level,
+      internalFormat,
+      width,
+      height,
+      border,
+      format,
+      type,
+      this._buffer
+    );
   }
 
   update(start: number, data: number[]) {
@@ -128,7 +138,18 @@ export class DataTexture implements IBoundDataTexture {
     const yoffset = 0; // must stay 0
     const srcOffset = 0;
 
-    gl.texSubImage2D(gl.TEXTURE_2D, level, xoffset, yoffset, width, height, format, type, this._buffer, srcOffset);
+    gl.texSubImage2D(
+      gl.TEXTURE_2D,
+      level,
+      xoffset,
+      yoffset,
+      width,
+      height,
+      format,
+      type,
+      this._buffer,
+      srcOffset
+    );
   }
 
   rawBind() {

@@ -151,8 +151,16 @@ export class TextureArray implements IUnboundTextureArray, IBoundTextureArray {
 
     if (repeat === TextureRepeat.noRepeat) {
       // wrapping to clamp to edge
-      gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(
+        gl.TEXTURE_2D_ARRAY,
+        gl.TEXTURE_WRAP_S,
+        gl.CLAMP_TO_EDGE
+      );
+      gl.texParameteri(
+        gl.TEXTURE_2D_ARRAY,
+        gl.TEXTURE_WRAP_T,
+        gl.CLAMP_TO_EDGE
+      );
     } else if (repeat === TextureRepeat.repeat) {
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.REPEAT);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.REPEAT);
@@ -167,7 +175,11 @@ export class TextureArray implements IUnboundTextureArray, IBoundTextureArray {
     } else if (mode === TextureFilter.mipmap) {
       gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.texParameteri(
+        gl.TEXTURE_2D_ARRAY,
+        gl.TEXTURE_MIN_FILTER,
+        gl.LINEAR_MIPMAP_LINEAR
+      );
     }
   }
 

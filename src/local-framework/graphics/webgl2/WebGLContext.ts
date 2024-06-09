@@ -46,7 +46,8 @@ export class WebGLContext {
 
     if (!WebGLContext._gl) throw new Error('could not create webgl context');
 
-    WebGLContext._extensionLoseContext = WebGLContext._gl.getExtension('WEBGL_lose_context');
+    WebGLContext._extensionLoseContext =
+      WebGLContext._gl.getExtension('WEBGL_lose_context');
 
     WebGLContext._gl.getExtension('EXT_color_buffer_float');
     WebGLContext._gl.getExtension('EXT_float_blend');

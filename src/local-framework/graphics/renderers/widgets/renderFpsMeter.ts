@@ -13,14 +13,20 @@ export const renderFpsMeter = (
   // fps meter
 
   const k_divider = 5;
-  const k_verticalSize = Math.ceil(inFrameProfiler.maxDelta / k_divider) * k_divider;
+  const k_verticalSize =
+    Math.ceil(inFrameProfiler.maxDelta / k_divider) * k_divider;
 
   {
     // border
 
     inStackRenderers.pushOriginBoundRectangle(inPos, inSize, [0, 0, 0, 0.5]);
 
-    const allVertices: [glm.ReadonlyVec3, glm.ReadonlyVec3, glm.ReadonlyVec3, glm.ReadonlyVec3] = [
+    const allVertices: [
+      glm.ReadonlyVec3,
+      glm.ReadonlyVec3,
+      glm.ReadonlyVec3,
+      glm.ReadonlyVec3
+    ] = [
       [inPos[0] + inSize[0] * 0, inPos[1] + inSize[1] * 0, 0],
       [inPos[0] + inSize[0] * 1, inPos[1] + inSize[1] * 0, 0],
       [inPos[0] + inSize[0] * 1, inPos[1] + inSize[1] * 1, 0],
@@ -36,11 +42,23 @@ export const renderFpsMeter = (
   {
     // dividers
 
-    for (let currDivider = k_divider; currDivider < k_verticalSize; currDivider += k_divider) {
+    for (
+      let currDivider = k_divider;
+      currDivider < k_verticalSize;
+      currDivider += k_divider
+    ) {
       const ratio = currDivider / k_verticalSize;
 
-      const pointA: glm.ReadonlyVec3 = [inPos[0] + 0, inPos[1] + inSize[1] * ratio, 0];
-      const pointB: glm.ReadonlyVec3 = [inPos[0] + inSize[0], inPos[1] + inSize[1] * ratio, 0];
+      const pointA: glm.ReadonlyVec3 = [
+        inPos[0] + 0,
+        inPos[1] + inSize[1] * ratio,
+        0
+      ];
+      const pointB: glm.ReadonlyVec3 = [
+        inPos[0] + inSize[0],
+        inPos[1] + inSize[1] * ratio,
+        0
+      ];
 
       inStackRenderers.pushLine(pointA, pointB, [0.5, 0.5, 0.5]);
     }
@@ -61,8 +79,16 @@ export const renderFpsMeter = (
         const currCoordX = ii * widthStep;
         const currCoordY = (inSize[1] * currDelta) / k_verticalSize;
 
-        const pointA: glm.ReadonlyVec3 = [inPos[0] + prevCoordX, inPos[1] + prevCoordY, 0];
-        const pointB: glm.ReadonlyVec3 = [inPos[0] + currCoordX, inPos[1] + currCoordY, 0];
+        const pointA: glm.ReadonlyVec3 = [
+          inPos[0] + prevCoordX,
+          inPos[1] + prevCoordY,
+          0
+        ];
+        const pointB: glm.ReadonlyVec3 = [
+          inPos[0] + currCoordX,
+          inPos[1] + currCoordY,
+          0
+        ];
 
         inStackRenderers.pushLine(pointA, pointB, [1, 1, 1]);
 
@@ -88,7 +114,8 @@ export const renderFpsMeter = (
     let minStr = `>${minValue}ms`;
 
     if (inShowFps === true) {
-      const _getFpsStr = (inVal: number) => (inVal < 999 ? inVal.toFixed(0) : '???');
+      const _getFpsStr = (inVal: number) =>
+        inVal < 999 ? inVal.toFixed(0) : '???';
 
       averageStr += `\n~${_getFpsStr(1000 / averageValue)}fps`;
       maxStr += `\n<${_getFpsStr(1000 / maxValue)}fps`;
@@ -102,9 +129,15 @@ export const renderFpsMeter = (
       .pushText(averageStr, [inPos[0] + 7, inPos[1] - 8])
       .setTextAlign('left', 'centered')
       .setTextColor(1.0, 0.75, 0.75)
-      .pushText(maxStr, [inPos[0] + inSize[0] + k_textHScale, inPos[1] + inSize[1] - k_textHScale * 1])
+      .pushText(maxStr, [
+        inPos[0] + inSize[0] + k_textHScale,
+        inPos[1] + inSize[1] - k_textHScale * 1
+      ])
       .setTextColor(0.75, 1.0, 0.75)
-      .pushText(minStr, [inPos[0] + inSize[0] + k_textHScale, inPos[1] + k_textHScale * 1])
+      .pushText(minStr, [
+        inPos[0] + inSize[0] + k_textHScale,
+        inPos[1] + k_textHScale * 1
+      ])
       .setTextColor(1.0, 1.0, 1.0);
   } // counter
 };

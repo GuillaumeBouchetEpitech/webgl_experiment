@@ -167,6 +167,13 @@ export const easeOutBounce = (t: number): number => {
 };
 
 export const easeInOutBounce = (t: number): number => {
-  if (t < 0.5) return 8.0 * Math.pow(2.0, 8.0 * (t - 1.0)) * Math.abs(Math.sin(t * Math.PI * 7.0));
-  return 1.0 - 8.0 * Math.pow(2.0, -8.0 * t) * Math.abs(Math.sin(t * Math.PI * 7.0));
+  if (t < 0.5)
+    return (
+      8.0 *
+      Math.pow(2.0, 8.0 * (t - 1.0)) *
+      Math.abs(Math.sin(t * Math.PI * 7.0))
+    );
+  return (
+    1.0 - 8.0 * Math.pow(2.0, -8.0 * t) * Math.abs(Math.sin(t * Math.PI * 7.0))
+  );
 };

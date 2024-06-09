@@ -30,7 +30,10 @@ export class RenderHudTexture {
       .addVboAttribute('a_vertex_position', 'vec3f')
       .addVboAttribute('a_vertex_texCoord', 'vec2f');
 
-    this._geometry = new webgl2.GeometryWrapper.Geometry(this._shader, geoBuilder.getDef());
+    this._geometry = new webgl2.GeometryWrapper.Geometry(
+      this._shader,
+      geoBuilder.getDef()
+    );
 
     this.resize(width, height);
   }
@@ -48,7 +51,13 @@ export class RenderHudTexture {
 
     const vertArr = tmpVertices
       .map((vertex) => {
-        return [vertex.pos[0], vertex.pos[1], vertex.pos[2], vertex.tex[0], vertex.tex[1]];
+        return [
+          vertex.pos[0],
+          vertex.pos[1],
+          vertex.pos[2],
+          vertex.tex[0],
+          vertex.tex[1]
+        ];
       })
       .flat();
 

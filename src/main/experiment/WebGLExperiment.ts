@@ -214,7 +214,6 @@ export class WebGLExperiment {
 
     this._chunkGenerator.update(eyePos);
 
-
     let visibleChunks = 0;
     this._chunkGenerator.getChunks().forEach((chunk) => {
       if (chunk.isVisible) {
@@ -227,9 +226,7 @@ export class WebGLExperiment {
     ////// render 3d scene
 
     this._renderer.multipleBuffering.captureScene(() => {
-
       this._renderer.renderScene(() => {
-
         //
         //
         //
@@ -259,9 +256,7 @@ export class WebGLExperiment {
         //
         //
         //
-
       });
-
     });
 
     //
@@ -269,7 +264,6 @@ export class WebGLExperiment {
     ////// HUD
 
     this._renderer.renderHUD(() => {
-
       const gl = graphics.webgl2.WebGLContext.getContext();
 
       gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -279,7 +273,9 @@ export class WebGLExperiment {
       // the modern web browsers are already applying double buffering
       // -> so we're in fact triple buffering here
       // -> which is great -> more time for the WebGL queue to finish on time
-      this._renderer.multipleBuffering.renderHud(this._renderer.hudCamera.getComposedMatrix());
+      this._renderer.multipleBuffering.renderHud(
+        this._renderer.hudCamera.getComposedMatrix()
+      );
 
       this._renderer.stackRenderers.clear();
       this._renderer.textRenderer.clear();
@@ -374,6 +370,5 @@ export class WebGLExperiment {
 
       this._renderer.flush();
     });
-
   }
 }

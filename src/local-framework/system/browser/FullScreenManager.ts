@@ -34,7 +34,8 @@ class FullScreenManager {
       this._onFullScreenChangeCallbacks.forEach((callback) => callback());
     };
 
-    for (const currEvent of allChangeEvents) document.addEventListener(currEvent, onLockChange, false);
+    for (const currEvent of allChangeEvents)
+      document.addEventListener(currEvent, onLockChange, false);
   }
 
   //

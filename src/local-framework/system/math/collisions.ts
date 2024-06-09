@@ -27,7 +27,10 @@ export const intersectSegment = (
   return 1;
 };
 
-export const collisionLinesStrip = (tab: ReadonlyArray<glm.ReadonlyVec2>, P: glm.vec2): boolean => {
+export const collisionLinesStrip = (
+  tab: ReadonlyArray<glm.ReadonlyVec2>,
+  P: glm.vec2
+): boolean => {
   const I = glm.vec2.fromValues(0, 0);
   I[0] = 10000 + Math.random() * 100; // 10000 + un nombre aléatoire entre 0 et 99
   I[1] = 10000 + Math.random() * 100;

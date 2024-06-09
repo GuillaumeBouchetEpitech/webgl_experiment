@@ -51,9 +51,17 @@ class MouseManager {
       this._positionX = event.pageX;
       this._positionY = event.pageY;
 
-      this._deltaX += event.movementX || (event as any).mozMovementX || (event as any).webkitMovementX || 0;
+      this._deltaX +=
+        event.movementX ||
+        (event as any).mozMovementX ||
+        (event as any).webkitMovementX ||
+        0;
 
-      this._deltaY += event.movementY || (event as any).mozMovementY || (event as any).webkitMovementY || 0;
+      this._deltaY +=
+        event.movementY ||
+        (event as any).mozMovementY ||
+        (event as any).webkitMovementY ||
+        0;
     };
     const handleWheelEvent = (event: WheelEvent) => {
       if (this._onEvent) {

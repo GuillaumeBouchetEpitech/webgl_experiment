@@ -89,15 +89,13 @@ export class WebGLRenderer {
       multipleBuffering: new graphics.renderers.MultiBuffersRendering(
         this._def.canvasDomElement.width,
         this._def.canvasDomElement.height
-      ),
+      )
     };
 
     this.resize(
       this._def.canvasDomElement.width,
       this._def.canvasDomElement.height
     );
-
-
   }
 
   resize(width: number, height: number) {

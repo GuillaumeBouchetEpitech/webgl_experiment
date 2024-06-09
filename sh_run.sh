@@ -5,6 +5,8 @@ echo "Build target?"
 echo "=> watch:          1 (default)"
 echo "=> build release:  2"
 echo "=> build debug:    3"
+echo "=> prettify:       4"
+
 
 echo ""
 
@@ -24,6 +26,13 @@ case $USER_INPUT_PLATFORM in
   echo ""
 
   npm run debug
+  ;;
+4)
+  echo ""
+  echo "selected target: prettify"
+  echo ""
+
+  npm run prettier-format
   ;;
 *)
   echo ""

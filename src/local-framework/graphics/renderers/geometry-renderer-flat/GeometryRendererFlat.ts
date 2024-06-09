@@ -67,7 +67,10 @@ export class GeometryRendererFlat implements IGeometryRendererFlat {
       .addVboAttribute('a_offset_color', 'vec3f')
       .addVboAttribute('a_offset_scale', 'vec3f');
 
-    this._geometry = new webgl2.GeometryWrapper.Geometry(this._shader, geoBuilder.getDef());
+    this._geometry = new webgl2.GeometryWrapper.Geometry(
+      this._shader,
+      geoBuilder.getDef()
+    );
     this._geometry.setFloatBufferSize(1, k_bufferSize);
   }
 
@@ -81,7 +84,12 @@ export class GeometryRendererFlat implements IGeometryRendererFlat {
     this._geometry.setPrimitiveCount(buf.length / 3);
   }
 
-  push(inPointA: glm.ReadonlyVec3, inQuat: glm.ReadonlyQuat, inColor: glm.ReadonlyVec3, inScale: glm.ReadonlyVec3) {
+  push(
+    inPointA: glm.ReadonlyVec3,
+    inQuat: glm.ReadonlyQuat,
+    inColor: glm.ReadonlyVec3,
+    inScale: glm.ReadonlyVec3
+  ) {
     if (this._currentSize + 13 >= this._buffer.length) {
       if (this._shader.isBound()) {
         this._flush();

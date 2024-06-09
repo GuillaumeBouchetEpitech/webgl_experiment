@@ -1,10 +1,19 @@
 import * as glm from 'gl-matrix';
 
-export const polar2Cartesian = (lat: number, lng: number, relAltitude = 0, globRadius = 100): glm.vec3 => {
+export const polar2Cartesian = (
+  lat: number,
+  lng: number,
+  relAltitude = 0,
+  globRadius = 100
+): glm.vec3 => {
   const phi = ((90 - lat) * Math.PI) / 180;
   const theta = ((90 - lng) * Math.PI) / 180;
   const r = globRadius * (1 + relAltitude);
-  return [r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta)];
+  return [
+    r * Math.sin(phi) * Math.cos(theta),
+    r * Math.cos(phi),
+    r * Math.sin(phi) * Math.sin(theta)
+  ];
 };
 
 export const cartesian2Polar = (

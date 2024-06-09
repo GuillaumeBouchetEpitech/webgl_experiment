@@ -48,8 +48,10 @@ export const sceneToScreenCoordsFromComposed = (
 
     // Window coordinates
     // Map x, y to range 0-1
-    (multipliedVec4[0] = (multipliedVec4[0] * 0.5 + 0.5) * viewport[2] + viewport[0]),
-      (multipliedVec4[1] = (multipliedVec4[1] * 0.5 + 0.5) * viewport[3] + viewport[1]);
+    (multipliedVec4[0] =
+      (multipliedVec4[0] * 0.5 + 0.5) * viewport[2] + viewport[0]),
+      (multipliedVec4[1] =
+        (multipliedVec4[1] * 0.5 + 0.5) * viewport[3] + viewport[1]);
 
     results.push(glm.vec3.copy(glm.vec3.create(), multipliedVec4 as glm.vec3));
   });

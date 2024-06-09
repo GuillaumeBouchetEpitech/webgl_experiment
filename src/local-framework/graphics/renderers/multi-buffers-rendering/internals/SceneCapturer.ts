@@ -5,15 +5,15 @@ export class SceneCapturer {
   private _height: number = 0;
 
   private _frameBuffer: webgl2.IUnboundFrameBuffer = new webgl2.FrameBuffer();
-  private _renderBuffer: webgl2.IUnboundRenderBuffer = new webgl2.RenderBuffer();
+  private _renderBuffer: webgl2.IUnboundRenderBuffer =
+    new webgl2.RenderBuffer();
   private _colorTextures: webgl2.IUnboundTexture[] = [];
   private _currentIndex: number = 0;
 
   constructor(width: number, height: number) {
-
     this._colorTextures.push(new webgl2.Texture());
     this._colorTextures.push(new webgl2.Texture());
-    this._colorTextures.forEach(texture => texture.initialize());
+    this._colorTextures.forEach((texture) => texture.initialize());
 
     this.resize(width, height);
   }
@@ -41,7 +41,6 @@ export class SceneCapturer {
 
   captureScene(renderCallback: () => void): void {
     this._frameBuffer.bind((boundFrameBuffer) => {
-
       this._colorTextures[this._currentIndex].bind((boundTexture) => {
         boundFrameBuffer.attachTexture(boundTexture);
       });
