@@ -1,4 +1,4 @@
-
+#!/bin/bash
 
 echo ""
 echo "Build target?"
