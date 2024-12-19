@@ -37,6 +37,8 @@ export class WebGLContext {
       // preserve their values until cleared or overwritten by the author.
       preserveDrawingBuffer: true,
 
+      desynchronized: true,
+
       // Boolean that indicates that the drawing buffer has a
       // stencil buffer of at least 8 bits.
       stencil: false

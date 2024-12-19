@@ -302,7 +302,7 @@ export class WebGLExperiment {
         const touchEventsPos: glm.ReadonlyVec2 = [7 + 20, 260];
         const boardPos: glm.ReadonlyVec2 = [7, 35];
 
-        graphics.renderers.widgets.addArrowStrokesWidgets(
+        graphics.renderers.widgets.addKeyStrokesWidgets(
           keyEventsPos,
           this._renderer.stackRenderers,
           this._renderer.textRenderer
