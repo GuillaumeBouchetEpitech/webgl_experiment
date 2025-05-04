@@ -177,7 +177,7 @@ export class TrianglesStackRenderer {
       return;
     }
 
-    this._geometry.allocateBuffer(0, this._buffer, this._currentSize);
+    this._geometry.allocateBuffer(0, this._buffer.slice(0, this._currentSize), this._currentSize);
     this._geometry.setPrimitiveCount(this._currentSize / 7);
 
     this._geometry.render();

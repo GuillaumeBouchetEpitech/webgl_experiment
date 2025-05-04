@@ -137,7 +137,7 @@ export class GeometryRenderer implements IGeometryRenderer {
   }
 
   private _flush() {
-    this._geometry.updateBuffer(1, this._buffer, this._currentSize, 0);
+    this._geometry.updateBuffer(1, this._buffer.slice(0, this._currentSize), this._currentSize, 0);
     this._geometry.setInstancedCount(this._currentSize / 13);
 
     this._geometry.render();

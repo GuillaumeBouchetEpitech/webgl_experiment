@@ -367,7 +367,7 @@ export class Geometry {
     const gl = WebGLContext.getContext();
 
     gl.bindBuffer(gl.ARRAY_BUFFER, currVbo.object);
-    gl.bufferSubData(gl.ARRAY_BUFFER, inStartOffset ?? 0, buffer, 0, inSize);
+    gl.bufferSubData(gl.ARRAY_BUFFER, inStartOffset ?? 0, buffer.slice(0, inSize), 0, inSize);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
   }
 

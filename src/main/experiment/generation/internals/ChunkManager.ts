@@ -253,7 +253,7 @@ export class ChunkManager {
               return this._usedSet.has(currChunk.indexPosition);
             });
             if (tmpIndex >= 0) {
-              return; // already processed
+              continue; // already processed
             }
           }
 
@@ -268,7 +268,7 @@ export class ChunkManager {
               });
 
             if (tmpIndex >= 0) {
-              return; // already processing
+              continue; // already processing
             }
           }
 
