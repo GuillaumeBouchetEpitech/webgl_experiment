@@ -53,7 +53,7 @@ class LiveGeometry implements ILiveGeometry {
     glm.vec3.copy(this._origin, inOrigin);
     this._size = inBufferLength;
 
-    this._geometry.updateBuffer(0, inBuffer.slice(0, inBufferLength), inBufferLength);
+    this._geometry.updateBuffer(0, inBuffer, inBufferLength);
     this._geometry.setPrimitiveCount(inBufferLength / 6);
 
     const newBuffer = new Float32Array([inOrigin[0], inOrigin[1], inOrigin[2]]);

@@ -86,8 +86,6 @@ export class ChunkManager {
   ) {
     const geometry = this._def.acquireGeometry(inGeometryDataLength);
 
-    const subBuffer = inGeometryDataBuffer.slice(0, inGeometryUsedLength);
-
     // save
     if (this._unusedChunks.length === 0) {
       this._usedChunks.push({
@@ -96,7 +94,7 @@ export class ChunkManager {
         geometry,
         isVisible: false,
         isDirty: true,
-        geometryFloat32buffer: new Float32Array(subBuffer),
+        geometryFloat32buffer: new Float32Array(inGeometryDataBuffer),
         geometryBufferSizeUsed: inGeometryUsedLength
       });
     } else {
@@ -105,7 +103,7 @@ export class ChunkManager {
       reused.indexPosition = [...inIndexPosition];
       reused.isVisible = false;
       reused.isDirty = true;
-      reused.geometryFloat32buffer = new Float32Array(subBuffer);
+      reused.geometryFloat32buffer = new Float32Array(inGeometryDataBuffer);
       reused.geometryBufferSizeUsed = inGeometryUsedLength;
       this._usedChunks.push(reused);
     }

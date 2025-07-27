@@ -21,7 +21,7 @@
     "@rollup/plugin-typescript": "^9.0.2",
     "@types/gl-matrix": "^3.2.0",
     "@types/node": "^15.6.1",
-    "bun": "^1.0.18",
+    "bun": "^1.0.x",
     "gl-matrix": "^3.3.0",
     "nodemon": "^3.0.1",
     "prettier": "^2.8.4",

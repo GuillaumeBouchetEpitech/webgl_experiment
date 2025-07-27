@@ -426,7 +426,7 @@ export class TextRenderer implements ITextRenderer {
       boundShader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
       boundShader.setTextureUniform('u_texture', this._texture, 0);
 
-      this._geometry.allocateBuffer(1, this._buffer.slice(0, this._currentSize), this._currentSize);
+      this._geometry.allocateBuffer(1, this._buffer, this._currentSize);
       this._geometry.setInstancedCount(this._currentSize / 9);
       this._geometry.render();
     });
