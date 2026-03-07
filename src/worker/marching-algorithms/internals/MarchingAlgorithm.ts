@@ -2,20 +2,20 @@ import { Vec3 } from './types';
 import * as utilities from './utilities';
 
 // common
-export const a2fVertexOffset: Vec3[] = [
-  [0, 0, 0],
-  [1, 0, 0],
-  [1, 1, 0],
-  [0, 1, 0],
-  [0, 0, 1],
-  [1, 0, 1],
-  [1, 1, 1],
-  [0, 1, 1]
-];
+export const a2fVertexOffset: Readonly<Float32Array> = new Float32Array([
+  0, 0, 0,
+  1, 0, 0,
+  1, 1, 0,
+  0, 1, 0,
+  0, 0, 1,
+  1, 0, 1,
+  1, 1, 1,
+  0, 1, 1,
+]);
 
 export type OnSampleCallback = (x: number, y: number, z: number) => number;
 
-export type OnVertexCallback = (vertex: Vec3, normal: Vec3) => void;
+export type OnVertexCallback = (vertex: Readonly<Float32Array>, normal: Readonly<Float32Array>) => void;
 
 export interface IMarchingAlgorithm {
   generate(

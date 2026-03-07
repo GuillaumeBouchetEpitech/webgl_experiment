@@ -46,16 +46,22 @@ const _getRadius = (
 const k_originRadius = 1.25;
 const k_originRange = 2;
 
-const onGenericSampleCallback = (x: number, y: number, z: number) => {
-  return simplexNoiseInstance.getNoise(x, y, z) + 0.5; // [0..1]
-};
+// this will ensure the 0/0/0 coordinate is "empty" (for some radius value)
+const onOriginSampleCallback = (inX: number, inY: number, inZ: number): number => {
+  const noiseValue = onGenericSampleCallback(inX, inY, inZ); // [0..1]
 
-const onOriginSampleCallback = (inX: number, inY: number, inZ: number) => {
-  const noiseValue = onGenericSampleCallback(inX, inY, inZ);
-
+  // this coefficient that dictate how much of the noise get considered
+  // -> closer to the origin means lerpCoef is closer to 1 (empty space)
+  // -> farther from the origin means lerpCoef is closer to 0 (noise space)
   const lerpCoef = 1 - _getRadius(inX, inY, inZ, k_originRadius);
 
+  // interpolate to get the final value
   return _lerp(noiseValue, 0, lerpCoef);
+};
+
+// when we're far enough from the 0/0/0 coordinate -> use a simpler callback
+const onGenericSampleCallback = (x: number, y: number, z: number): number => {
+  return simplexNoiseInstance.getNoise(x, y, z) + 0.5; // [0..1]
 };
 
 const marchingCubeInstance: IMarchingAlgorithm = new MarchingCube(
@@ -63,7 +69,8 @@ const marchingCubeInstance: IMarchingAlgorithm = new MarchingCube(
   configuration.chunkThreshold
 );
 
-const myself = self as unknown as Worker; // well, that's apparently needed...
+// well, that's apparently needed...
+const myself = self as unknown as Worker;
 
 const onMainScriptMessage = (event: TypedMessageEvent<IMessage>) => {
   const {
@@ -84,7 +91,7 @@ const onMainScriptMessage = (event: TypedMessageEvent<IMessage>) => {
 
   let bufIndex = 0;
 
-  const onVertexCallback: OnVertexCallback = (vertex: Vec3, normal: Vec3) => {
+  const onVertexCallback: OnVertexCallback = (vertex, normal) => {
     // should never happen, but just in case
     if (bufIndex + 6 > geometryBufferSize) {
       return;
@@ -130,7 +137,7 @@ const onMainScriptMessage = (event: TypedMessageEvent<IMessage>) => {
   };
 
   myself.postMessage(toSend, [
-    // we now transfer the ownership of the vertices buffer
+    // this transfer the ownership of the geometry buffer (not copied, faster)
     geometryFloat32buffer.buffer
   ]);
 };

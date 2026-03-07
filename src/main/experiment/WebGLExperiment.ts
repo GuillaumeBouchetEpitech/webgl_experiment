@@ -30,7 +30,7 @@ export class WebGLExperiment {
   private _chunksCreated: number = 0;
   private _chunksDiscarded: number = 0;
 
-  private _currFrameTime: number = 0;
+  private _currFrameTimeMsec: number = Date.now();
   private _frameProfiler = new system.metrics.FrameProfiler();
 
   constructor(canvasElement: HTMLCanvasElement) {
@@ -176,8 +176,8 @@ export class WebGLExperiment {
       }
 
       // plan the next frame
-      // window.requestAnimationFrame(tick);
-      window.setTimeout(tick, 1000 / 60);
+      window.requestAnimationFrame(tick);
+      // window.setTimeout(tick, 1000 / 60);
 
       this._mainLoop();
     };
@@ -186,16 +186,14 @@ export class WebGLExperiment {
   }
 
   private _mainLoop() {
-    const currentTime = Date.now();
-    const elapsedTimeMsec = system.math.clamp(
-      currentTime - this._currFrameTime,
-      0,
-      1000
-    );
-    this._currFrameTime = currentTime;
-    this._frameProfiler.pushDelta(elapsedTimeMsec);
+    const newTimeMsec = Date.now();
+    const deltaTimeMsec = newTimeMsec - this._currFrameTimeMsec;
+    this._currFrameTimeMsec = newTimeMsec;
+    this._frameProfiler.pushDelta(deltaTimeMsec);
 
-    const deltaTimeSec = elapsedTimeMsec / 1000;
+    const safeMaxTimeMsec = 40; // 40ms -> 20fps
+    const safeTimeMsec = system.math.clamp(deltaTimeMsec, 0, safeMaxTimeMsec);
+    const deltaTimeSec = safeTimeMsec / 1000;
 
     //
     //

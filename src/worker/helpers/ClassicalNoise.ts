@@ -1,17 +1,18 @@
-const k_grad3: [number, number, number][] = [
-  [1, 1, 0],
-  [-1, 1, 0],
-  [1, -1, 0],
-  [-1, -1, 0],
-  [1, 0, 1],
-  [-1, 0, 1],
-  [1, 0, -1],
-  [-1, 0, -1],
-  [0, 1, 1],
-  [0, -1, 1],
-  [0, 1, -1],
-  [0, -1, -1]
-];
+
+const k_grad3: Readonly<Float32Array> = new Float32Array([
+  1, 1, 0,
+  -1, 1, 0,
+  1, -1, 0,
+  -1, -1, 0,
+  1, 0, 1,
+  -1, 0, 1,
+  1, 0, -1,
+  -1, 0, -1,
+  0, 1, 1,
+  0, -1, 1,
+  0, 1, -1,
+  0, -1, -1,
+]);
 
 type GetNormalizedRandomCallback = () => number;
 
@@ -69,8 +70,7 @@ export class ClassicalNoise {
   }
 
   private _dot(i: number, x: number, y: number, z: number): number {
-    const g = k_grad3[i];
-    return g[0] * x + g[1] * y + g[2] * z;
+    return k_grad3[i * 3 + 0] * x + k_grad3[i * 3 + 1] * y + k_grad3[i * 3 + 2] * z;
   }
 
   private _mix(a: number, b: number, t: number): number {
