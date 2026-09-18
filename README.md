@@ -1,4 +1,3 @@
-
 # WebGL Experiment: Simplex Noise 3D Cave Explorer
 
 ---
@@ -45,7 +44,7 @@ bun install
 
 ### Release Build
 ```bash
-npm run build-release # minified
+npm run release # minified
 ```
 
 ### Debug Build
